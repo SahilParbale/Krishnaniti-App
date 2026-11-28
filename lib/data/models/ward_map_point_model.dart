@@ -63,18 +63,30 @@ class WardMapPointModel {
     }
   }
 
-  String get categoryDisplay {
+  String get categoryDisplay => categoryDisplayFor('mr');
+
+  String categoryDisplayFor(String lang) {
     switch (category.toLowerCase()) {
       case 'booth':
-        return 'Polling Booth / मतदान केंद्र';
+        if (lang == 'mr') return 'मतदान केंद्र';
+        if (lang == 'hi') return 'मतदान केंद्र';
+        return 'Polling Booth';
       case 'civilworks':
-        return 'Civil Works / विकासकामे';
+        if (lang == 'mr') return 'विकासकामे';
+        if (lang == 'hi') return 'नागरिक कार्य';
+        return 'Civil Works';
       case 'amenity':
-        return 'Civic Amenity / नागरी सुविधा';
+        if (lang == 'mr') return 'नागरी सुविधा';
+        if (lang == 'hi') return 'नागरिक सुविधा';
+        return 'Civic Amenity';
       case 'problemspot':
-        return 'Problem Spot / समस्या ठिकाण';
+        if (lang == 'mr') return 'समस्या ठिकाण';
+        if (lang == 'hi') return 'समस्या स्थल';
+        return 'Problem Spot';
       case 'office':
-        return 'Ward Office / कार्यालय';
+        if (lang == 'mr') return 'कार्यालय';
+        if (lang == 'hi') return 'कार्यालय';
+        return 'Ward Office';
       default:
         return category;
     }

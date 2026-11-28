@@ -82,14 +82,26 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   }
 
   void _applyTemplate(AiPromptTemplate tmpl) {
+    final lang = ref.read(appLanguageProvider);
     setState(() {
       _topicCtrl.text = tmpl.prompt;
       _selectedType = tmpl.defaultType;
       _selectedTone = tmpl.defaultTone;
     });
+    final tmplTitle = lang == 'mr'
+        ? tmpl.titleMr
+        : (DynamicTranslationService.getCachedTranslation(tmpl.title, lang) ??
+            tmpl.title);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('\'${tmpl.titleMr}\' template applied'),
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: '\'$tmplTitle\' template applied',
+            mr: '\'$tmplTitle\' नमुना लागू केला',
+            hi: '\'$tmplTitle\' टेम्पलेट लागू किया गया',
+          ),
+        ),
         duration: const Duration(seconds: 1),
         backgroundColor: const Color(0xFF0284C7),
       ),
@@ -97,12 +109,20 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   }
 
   Future<void> _handleGenerate() async {
+    final lang = ref.read(appLanguageProvider);
     final topic = _topicCtrl.text.trim();
     if (topic.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a topic or context first'),
-          backgroundColor: Color(0xFFDC2626),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please enter a topic or context first',
+              mr: 'कृपया प्रथम विषय किंवा संदर्भ प्रविष्ट करा',
+              hi: 'कृपया पहले विषय या संदर्भ दर्ज करें',
+            ),
+          ),
+          backgroundColor: const Color(0xFFDC2626),
         ),
       );
       return;
@@ -135,10 +155,17 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Content generated successfully!'),
-            backgroundColor: Color(0xFF059669),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Content generated successfully!',
+                mr: 'मजकूर यशस्वीरित्या तयार झाला!',
+                hi: 'सामग्री सफलतापूर्वक तैयार हुई!',
+              ),
+            ),
+            backgroundColor: const Color(0xFF059669),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -147,7 +174,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
         setState(() => _isGenerating = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              '${AppTranslations.pick(lang, en: "Error", mr: "त्रुटी", hi: "त्रुटि")}: ${e.toString()}',
+            ),
             backgroundColor: const Color(0xFFDC2626),
           ),
         );
@@ -157,13 +186,26 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
 
   void _handleCopy() {
     if (_lastGeneratedItem == null) return;
-    Clipboard.setData(ClipboardData(text: _lastGeneratedItem!.generatedContent));
+    final lang = ref.read(appLanguageProvider);
+    final content = DynamicTranslationService.getCachedTranslation(
+          _lastGeneratedItem!.generatedContent,
+          lang,
+        ) ??
+        _lastGeneratedItem!.generatedContent;
+    Clipboard.setData(ClipboardData(text: content));
     setState(() => _copied = true);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Content copied to clipboard!'),
-        backgroundColor: Color(0xFF059669),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Content copied to clipboard!',
+            mr: 'मजकूर क्लिपबोर्डवर कॉपी केला!',
+            hi: 'सामग्री क्लिपबोर्ड पर कॉपी की गई!',
+          ),
+        ),
+        backgroundColor: const Color(0xFF059669),
+        duration: const Duration(seconds: 2),
       ),
     );
     Future.delayed(const Duration(seconds: 2), () {
@@ -172,7 +214,28 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   }
 
   Future<void> _handleShare(AiContentHistoryItem item) async {
-    final text = '${item.title}\n\n${item.generatedContent}\n\n— Nagarsevak Amit Chougale (Ward 12)';
+    final lang = ref.read(appLanguageProvider);
+    final title =
+        DynamicTranslationService.getCachedTranslation(item.title, lang) ??
+            item.title;
+    final content = DynamicTranslationService.getCachedTranslation(
+          item.generatedContent,
+          lang,
+        ) ??
+        item.generatedContent;
+    final footer = AppTranslations.pick(
+      lang,
+      en: '— Nagarsevak Amit Chougale (Ward 12)',
+      mr: '— नगरसेवक अमित चौगुले (प्रभाग १२)',
+      hi: '— नगरसेवक अमित चौगुले (वार्ड १२)',
+    );
+    final copiedMsg = AppTranslations.pick(
+      lang,
+      en: 'Content copied to clipboard!',
+      mr: 'मजकूर क्लिपबोर्डवर कॉपी केला!',
+      hi: 'सामग्री क्लिपबोर्ड पर कॉपी की गई!',
+    );
+    final text = '$title\n\n$content\n\n$footer';
     final encoded = Uri.encodeComponent(text);
     final uri = Uri.parse('https://wa.me/?text=$encoded');
     try {
@@ -182,7 +245,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
         Clipboard.setData(ClipboardData(text: text));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Content copied to clipboard!')),
+            SnackBar(content: Text(copiedMsg)),
           );
         }
       }
@@ -190,13 +253,14 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
       Clipboard.setData(ClipboardData(text: text));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Content copied to clipboard!')),
+          SnackBar(content: Text(copiedMsg)),
         );
       }
     }
   }
 
   void _loadFromHistory(AiContentHistoryItem item) {
+    final lang = ref.read(appLanguageProvider);
     setState(() {
       _topicCtrl.text = item.title;
       _selectedType = item.contentType;
@@ -205,10 +269,19 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
       _lastGeneratedItem = item;
       _tabController.animateTo(0);
     });
-
+    final title =
+        DynamicTranslationService.getCachedTranslation(item.title, lang) ??
+            item.title;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('\'${item.title}\' loaded in editor'),
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: '\'$title\' loaded in editor',
+            mr: '\'$title\' संपादकात लोड केले',
+            hi: '\'$title\' संपादक में लोड किया गया',
+          ),
+        ),
         duration: const Duration(seconds: 1),
         backgroundColor: const Color(0xFF0284C7),
       ),
@@ -216,20 +289,40 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   }
 
   Future<void> _handleDelete(String id) async {
+    final lang = ref.read(appLanguageProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Draft?'),
-        content: const Text('This draft will be permanently removed from your history.'),
+        title: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Delete Draft?',
+            mr: 'मसुदा हटवायचा का?',
+            hi: 'ड्राफ्ट हटाएं?',
+          ),
+        ),
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'This draft will be permanently removed from your history.',
+            mr: 'हा मसुदा तुमच्या इतिहासातून कायमचा हटवला जाईल.',
+            hi: 'यह ड्राफ्ट आपके इतिहास से स्थायी रूप से हटा दिया जाएगा।',
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -251,9 +344,11 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   }
 
   Future<void> _exportDossierPdf() async {
+    final lang = ref.read(appLanguageProvider);
     await AiContentReportGenerator.generateDossier(
       items: _filteredHistory,
       categoryFilter: _historyFilter,
+      lang: lang,
     );
   }
 
@@ -290,7 +385,12 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -384,11 +484,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                                       const SizedBox(width: 6),
                                       Flexible(
                                         child: Text(
-                                          lang == 'mr'
-                                              ? 'इतिहास (${_allHistory.length})'
-                                              : (lang == 'hi'
-                                                  ? 'इतिहास (${_allHistory.length})'
-                                                  : 'History (${_allHistory.length})'),
+                                          '${AppTranslations.pick(lang, en: "History", mr: "इतिहास", hi: "इतिहास")} (${AppTranslations.formatDigits(_allHistory.length, lang)})',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -402,7 +498,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                         ),
                         const SizedBox(width: 8),
                         AppPdfButton.icon(
-                          tooltip: 'Download Report',
+                          tooltip: AppTranslations.getDownloadReport(lang),
                           onPressed: _exportDossierPdf,
                         ),
                       ],
@@ -412,8 +508,8 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildStudioTab(),
-                        _buildHistoryTab(),
+                        _buildStudioTab(lang),
+                        _buildHistoryTab(lang),
                       ],
                     ),
                   ),
@@ -426,24 +522,24 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   // ==========================================
   // TAB 1: STUDIO (INPUT + GENERATED PREVIEW)
   // ==========================================
-  Widget _buildStudioTab() {
+  Widget _buildStudioTab(String lang) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Quick Prompt Templates Carousel
-          _buildTemplatesCarousel(),
+          _buildTemplatesCarousel(lang),
 
           const SizedBox(height: 16),
 
           // Generator Form Card
-          _buildGeneratorFormCard(),
+          _buildGeneratorFormCard(lang),
 
           // If content is generated, show Result Card
           if (_lastGeneratedItem != null) ...[
             const SizedBox(height: 16),
-            _buildResultCard(_lastGeneratedItem!),
+            _buildResultCard(_lastGeneratedItem!, lang),
           ],
 
           const SizedBox(height: 32),
@@ -452,7 +548,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
     );
   }
 
-  Widget _buildTemplatesCarousel() {
+  Widget _buildTemplatesCarousel(String lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -460,12 +556,19 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
           children: [
             const Icon(Icons.flash_on_rounded, size: 16, color: Color(0xFFD97706)),
             const SizedBox(width: 4),
-            const Text(
-              'Quick Political Drafting Templates (Prompts)',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF334155),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Quick Political Drafting Templates (Prompts)',
+                  mr: 'त्वरित राजकीय मसुदा नमुने (Prompts)',
+                  hi: 'त्वरित राजनीतिक ड्राफ्टिंग टेम्पलेट्स (Prompts)',
+                ),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF334155),
+                ),
               ),
             ),
           ],
@@ -506,8 +609,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                           Icon(tmpl.icon, size: 14, color: const Color(0xFF0284C7)),
                           const SizedBox(width: 5),
                           Expanded(
-                            child: Text(
-                              tmpl.titleMr,
+                            child: AppTranslatedText(
+                              lang == 'mr' ? tmpl.titleMr : tmpl.title,
+                              targetLanguage: lang,
                               style: const TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.bold,
@@ -520,8 +624,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AppTranslatedText(
                         tmpl.subtitle,
+                        targetLanguage: lang,
                         style: const TextStyle(
                           fontSize: 10,
                           color: Color(0xFF64748B),
@@ -540,7 +645,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
     );
   }
 
-  Widget _buildGeneratorFormCard() {
+  Widget _buildGeneratorFormCard(String lang) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -573,9 +678,14 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Enter Draft Details',
-                style: TextStyle(
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Enter Draft Details',
+                  mr: 'मसुद्याचा तपशील प्रविष्ट करा',
+                  hi: 'ड्राफ्ट का विवरण दर्ज करें',
+                ),
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
@@ -586,9 +696,14 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
           const SizedBox(height: 14),
 
           // Topic / Context TextArea
-          const Text(
-            'Topic / Context',
-            style: TextStyle(
+          Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Topic / Context',
+              mr: 'विषय / संदर्भ',
+              hi: 'विषय / संदर्भ',
+            ),
+            style: const TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: Color(0xFF334155),
@@ -599,7 +714,12 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             controller: _topicCtrl,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'e.g., Inauguration of new community center in Ward 12 on Sunday...',
+              hintText: AppTranslations.pick(
+                lang,
+                en: 'e.g., Inauguration of new community center in Ward 12 on Sunday...',
+                mr: 'उदा. रविवारी प्रभाग १२ मध्ये नवीन सभागृहाचे उद्घाटन...',
+                hi: 'उदा. रविवार को वार्ड १२ में नए सामुदायिक केंद्र का उद्घाटन...',
+              ),
               hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
@@ -638,9 +758,14 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Content Type',
-                      style: TextStyle(
+                    Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Content Type',
+                        mr: 'सामग्री प्रकार',
+                        hi: 'सामग्री प्रकार',
+                      ),
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF334155),
@@ -648,7 +773,12 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     ),
                     const SizedBox(height: 6),
                     AppDropdown<AiContentType>(
-                      title: 'सामग्री प्रकार (Content Type)',
+                      title: AppTranslations.pick(
+                        lang,
+                        en: 'Content Type',
+                        mr: 'सामग्री प्रकार निवडा',
+                        hi: 'सामग्री प्रकार चुनें',
+                      ),
                       value: _selectedType,
                       items: AiContentType.values.map((type) {
                         return DropdownMenuItem<AiContentType>(
@@ -659,7 +789,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  type.titleMr,
+                                  type.title(lang),
                                   style: const TextStyle(fontSize: 12),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -682,9 +812,14 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Tone / Sentiment',
-                      style: TextStyle(
+                    Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Tone / Sentiment',
+                        mr: 'संभाषण सूर / भाव',
+                        hi: 'संवाद शैली / भाव',
+                      ),
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF334155),
@@ -692,7 +827,12 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     ),
                     const SizedBox(height: 6),
                     AppDropdown<AiToneType>(
-                      title: 'संभाषण सूर (Tone / Sentiment)',
+                      title: AppTranslations.pick(
+                        lang,
+                        en: 'Tone / Sentiment',
+                        mr: 'संभाषण सूर निवडा',
+                        hi: 'संवाद शैली चुनें',
+                      ),
                       value: _selectedTone,
                       items: AiToneType.values.map((tone) {
                         return DropdownMenuItem<AiToneType>(
@@ -703,7 +843,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  tone.titleMr,
+                                  tone.title(lang),
                                   style: const TextStyle(fontSize: 12),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -729,9 +869,14 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Language',
-                style: TextStyle(
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Language',
+                  mr: 'भाषा',
+                  hi: 'भाषा',
+                ),
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF334155),
@@ -739,13 +884,13 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               ),
               const SizedBox(height: 6),
               Row(
-                children: AiLanguageType.values.map((lang) {
-                  final isSelected = _selectedLanguage == lang;
+                children: AiLanguageType.values.map((aiLang) {
+                  final isSelected = _selectedLanguage == aiLang;
                   return Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: InkWell(
-                        onTap: () => setState(() => _selectedLanguage = lang),
+                        onTap: () => setState(() => _selectedLanguage = aiLang),
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -762,9 +907,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            lang.id == 'Marathi'
-                                ? 'Marathi'
-                                : (lang.id == 'Hindi' ? 'Hindi' : 'English'),
+                            aiLang.labelFor(lang),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -799,8 +944,8 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               child: _isGenerating
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        SizedBox(
+                      children: [
+                        const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
@@ -808,21 +953,31 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Text(
-                          'Generating Content...',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Generating Content...',
+                            mr: 'मजकूर तयार होत आहे...',
+                            hi: 'सामग्री तैयार हो रही है...',
+                          ),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                         ),
                       ],
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.auto_awesome_rounded, size: 18),
-                        SizedBox(width: 8),
+                      children: [
+                        const Icon(Icons.auto_awesome_rounded, size: 18),
+                        const SizedBox(width: 8),
                         Text(
-                          'Generate Content',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Generate Content',
+                            mr: 'मजकूर तयार करा',
+                            hi: 'सामग्री तैयार करें',
+                          ),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -833,7 +988,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
     );
   }
 
-  Widget _buildResultCard(AiContentHistoryItem item) {
+  Widget _buildResultCard(AiContentHistoryItem item, String lang) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -866,7 +1021,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     Icon(item.contentType.icon, size: 12, color: item.contentType.color),
                     const SizedBox(width: 4),
                     Text(
-                      item.contentType.titleMr,
+                      item.contentType.title(lang),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -884,7 +1039,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  item.tone.titleMr,
+                  item.tone.title(lang),
                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
                 ),
               ),
@@ -912,7 +1067,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _copied ? 'Copied!' : 'Copy',
+                        _copied
+                            ? AppTranslations.pick(lang, en: 'Copied!', mr: 'कॉपी!', hi: 'कॉपी!')
+                            : AppTranslations.pick(lang, en: 'Copy', mr: 'कॉपी', hi: 'कॉपी'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -925,16 +1082,19 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               ),
               const SizedBox(width: 6),
               // Share Button
-              InkWell(
-                onTap: () => _handleShare(item),
-                borderRadius: BorderRadius.circular(6),
-                child: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(6),
+              Tooltip(
+                message: AppTranslations.pick(lang, en: 'Share', mr: 'शेअर करा', hi: 'साझा करें'),
+                child: InkWell(
+                  onTap: () => _handleShare(item),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(Icons.share_rounded, size: 14, color: Color(0xFF475569)),
                   ),
-                  child: const Icon(Icons.share_rounded, size: 14, color: Color(0xFF475569)),
                 ),
               ),
             ],
@@ -943,8 +1103,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
           const SizedBox(height: 10),
 
           // Title
-          Text(
+          AppTranslatedText(
             item.title,
+            targetLanguage: lang,
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
@@ -960,15 +1121,24 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               const Icon(Icons.menu_book_rounded, size: 12, color: Color(0xFF64748B)),
               const SizedBox(width: 4),
               Text(
-                '${item.wordCount} words',
+                AppTranslations.pick(
+                  lang,
+                  en: '${AppTranslations.formatDigits(item.wordCount, lang)} words',
+                  mr: '${AppTranslations.formatDigits(item.wordCount, lang)} शब्द',
+                  hi: '${AppTranslations.formatDigits(item.wordCount, lang)} शब्द',
+                ),
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
               const SizedBox(width: 12),
               const Icon(Icons.timer_outlined, size: 12, color: Color(0xFF64748B)),
               const SizedBox(width: 4),
-              Text(
-                'Reading Time: ${item.readingTimeFormatted}',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              Expanded(
+                child: Text(
+                  '${AppTranslations.pick(lang, en: "Reading Time", mr: "वाचन वेळ", hi: "पढ़ने का समय")}: ${item.readingTimeFormattedFor(lang)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                ),
               ),
             ],
           ),
@@ -986,13 +1156,27 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: SelectableText(
-              item.generatedContent,
-              style: const TextStyle(
-                fontSize: 13.5,
-                height: 1.55,
-                color: Color(0xFF1E293B),
+            child: FutureBuilder<String>(
+              key: ValueKey('studio_res_${item.id}_$lang'),
+              future: DynamicTranslationService.translateOrRaw(
+                item.generatedContent,
+                lang,
               ),
+              initialData: DynamicTranslationService.getCachedTranslation(
+                    item.generatedContent,
+                    lang,
+                  ) ??
+                  item.generatedContent,
+              builder: (ctx, snap) {
+                return SelectableText(
+                  snap.data ?? item.generatedContent,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    height: 1.55,
+                    color: Color(0xFF1E293B),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -1015,7 +1199,15 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     );
                   },
                   icon: const Icon(Icons.fullscreen_rounded, size: 16),
-                  label: const Text('View Full Screen', style: TextStyle(fontSize: 12)),
+                  label: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'View Full Screen',
+                      mr: 'पूर्ण स्क्रीन पहा',
+                      hi: 'पूर्ण स्क्रीन देखें',
+                    ),
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF0284C7),
                     side: const BorderSide(color: Color(0xFF0284C7)),
@@ -1026,9 +1218,17 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => AiContentReportGenerator.printDocument(item),
+                  onPressed: () => AiContentReportGenerator.printDocument(item, lang: lang),
                   icon: const Icon(Icons.print_rounded, size: 16),
-                  label: const Text('Print Letterhead', style: TextStyle(fontSize: 12)),
+                  label: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Print Letterhead',
+                      mr: 'लेटरहेड प्रिंट',
+                      hi: 'लेटरहेड प्रिंट',
+                    ),
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0284C7),
                     foregroundColor: Colors.white,
@@ -1047,7 +1247,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
   // ==========================================
   // TAB 2: HISTORY & ARCHIVE
   // ==========================================
-  Widget _buildHistoryTab() {
+  Widget _buildHistoryTab(String lang) {
     final filtered = _filteredHistory;
 
     return Column(
@@ -1062,7 +1262,12 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
               TextField(
                 controller: _historySearchCtrl,
                 decoration: InputDecoration(
-                  hintText: 'Search drafts or topics...',
+                  hintText: AppTranslations.pick(
+                    lang,
+                    en: 'Search drafts or topics...',
+                    mr: 'मसुदे किंवा विषय शोधा...',
+                    hi: 'ड्राफ्ट या विषय खोजें...',
+                  ),
                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                   prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
                   suffixIcon: _historySearchCtrl.text.isNotEmpty
@@ -1094,17 +1299,23 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('All (${_allHistory.length})', 'all'),
+                    _buildFilterChip(
+                      '${AppTranslations.getAll(lang)} (${AppTranslations.formatDigits(_allHistory.length, lang)})',
+                      'all',
+                    ),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Speeches', 'Speech'),
+                    _buildFilterChip(AiContentType.speech.title(lang), 'Speech'),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Social Captions', 'Social Media Caption'),
+                    _buildFilterChip(
+                      AiContentType.socialMediaCaption.title(lang),
+                      'Social Media Caption',
+                    ),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Letters & Notices', 'Letter/Notice'),
+                    _buildFilterChip(AiContentType.letterNotice.title(lang), 'Letter/Notice'),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Press Releases', 'Press Release'),
+                    _buildFilterChip(AiContentType.pressRelease.title(lang), 'Press Release'),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Work Reports', 'Work Report'),
+                    _buildFilterChip(AiContentType.workReport.title(lang), 'Work Report'),
                   ],
                 ),
               ),
@@ -1125,8 +1336,18 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                       const SizedBox(height: 10),
                       Text(
                         _historySearchCtrl.text.isNotEmpty
-                            ? 'No drafts found matching search'
-                            : 'No draft history found',
+                            ? AppTranslations.pick(
+                                lang,
+                                en: 'No drafts found matching search',
+                                mr: 'शोधाशी जुळणारे मसुदे आढळले नाहीत',
+                                hi: 'खोज से मेल खाने वाला कोई ड्राफ्ट नहीं मिला',
+                              )
+                            : AppTranslations.pick(
+                                lang,
+                                en: 'No draft history found',
+                                mr: 'कोणताही मसुदा इतिहास सापडला नाही',
+                                hi: 'कोई ड्राफ्ट इतिहास नहीं मिला',
+                              ),
                         style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -1142,8 +1363,13 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                         currentCount: _visibleHistory.length,
                         totalCount: filtered.length,
                         pageSize: 10,
-                        label: 'drafts',
-                        isMarathi: false,
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'drafts',
+                          mr: 'मसुदे',
+                          hi: 'ड्राफ्ट',
+                        ),
+                        isMarathi: lang == 'mr',
                         onLoadMore: () {
                           setState(() {
                             _historyLimit += 10;
@@ -1152,7 +1378,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                       );
                     }
                     final item = _visibleHistory[idx];
-                    return _buildHistoryCard(item);
+                    return _buildHistoryCard(item, lang);
                   },
                 ),
         ),
@@ -1184,7 +1410,8 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
     );
   }
 
-  Widget _buildHistoryCard(AiContentHistoryItem item) {
+  Widget _buildHistoryCard(AiContentHistoryItem item, String lang) {
+    final wordsLabel = AppTranslations.pick(lang, en: 'words', mr: 'शब्द', hi: 'शब्द');
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -1230,7 +1457,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                       Icon(item.contentType.icon, size: 11, color: item.contentType.color),
                       const SizedBox(width: 4),
                       Text(
-                        item.contentType.titleMr,
+                        item.contentType.title(lang),
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
@@ -1242,12 +1469,12 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '• ${item.tone.titleMr}',
+                  '• ${item.tone.title(lang)}',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
                 const Spacer(),
                 Text(
-                  item.relativeTime,
+                  item.relativeTimeFor(lang),
                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                 ),
               ],
@@ -1256,8 +1483,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             const SizedBox(height: 8),
 
             // Subject / Title
-            Text(
+            AppTranslatedText(
               item.title,
+              targetLanguage: lang,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -1270,8 +1498,9 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             const SizedBox(height: 6),
 
             // Excerpt
-            Text(
+            AppTranslatedText(
               item.generatedContent.replaceAll('\n', ' '),
+              targetLanguage: lang,
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF64748B),
@@ -1289,7 +1518,7 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
             Row(
               children: [
                 Text(
-                  '${item.wordCount} words • ${item.language.id}',
+                  '${AppTranslations.formatDigits(item.wordCount, lang)} $wordsLabel • ${item.language.labelFor(lang)}',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                 ),
                 const Spacer(),
@@ -1301,12 +1530,17 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.edit_rounded, size: 14, color: Color(0xFF0284C7)),
-                        SizedBox(width: 4),
+                      children: [
+                        const Icon(Icons.edit_rounded, size: 14, color: Color(0xFF0284C7)),
+                        const SizedBox(width: 4),
                         Text(
-                          'Use',
-                          style: TextStyle(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Use',
+                            mr: 'वापरा',
+                            hi: 'उपयोग करें',
+                          ),
+                          style: const TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF0284C7),
@@ -1318,22 +1552,28 @@ class _AiContentStudioScreenState extends ConsumerState<AiContentStudioScreen>
                 ),
                 const SizedBox(width: 8),
                 // Quick Share
-                InkWell(
-                  onTap: () => _handleShare(item),
-                  borderRadius: BorderRadius.circular(6),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(Icons.share_rounded, size: 15, color: Color(0xFF64748B)),
+                Tooltip(
+                  message: AppTranslations.pick(lang, en: 'Share', mr: 'शेअर करा', hi: 'साझा करें'),
+                  child: InkWell(
+                    onTap: () => _handleShare(item),
+                    borderRadius: BorderRadius.circular(6),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.share_rounded, size: 15, color: Color(0xFF64748B)),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 6),
                 // Quick Delete
-                InkWell(
-                  onTap: () => _handleDelete(item.id),
-                  borderRadius: BorderRadius.circular(6),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                Tooltip(
+                  message: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                  child: InkWell(
+                    onTap: () => _handleDelete(item.id),
+                    borderRadius: BorderRadius.circular(6),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                    ),
                   ),
                 ),
               ],

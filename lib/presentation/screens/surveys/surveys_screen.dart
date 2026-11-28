@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../data/models/survey_model.dart';
@@ -9,9 +8,9 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/surveys_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
@@ -87,16 +86,46 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
     }
   }
 
+  String _formatIndianInt(int value, String lang) {
+    final s = value.toString();
+    final formatted = s.length <= 3
+        ? s
+        : () {
+            final last3 = s.substring(s.length - 3);
+            var rest = s.substring(0, s.length - 3);
+            final parts = <String>[];
+            while (rest.length > 2) {
+              parts.insert(0, rest.substring(rest.length - 2));
+              rest = rest.substring(0, rest.length - 2);
+            }
+            if (rest.isNotEmpty) parts.insert(0, rest);
+            return '${parts.join(',')},$last3';
+          }();
+    return AppTranslations.formatDigits(formatted, lang);
+  }
+
   List<SurveyModel> get _filteredSurveys {
+    final lang = ref.read(appLanguageProvider);
     var list = List<SurveyModel>.from(_allSurveys);
 
     // Search query filter
-    final q = _searchCtrl.text.trim().toLowerCase();
+    final q = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim().toLowerCase());
     if (q.isNotEmpty) {
       list = list.where((s) {
+        final tTitle = (DynamicTranslationService.getCachedTranslation(s.title, lang) ?? '').toLowerCase();
+        final tDesc = (DynamicTranslationService.getCachedTranslation(s.description, lang) ?? '').toLowerCase();
+        final tArea = (DynamicTranslationService.getCachedTranslation(
+                  AppTranslations.getAreaName(s.area ?? '', lang),
+                  lang,
+                ) ??
+                '')
+            .toLowerCase();
         return s.title.toLowerCase().contains(q) ||
             s.description.toLowerCase().contains(q) ||
-            (s.area?.toLowerCase().contains(q) ?? false);
+            (s.area?.toLowerCase().contains(q) ?? false) ||
+            tTitle.contains(q) ||
+            tDesc.contains(q) ||
+            tArea.contains(q);
       }).toList();
     }
 
@@ -118,30 +147,51 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
   int get _totalResponsesAcrossAll => _surveyResponseCounts.values.fold(0, (a, b) => a + b);
 
   Future<void> _deleteSurvey(SurveyModel survey) async {
+    final lang = ref.read(appLanguageProvider);
+    final tTitle = await DynamicTranslationService.translateOrRaw(survey.title, lang);
+    if (!mounted) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-            SizedBox(width: 8),
-            Text('Delete Survey?'),
+          children: [
+            const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Delete Survey?',
+                  mr: 'सर्व्हेक्षण हटवायचे का?',
+                  hi: 'सर्वेक्षण हटाएं?',
+                ),
+              ),
+            ),
           ],
         ),
         content: Text(
-          'Are you sure you want to delete "${survey.title}"? This action cannot be undone.',
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to delete "$tTitle"? This action cannot be undone.',
+            mr: 'तुम्हाला खात्री आहे की "$tTitle" हटवायचे आहे? ही कृती पूर्ववत करता येणार नाही.',
+            hi: 'क्या आप वाकई "$tTitle" को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।',
+          ),
           style: const TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -153,15 +203,22 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
       await repo.deleteSurvey(survey.id);
       _loadSurveys();
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Survey deleted successfully'),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Survey deleted successfully',
+              mr: 'सर्व्हेक्षण यशस्वीरित्या हटवले गेले',
+              hi: 'सर्वेक्षण सफलतापूर्वक हटा दिया गया',
+            ),
+          ),
           backgroundColor: Colors.redAccent,
         ),
       );
     }
   }
 
-  void _showHelpGuide() {
+  void _showHelpGuide(String lang) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -198,17 +255,27 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   child: const Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7)),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sample Surveys Guide',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Sample Surveys Guide',
+                          mr: 'नमुना सर्व्हेक्षण मार्गदर्शक',
+                          hi: 'नमूना सर्वेक्षण गाइड',
+                        ),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'Scientific Opinion Polling Methodology',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Scientific Opinion Polling Methodology',
+                          mr: 'शास्त्रीय जनमत चाचणी पद्धत',
+                          hi: 'वैज्ञानिक जनमत सर्वेक्षण पद्धति',
+                        ),
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -218,23 +285,50 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
             const SizedBox(height: 18),
             _buildHelpPoint(
               icon: Icons.pie_chart_rounded,
-              title: '1% Sample Size Target',
-              desc:
-                  'Surveying a representative sample of 1% (426 citizens) out of 42,560 voters gives 95% statistical confidence in public opinion.',
+              title: AppTranslations.pick(
+                lang,
+                en: '1% Sample Size Target',
+                mr: '१% नमुना आकार लक्ष्य',
+                hi: '१% नमूना आकार लक्ष्य',
+              ),
+              desc: AppTranslations.pick(
+                lang,
+                en: 'Surveying a representative sample of 1% (426 citizens) out of 42,560 voters gives 95% statistical confidence in public opinion.',
+                mr: '४२,५६० मतदारांपैकी १% (४२६ नागरिक) प्रातिनिधिक नमुन्याचे सर्वेक्षण केल्यास जनमताबाबत ९५% अचूक निष्कर्ष मिळतात.',
+                hi: '४२,५६० मतदाताओं में से १% (४२६ नागरिकों) के प्रतिनिधि नमूने का सर्वेक्षण जनमत में ९५% सांख्यिकीय विश्वास प्रदान करता है।',
+              ),
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.share_rounded,
-              title: 'Direct WhatsApp Distribution',
-              desc:
-                  'Send personalized WhatsApp magic links to citizens so they can fill out the questionnaire in 2 minutes.',
+              title: AppTranslations.pick(
+                lang,
+                en: 'Direct WhatsApp Distribution',
+                mr: 'थेट व्हॉट्सअॅप वितरण',
+                hi: 'सीधा व्हाट्सऐप वितरण',
+              ),
+              desc: AppTranslations.pick(
+                lang,
+                en: 'Send personalized WhatsApp magic links to citizens so they can fill out the questionnaire in 2 minutes.',
+                mr: 'नागरिकांना वैयक्तिक व्हॉट्सअॅप लिंक पाठवा जेणेकरून ते २ मिनिटांत प्रश्नावली भरू शकतील.',
+                hi: 'नागरिकों को व्यक्तिगत व्हाट्सऐप लिंक भेजें ताकि वे २ मिनट में प्रश्नावली भर सकें।',
+              ),
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.bar_chart_rounded,
-              title: 'Live Analytics & Graphs',
-              desc:
-                  'Instant statistical breakdown of Yes/No, MCQ and star ratings with downloadable PDF reports.',
+              title: AppTranslations.pick(
+                lang,
+                en: 'Live Analytics & Graphs',
+                mr: 'थेट विश्लेषण आणि आलेख',
+                hi: 'लाइव विश्लेषण और ग्राफ़',
+              ),
+              desc: AppTranslations.pick(
+                lang,
+                en: 'Instant statistical breakdown of Yes/No, MCQ and star ratings with downloadable PDF reports.',
+                mr: 'होय/नाही, बहुपर्यायी आणि स्टार रेटिंगचे त्वरित विश्लेषण व डाउनलोड करण्यायोग्य PDF अहवाल.',
+                hi: 'हाँ/नहीं, बहुविकल्पीय और स्टार रेटिंग का त्वरित विश्लेषण व डाउनलोड करने योग्य PDF रिपोर्ट।',
+              ),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -246,7 +340,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(
+                  AppTranslations.pick(lang, en: 'Got it', mr: 'समजले', hi: 'समझ गया'),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
@@ -290,7 +387,6 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final filtered = _filteredSurveys;
     final activeCount = _allSurveys.where((s) => s.status.toLowerCase() == 'active').length;
 
@@ -303,15 +399,20 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Open Menu Drawer',
+              mr: 'मेनू ड्रॉवर उघडा',
+              hi: 'मेनू ड्रॉवर खोलें',
             ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +445,18 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Surveys Guide',
+              mr: 'सर्व्हेक्षण मार्गदर्शक',
+              hi: 'सर्वेक्षण गाइड',
+            ),
+            onPressed: () => _showHelpGuide(lang),
+          ),
+        ],
       ),
       body: _isLoading
           ? const AppShimmerList(count: 6)
@@ -382,8 +494,8 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                       onLoadMore: () {
                         setState(() => _displayedLimit += 20);
                       },
-                      label: isMr ? 'सर्व्हेक्षणे' : (lang == 'hi' ? 'सर्वेक्षण' : 'surveys'),
-                      isMarathi: isMr,
+                      label: AppTranslations.pick(lang, en: 'surveys', mr: 'सर्व्हेक्षणे', hi: 'सर्वेक्षण'),
+                      isMarathi: lang == 'mr',
                     ),
 
                   const SizedBox(height: 80),
@@ -420,7 +532,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         Expanded(
           child: _buildKpiCard(
             title: lang == 'mr' ? 'एकूण मतदार' : (lang == 'hi' ? 'कुल मतदाता' : 'Total Voters'),
-            value: AppTranslations.formatDigits(NumberFormat('#,##,###').format(_totalVoters), lang),
+            value: _formatIndianInt(_totalVoters, lang),
             subtitle: lang == 'mr' ? 'प्रभाग १२ मतदार यादी' : (lang == 'hi' ? 'वार्ड १२ मतदाता सूची' : 'Ward 12 Voter Roll'),
             icon: Icons.people_alt_rounded,
             iconBg: const Color(0xFFE0F2FE),
@@ -431,7 +543,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
         Expanded(
           child: _buildKpiCard(
             title: lang == 'mr' ? 'नमुना लक्ष्य (१%)' : (lang == 'hi' ? 'नमूना लक्ष्य (१%)' : 'Sample Target (1%)'),
-            value: AppTranslations.formatDigits(NumberFormat('#,##,###').format(_sampleSizeTarget), lang),
+            value: _formatIndianInt(_sampleSizeTarget, lang),
             subtitle: lang == 'mr' ? 'प्रमाणित नमुना आकार' : (lang == 'hi' ? 'मानक नमूना आकार' : 'Standard Sample Size'),
             icon: Icons.pie_chart_rounded,
             iconBg: const Color(0xFFDCFCE7),
@@ -598,7 +710,13 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(AppTranslations.getAreaName(area, lang)),
+                      Flexible(
+                        child: AppTranslatedText(
+                          AppTranslations.getAreaName(area, lang),
+                          targetLanguage: lang,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -627,11 +745,12 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           ),
 
           AppPdfButton.icon(
-            tooltip: 'Download Report',
+            tooltip: AppTranslations.getDownloadReport(lang),
             onPressed: () => SurveyReportGenerator.generateAndPrintReport(
               surveys: filtered,
               responseCounts: _surveyResponseCounts,
               totalVoters: _totalVoters,
+              lang: lang,
             ),
           ),
         ],
@@ -697,7 +816,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   size: 18,
                   color: _displayMode == 'cards' ? const Color(0xFF0284C7) : Colors.grey,
                 ),
-                tooltip: 'Card View',
+                tooltip: AppTranslations.pick(lang, en: 'Card View', mr: 'कार्ड दृश्य', hi: 'कार्ड दृश्य'),
                 constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _displayMode = 'cards'),
@@ -709,7 +828,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   size: 18,
                   color: _displayMode == 'table' ? const Color(0xFF0284C7) : Colors.grey,
                 ),
-                tooltip: 'Table View',
+                tooltip: AppTranslations.pick(lang, en: 'Table View', mr: 'तक्ता दृश्य', hi: 'तालिका दृश्य'),
                 constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _displayMode = 'table'),
@@ -775,7 +894,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -806,8 +927,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                               ],
                             ),
                           ),
-                          if (survey.area != null && survey.area!.isNotEmpty) ...[
-                            const SizedBox(width: 6),
+                          if (survey.area != null && survey.area!.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                               decoration: BoxDecoration(
@@ -820,19 +940,22 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                                 children: [
                                   const Icon(Icons.location_on, size: 10, color: Color(0xFF0284C7)),
                                   const SizedBox(width: 3),
-                                  Text(
-                                    AppTranslations.getAreaName(survey.area!, lang),
-                                    style: const TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF0284C7),
+                                  Flexible(
+                                    child: AppTranslatedText(
+                                      AppTranslations.getAreaName(survey.area!, lang),
+                                      targetLanguage: lang,
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0284C7),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
-                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                             decoration: BoxDecoration(
@@ -851,8 +974,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      AppTranslatedText(
                         survey.title,
+                        targetLanguage: lang,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -906,8 +1030,9 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
           if (survey.description.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
+              child: AppTranslatedText(
                 survey.description,
+                targetLanguage: lang,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -983,7 +1108,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                           Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade400),
                           const SizedBox(width: 4),
                           Text(
-                            AppTranslations.formatDigits(DateFormat('dd MMM yyyy').format(survey.createdAt), lang),
+                            AppTranslations.formatDate(survey.createdAt, lang, pattern: 'dd MMM yyyy'),
                             style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                           ),
                         ],
@@ -1092,15 +1217,17 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
+                        AppTranslatedText(
                           s.title,
+                          targetLanguage: lang,
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (s.area != null && s.area!.isNotEmpty)
-                          Text(
+                          AppTranslatedText(
                             AppTranslations.getAreaName(s.area!, lang),
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 10.5, color: Color(0xFF0284C7)),
                           ),
                       ],
@@ -1135,7 +1262,10 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
                     ),
                   ),
                   DataCell(
-                    Text(AppTranslations.formatDigits(DateFormat('dd/MM/yy').format(s.createdAt), lang), style: const TextStyle(fontSize: 11)),
+                    Text(
+                      AppTranslations.formatDate(s.createdAt, lang, pattern: 'dd/MM/yy'),
+                      style: const TextStyle(fontSize: 11),
+                    ),
                   ),
                   DataCell(
                     Row(
@@ -1226,7 +1356,7 @@ class _SurveysScreenState extends ConsumerState<SurveysScreen> {
 }
 
 /// WhatsApp Share Modal with Voter Selection
-class _WhatsAppShareModal extends StatefulWidget {
+class _WhatsAppShareModal extends ConsumerStatefulWidget {
   final SurveyModel survey;
   final VotersRepository votersRepo;
 
@@ -1236,10 +1366,10 @@ class _WhatsAppShareModal extends StatefulWidget {
   });
 
   @override
-  State<_WhatsAppShareModal> createState() => _WhatsAppShareModalState();
+  ConsumerState<_WhatsAppShareModal> createState() => _WhatsAppShareModalState();
 }
 
-class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
+class _WhatsAppShareModalState extends ConsumerState<_WhatsAppShareModal> {
   final TextEditingController _searchCtrl = TextEditingController();
   bool _isLoading = true;
   List<VoterModel> _allVoters = [];
@@ -1351,12 +1481,21 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
   }
 
   List<VoterModel> get _filteredVoters {
-    final q = _searchCtrl.text.trim().toLowerCase();
+    final lang = ref.read(appLanguageProvider);
+    final q = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim().toLowerCase());
     if (q.isEmpty) return _allVoters;
     return _allVoters.where((v) {
+      final cachedName = (DynamicTranslationService.getCachedTranslation(
+                v.displayName,
+                lang,
+                isName: true,
+              ) ??
+              '')
+          .toLowerCase();
       return v.nameMarathi.toLowerCase().contains(q) ||
           v.nameEnglish.toLowerCase().contains(q) ||
-          (v.mobile?.contains(q) ?? false);
+          cachedName.contains(q) ||
+          (AppTranslations.normalizeAsciiDigits(v.mobile ?? '').contains(q));
     }).toList();
   }
 
@@ -1373,22 +1512,41 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
 
   Future<void> _sendWhatsAppBroadcast() async {
     if (_selectedVoterIds.isEmpty) return;
+    final lang = ref.read(appLanguageProvider);
     setState(() => _isSending = true);
 
     final selected = _allVoters.where((v) => _selectedVoterIds.contains(v.id)).toList();
+    final tTitle = await DynamicTranslationService.translateOrRaw(widget.survey.title, lang);
 
     // Send survey links to selected voters via WhatsApp
     for (int i = 0; i < selected.length; i++) {
       final voter = selected[i];
-      final mobile = voter.mobile!.replaceAll(RegExp(r'\D'), '');
+      final mobile = AppTranslations.normalizeAsciiDigits(voter.mobile!).replaceAll(RegExp(r'\D'), '');
       final magicLink = 'https://nagarsevak.app/s/${widget.survey.id}?v=${voter.id}';
-      final msg = Uri.encodeComponent(
-        'Greetings ${voter.displayName},\n\n'
-        'We are conducting this public opinion survey to understand your thoughts on the development of Ward 12:\n\n'
-        '*Topic:* ${widget.survey.title}\n\n'
-        'Please click the link below to record your valuable 2-minute feedback:\n$magicLink\n\n'
-        '- Office of Corporator, Ward 12',
+      final tVoterName = await DynamicTranslationService.translateOrRaw(
+        voter.displayName,
+        lang,
+        isName: true,
       );
+      final body = AppTranslations.pick(
+        lang,
+        en: 'Greetings $tVoterName,\n\n'
+            'We are conducting this public opinion survey to understand your thoughts on the development of Ward 12:\n\n'
+            '*Topic:* $tTitle\n\n'
+            'Please click the link below to record your valuable 2-minute feedback:\n$magicLink\n\n'
+            '- Office of Corporator, Ward 12',
+        mr: 'नमस्कार $tVoterName,\n\n'
+            'प्रभाग १२ च्या विकासाबाबत आपले मत जाणून घेण्यासाठी आम्ही हे जनमत सर्व्हेक्षण घेत आहोत:\n\n'
+            '*विषय:* $tTitle\n\n'
+            'कृपया खालील लिंकवर क्लिक करून आपला २ मिनिटांचा मौल्यवान अभिप्राय नोंदवा:\n$magicLink\n\n'
+            '- नगरसेवक कार्यालय, प्रभाग १२',
+        hi: 'नमस्ते $tVoterName,\n\n'
+            'वार्ड १२ के विकास पर आपके विचार जानने के लिए हम यह जनमत सर्वेक्षण आयोजित कर रहे हैं:\n\n'
+            '*विषय:* $tTitle\n\n'
+            'अपनी २ मिनट की बहुमूल्य प्रतिक्रिया दर्ज करने के लिए नीचे दिए गए लिंक पर क्लिक करें:\n$magicLink\n\n'
+            '- नगरसेवक कार्यालय, वार्ड १२',
+      );
+      final msg = Uri.encodeComponent(body);
 
       final url = Uri.parse('https://wa.me/91$mobile?text=$msg');
       try {
@@ -1403,9 +1561,17 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
     if (mounted) {
       setState(() => _isSending = false);
       Navigator.pop(context);
+      final cntStr = AppTranslations.formatDigits(selected.length, lang);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('WhatsApp survey link sent to ${selected.length} voters!'),
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'WhatsApp survey link sent to $cntStr voters!',
+              mr: '$cntStr मतदारांना व्हॉट्सअॅप सर्व्हेक्षण लिंक पाठवली!',
+              hi: '$cntStr मतदाताओं को व्हाट्सऐप सर्वेक्षण लिंक भेजा गया!',
+            ),
+          ),
           backgroundColor: const Color(0xFF25D366),
         ),
       );
@@ -1414,13 +1580,16 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredVoters;
     final allSelected = filtered.isNotEmpty && _selectedVoterIds.length == filtered.length;
+    final filteredCnt = AppTranslations.formatDigits(filtered.length, lang);
+    final selCnt = AppTranslations.formatDigits(_selectedVoterIds.length, lang);
 
     return Container(
       constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -1458,12 +1627,18 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Send Survey via WhatsApp',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
                       Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Send Survey via WhatsApp',
+                          mr: 'व्हॉट्सअॅपद्वारे सर्व्हेक्षण पाठवा',
+                          hi: 'व्हाट्सऐप द्वारा सर्वेक्षण भेजें',
+                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      AppTranslatedText(
                         widget.survey.title,
+                        targetLanguage: lang,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
@@ -1473,6 +1648,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
+                  tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -1488,7 +1664,12 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
               controller: _searchCtrl,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'Search by name or mobile number...',
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search by name or mobile number...',
+                  mr: 'नाव किंवा मोबाईल नंबरने शोधा...',
+                  hi: 'नाम या मोबाइल नंबर से खोजें...',
+                ),
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                 prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF25D366)),
                 isDense: true,
@@ -1523,9 +1704,16 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                       activeColor: const Color(0xFF25D366),
                       onChanged: (_) => _toggleSelectAll(),
                     ),
-                    Text(
-                      'Select All (${filtered.length} voters)',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    Flexible(
+                      child: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Select All ($filteredCnt voters)',
+                          mr: 'सर्व निवडा ($filteredCnt मतदार)',
+                          hi: 'सभी चुनें ($filteredCnt मतदाता)',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
                     ),
                     const Spacer(),
                     Container(
@@ -1535,7 +1723,12 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${_selectedVoterIds.length} Selected',
+                        AppTranslations.pick(
+                          lang,
+                          en: '$selCnt Selected',
+                          mr: '$selCnt निवडले',
+                          hi: '$selCnt चयनित',
+                        ),
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -1558,7 +1751,12 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                 : filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'No voters with mobile numbers found.',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'No voters with mobile numbers found.',
+                            mr: 'मोबाईल नंबर असलेले मतदार आढळले नाहीत.',
+                            hi: 'मोबाइल नंबर वाले कोई मतदाता नहीं मिले।',
+                          ),
                           style: TextStyle(color: Colors.grey.shade500),
                         ),
                       )
@@ -1600,8 +1798,10 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
+                                        AppTranslatedText(
                                           v.displayName,
+                                          targetLanguage: lang,
+                                          isName: true,
                                           style: const TextStyle(
                                             fontSize: 13.5,
                                             fontWeight: FontWeight.bold,
@@ -1613,7 +1813,7 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                                             const Icon(Icons.phone_iphone, size: 12, color: Colors.grey),
                                             const SizedBox(width: 4),
                                             Text(
-                                              '+91 ${v.mobile ?? ""}',
+                                              AppTranslations.formatDigits('+91 ${v.mobile ?? ""}', lang),
                                               style: TextStyle(
                                                 fontSize: 11.5,
                                                 color: Colors.grey.shade600,
@@ -1621,11 +1821,17 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                                             ),
                                             if (v.booth.isNotEmpty) ...[
                                               const SizedBox(width: 8),
-                                              Text(
-                                                '• ${v.booth}',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.grey.shade500,
+                                              Text('• ', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                                              Flexible(
+                                                child: AppTranslatedText(
+                                                  v.booth,
+                                                  targetLanguage: lang,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.grey.shade500,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -1660,7 +1866,10 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                  child: Text(
+                    AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
@@ -1674,8 +1883,13 @@ class _WhatsAppShareModalState extends State<_WhatsAppShareModal> {
                       : const Icon(Icons.send_rounded, size: 16, color: Colors.white),
                   label: Text(
                     _isSending
-                        ? 'Sending...'
-                        : 'Send link to ${_selectedVoterIds.length} voters',
+                        ? AppTranslations.pick(lang, en: 'Sending...', mr: 'पाठवत आहे...', hi: 'भेजा जा रहा है...')
+                        : AppTranslations.pick(
+                            lang,
+                            en: 'Send link to $selCnt voters',
+                            mr: '$selCnt मतदारांना लिंक पाठवा',
+                            hi: '$selCnt मतदाताओं को लिंक भेजें',
+                          ),
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(

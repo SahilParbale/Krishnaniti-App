@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../providers/auth_provider.dart';
 import '../providers/custom_navigation_provider.dart';
 import '../providers/language_provider.dart';
 import '../../core/localization/app_translations.dart';
@@ -306,7 +305,6 @@ class _RadialQuickAccessMenuState extends ConsumerState<RadialQuickAccessMenu>
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final cx = widget.centerOffset.dx;
     final cy = widget.centerOffset.dy;
 

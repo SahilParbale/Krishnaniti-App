@@ -1,5 +1,6 @@
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
@@ -55,15 +56,68 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
   }
 
   List<GovernmentOfficeModel> get _filteredOffices {
+    final q = AppTranslations.normalizeAsciiDigits(_searchTerm.trim()).toLowerCase();
     return _offices.where((o) {
-      final matchesSearch = _searchTerm.isEmpty ||
-          o.name.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          o.officerName.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          o.area.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          o.category.toLowerCase().contains(_searchTerm.toLowerCase());
+      final matchesSearch = q.isEmpty ||
+          o.name.toLowerCase().contains(q) ||
+          o.officerName.toLowerCase().contains(q) ||
+          o.area.toLowerCase().contains(q) ||
+          o.category.toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(o.contactNumber).toLowerCase().contains(q);
 
       return matchesSearch;
     }).toList();
+  }
+
+  String? _knownCategoryLabel(String category, String lang) {
+    switch (category.trim().toLowerCase()) {
+      case 'municipal pmc':
+        return AppTranslations.pick(
+          lang,
+          en: 'Municipal Corporation (PMC)',
+          mr: 'महानगरपालिका (PMC)',
+          hi: 'नगर निगम (PMC)',
+        );
+      case 'police':
+        return AppTranslations.pick(lang, en: 'Police Station', mr: 'पोलीस स्टेशन', hi: 'पुलिस स्टेशन');
+      case 'msedcl electricity':
+        return AppTranslations.pick(
+          lang,
+          en: 'MSEDCL Electricity',
+          mr: 'महावितरण (वीज विभाग)',
+          hi: 'महावितरण (बिजली विभाग)',
+        );
+      case 'water supply':
+        return AppTranslations.pick(
+          lang,
+          en: 'Water Supply Department',
+          mr: 'पाणी पुरवठा विभाग',
+          hi: 'जल आपूर्ति विभाग',
+        );
+      case 'health & hospital':
+        return AppTranslations.pick(
+          lang,
+          en: 'Health & Hospital',
+          mr: 'आरोग्य व रुग्णालय',
+          hi: 'स्वास्थ्य एवं अस्पताल',
+        );
+      case 'fire & disaster':
+        return AppTranslations.pick(
+          lang,
+          en: 'Fire & Disaster Response',
+          mr: 'अग्निशमन व आपत्ती व्यवस्थापन',
+          hi: 'अग्निशमन एवं आपदा प्रबंधन',
+        );
+      case 'revenue & post':
+        return AppTranslations.pick(
+          lang,
+          en: 'Revenue & Post',
+          mr: 'महसूल व टपाल',
+          hi: 'राजस्व एवं डाक',
+        );
+      default:
+        return null;
+    }
   }
 
   void _showAddOfficeModal() {
@@ -78,232 +132,339 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          return DesktopModalDialog(
-            title: 'Add Government Office',
-            subtitle: 'Directory of public and civic administrative offices',
-            icon: Icons.account_balance_rounded,
-            width: 600,
-            onClose: () => Navigator.pop(ctx),
-            actions: [
-              DesktopModalDialog.cancelButton(ctx),
-              const SizedBox(width: 12),
-              DesktopModalDialog.primaryButton(
-                text: 'Save Office',
-                onPressed: () async {
-                            if (nameController.text.trim().isEmpty || contactController.text.trim().isEmpty) return;
-                            final newOffice = GovernmentOfficeModel(
-                              id: 'office-${DateTime.now().millisecondsSinceEpoch}',
-                              name: nameController.text.trim(),
-                              officerName: officerController.text.trim(),
-                              contactNumber: contactController.text.trim(),
-                              address: addressController.text.trim(),
-                              area: areaController.text.trim(),
-                              category: selectedCategory,
-                              isEmergency: isEmergency,
-                              createdAt: DateTime.now().toIso8601String(),
-                            );
-
-                            final repo = ref.read(governmentOfficeRepoProvider);
-                            await repo.addOffice(newOffice);
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchOffices();
-                          },
+      builder: (ctx) => ValueListenableBuilder<String>(
+        valueListenable: appLanguageValueNotifier,
+        builder: (ctx, lang, _) => StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return DesktopModalDialog(
+              title: AppTranslations.pick(
+                lang,
+                en: 'Add Government Office',
+                mr: 'शासकीय कार्यालय जोडा',
+                hi: 'सरकारी कार्यालय जोड़ें',
               ),
-            ],
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Office Name
-                    const Text('Office Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Municipal Ward Office No. 12',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              subtitle: AppTranslations.pick(
+                lang,
+                en: 'Directory of public and civic administrative offices',
+                mr: 'सार्वजनिक आणि नागरी प्रशासकीय कार्यालयांची निर्देशिका',
+                hi: 'सार्वजनिक और नागरिक प्रशासनिक कार्यालयों की निर्देशिका',
+              ),
+              icon: Icons.account_balance_rounded,
+              width: 600,
+              onClose: () => Navigator.pop(ctx),
+              actions: [
+                DesktopModalDialog.cancelButton(ctx),
+                const SizedBox(width: 12),
+                DesktopModalDialog.primaryButton(
+                  text: AppTranslations.pick(lang, en: 'Save Office', mr: 'कार्यालय जतन करा', hi: 'कार्यालय सहेजें'),
+                  onPressed: () async {
+                    final normalizedContact = AppTranslations.normalizeAsciiDigits(contactController.text.trim());
+                    if (nameController.text.trim().isEmpty || normalizedContact.isEmpty) return;
+                    final newOffice = GovernmentOfficeModel(
+                      id: 'office-${DateTime.now().millisecondsSinceEpoch}',
+                      name: nameController.text.trim(),
+                      officerName: officerController.text.trim().isEmpty
+                          ? 'Officer In-Charge'
+                          : officerController.text.trim(),
+                      contactNumber: normalizedContact,
+                      address: addressController.text.trim(),
+                      area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
+                      category: selectedCategory,
+                      isEmergency: isEmergency,
+                      createdAt: DateTime.now().toIso8601String(),
+                    );
+
+                    final repo = ref.read(governmentOfficeRepoProvider);
+                    await repo.addOffice(newOffice);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    _fetchOffices();
+                  },
+                ),
+              ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Office Name
+                  Text(
+                    AppTranslations.pick(lang, en: 'Office Name *', mr: 'कार्यालयाचे नाव *', hi: 'कार्यालय का नाम *'),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'e.g. Municipal Ward Office No. 12',
+                        mr: 'उदा. महानगरपालिका प्रभाग कार्यालय क्र. १२',
+                        hi: 'जैसे नगर निगम वार्ड कार्यालय क्र. १२',
                       ),
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
-                    const SizedBox(height: 16),
+                  ),
+                  const SizedBox(height: 16),
 
-                    // Category & Area
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Department / Category *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              AppDropdown<String>(
-                                value: selectedCategory,
-                                height: 44,
-                                backgroundColor: const Color(0xFFF8FAFC),
-                                borderColor: const Color(0xFFE2E8F0),
-                                items: const [
-                                  DropdownMenuItem(value: 'Municipal PMC', child: Text('Municipal Corporation (PMC)')),
-                                  DropdownMenuItem(value: 'Police', child: Text('Police Station')),
-                                  DropdownMenuItem(value: 'MSEDCL Electricity', child: Text('MSEDCL Electricity')),
-                                  DropdownMenuItem(value: 'Water Supply', child: Text('Water Supply Department')),
-                                  DropdownMenuItem(value: 'Health & Hospital', child: Text('Health & Hospital')),
-                                  DropdownMenuItem(value: 'Fire & Disaster', child: Text('Fire & Disaster Response')),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => selectedCategory = val);
-                                },
+                  // Category & Area
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Department / Category *',
+                                mr: 'विभाग / प्रकार *',
+                                hi: 'विभाग / श्रेणी *',
                               ),
-                            ],
-                          ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            AppDropdown<String>(
+                              value: selectedCategory,
+                              height: 44,
+                              backgroundColor: const Color(0xFFF8FAFC),
+                              borderColor: const Color(0xFFE2E8F0),
+                              items: [
+                                DropdownMenuItem(value: 'Municipal PMC', child: Text(_knownCategoryLabel('Municipal PMC', lang)!)),
+                                DropdownMenuItem(value: 'Police', child: Text(_knownCategoryLabel('Police', lang)!)),
+                                DropdownMenuItem(value: 'MSEDCL Electricity', child: Text(_knownCategoryLabel('MSEDCL Electricity', lang)!)),
+                                DropdownMenuItem(value: 'Water Supply', child: Text(_knownCategoryLabel('Water Supply', lang)!)),
+                                DropdownMenuItem(value: 'Health & Hospital', child: Text(_knownCategoryLabel('Health & Hospital', lang)!)),
+                                DropdownMenuItem(value: 'Fire & Disaster', child: Text(_knownCategoryLabel('Fire & Disaster', lang)!)),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) setModalState(() => selectedCategory = val);
+                              },
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Ward / Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: areaController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Officer Name & Contact
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Officer In-Charge *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: officerController,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Mr. R. K. Patil',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Contact Number *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: contactController,
-                                keyboardType: TextInputType.phone,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. 020-25501000',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Address
-                    const Text('Address *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: addressController,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        hintText: 'Full office address...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Emergency Checkbox
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: isEmergency,
-                          onChanged: (val) => setModalState(() => isEmergency = val ?? false),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(lang, en: 'Ward / Area', mr: 'प्रभाग / परिसर', hi: 'वार्ड / क्षेत्र'),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: areaController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
                         ),
-                        const Text('Emergency Service', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF334155))),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Officer Name & Contact
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Officer In-Charge *',
+                                mr: 'प्रमुख अधिकारी *',
+                                hi: 'प्रभारी अधिकारी *',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: officerController,
+                              decoration: InputDecoration(
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. Mr. R. K. Patil',
+                                  mr: 'उदा. श्री. आर. के. पाटील',
+                                  hi: 'जैसे श्री आर. के. पाटिल',
+                                ),
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Contact Number *',
+                                mr: 'संपर्क क्रमांक *',
+                                hi: 'संपर्क नंबर *',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: contactController,
+                              keyboardType: TextInputType.phone,
+                              decoration: InputDecoration(
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. 020-25501000',
+                                  mr: 'उदा. ०२०-२५५०१०००',
+                                  hi: 'जैसे ०२०-२५५०१०००',
+                                ),
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Address
+                  Text(
+                    AppTranslations.pick(lang, en: 'Address *', mr: 'पत्ता *', hi: 'पता *'),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: addressController,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Full office address...',
+                        mr: 'कार्यालयाचा पूर्ण पत्ता...',
+                        hi: 'कार्यालय का पूरा पता...',
+                      ),
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
-                                      ],
-            ),
-          );
-        },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Emergency Checkbox
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: isEmergency,
+                        onChanged: (val) => setModalState(() => isEmergency = val ?? false),
+                      ),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Emergency Service',
+                          mr: 'अत्यावश्यक सेवा',
+                          hi: 'आपातकालीन सेवा',
+                        ),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF334155)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
-    );  }
+    );
+  }
 
   void _showDeleteConfirm(GovernmentOfficeModel item) {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Office'),
-        content: Text('Are you sure you want to delete "${item.name}"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final repo = ref.read(governmentOfficeRepoProvider);
-              await repo.deleteOffice(item.id);
-              if (ctx.mounted) Navigator.pop(ctx);
-              _fetchOffices();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+      builder: (ctx) => ValueListenableBuilder<String>(
+        valueListenable: appLanguageValueNotifier,
+        builder: (ctx, lang, _) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(AppTranslations.pick(lang, en: 'Delete Office', mr: 'कार्यालय हटवा', hi: 'कार्यालय हटाएं')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Are you sure you want to delete this office?',
+                  mr: 'तुम्हाला खात्री आहे की तुम्ही हे कार्यालय हटवू इच्छिता?',
+                  hi: 'क्या आप वाकई इस कार्यालय को हटाना चाहते हैं?',
+                ),
+              ),
+              const SizedBox(height: 6),
+              AppTranslatedText(
+                item.name,
+                targetLanguage: lang,
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final repo = ref.read(governmentOfficeRepoProvider);
+                await repo.deleteOffice(item.id);
+                if (ctx.mounted) Navigator.pop(ctx);
+                _fetchOffices();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+              child: Text(
+                AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(desktopLanguageProvider);
     final filtered = _filteredOffices;
     final visible = _visibleOffices;
 
@@ -313,18 +474,18 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          _buildHeader(),
+          _buildHeader(lang),
           const SizedBox(height: 20),
 
           // Search Bar
-          _buildSearchBar(),
+          _buildSearchBar(lang),
           const SizedBox(height: 24),
 
           // Content Grid
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildOfficeGrid(visible),
+            _buildOfficeGrid(visible, lang),
 
           if (!_loading && filtered.isNotEmpty)
             AppLoadMoreFooter(
@@ -334,34 +495,44 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
               onLoadMore: () {
                 setState(() => _displayedLimit += 20);
               },
-              label: 'कार्यालये',
-              isMarathi: true,
+              label: 'offices',
+              isMarathi: lang == 'mr',
             ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text(
-              'Government Offices',
-              style: TextStyle(
+              AppTranslations.pick(
+                lang,
+                en: 'Government Offices',
+                mr: 'शासकीय कार्यालये',
+                hi: 'सरकारी कार्यालय',
+              ),
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF0F172A),
                 letterSpacing: -0.5,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Government departments, officers in-charge and emergency contact numbers',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              AppTranslations.pick(
+                lang,
+                en: 'Government departments, officers in-charge and emergency contact numbers',
+                mr: 'शासकीय विभाग, प्रभारी अधिकारी आणि तातडीचे संपर्क क्रमांक',
+                hi: 'सरकारी विभाग, प्रभारी अधिकारी और आपातकालीन संपर्क नंबर',
+              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -375,11 +546,12 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                 GovOfficeReportGenerator.generateAndPrintOfficeReport(
                   context: context,
                   offices: _filteredOffices,
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -401,14 +573,14 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
-                  SizedBox(width: 8), // gap-2
+                  const Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  const SizedBox(width: 8), // gap-2
                   Text(
-                    'Add Office',
-                    style: TextStyle(
+                    AppTranslations.pick(lang, en: 'Add Office', mr: 'कार्यालय जोडा', hi: 'कार्यालय जोड़ें'),
+                    style: const TextStyle(
                       fontSize: 14, // text-sm
                       fontWeight: FontWeight.w600, // font-semibold
                       color: Colors.white,
@@ -424,7 +596,7 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -437,20 +609,29 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
           _displayedLimit = 20;
         }),
         decoration: InputDecoration(
-          hintText: 'Search office by name, department, officer or area...',
+          hintText: AppTranslations.pick(
+            lang,
+            en: 'Search office by name, department, officer or area...',
+            mr: 'नाव, विभाग, अधिकारी किंवा परिसरानुसार कार्यालय शोधा...',
+            hi: 'नाम, विभाग, अधिकारी या क्षेत्र के अनुसार कार्यालय खोजें...',
+          ),
           hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
           prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           suffixIcon: _searchTerm.isNotEmpty
-              ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setState(() => _searchTerm = ''))
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 16),
+                  tooltip: AppTranslations.pick(lang, en: 'Clear', mr: 'साफ करा', hi: 'साफ़ करें'),
+                  onPressed: () => setState(() => _searchTerm = ''),
+                )
               : null,
         ),
       ),
     );
   }
 
-  Widget _buildOfficeGrid(List<GovernmentOfficeModel> items) {
+  Widget _buildOfficeGrid(List<GovernmentOfficeModel> items, String lang) {
     if (items.isEmpty) {
       return Container(
         width: double.infinity,
@@ -461,10 +642,18 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
-          children: const [
-            Icon(Icons.business_outlined, size: 48, color: Color(0xFFCBD5E1)),
-            SizedBox(height: 12),
-            const Text('No offices found', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          children: [
+            const Icon(Icons.business_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No offices found',
+                mr: 'कोणतेही कार्यालय आढळले नाही',
+                hi: 'कोई कार्यालय नहीं मिला',
+              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );
@@ -486,6 +675,14 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
           ),
           itemBuilder: (context, index) {
             final item = items[index];
+            final knownCat = _knownCategoryLabel(item.category, lang);
+            final catStyle = TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: item.isEmergency ? const Color(0xFFB91C1C) : const Color(0xFF0369A1),
+            );
+            final isDefaultOfficer =
+                item.officerName.trim().toLowerCase() == 'officer in-charge';
 
             return Container(
               decoration: BoxDecoration(
@@ -502,34 +699,37 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: item.isEmergency ? const Color(0xFFFEF2F2) : const Color(0xFFF0F9FF),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: item.isEmergency ? const Color(0xFFFECACA) : const Color(0xFFBAE6FD)),
-                        ),
-                        child: Text(
-                          item.category,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: item.isEmergency ? const Color(0xFFB91C1C) : const Color(0xFF0369A1),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: item.isEmergency ? const Color(0xFFFEF2F2) : const Color(0xFFF0F9FF),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: item.isEmergency ? const Color(0xFFFECACA) : const Color(0xFFBAE6FD)),
                           ),
+                          child: knownCat != null
+                              ? Text(knownCat, maxLines: 1, overflow: TextOverflow.ellipsis, style: catStyle)
+                              : AppTranslatedText(item.category, targetLanguage: lang, maxLines: 1, overflow: TextOverflow.ellipsis, style: catStyle),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                        child: Text(item.area, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                        child: AppTranslatedText(
+                          AppTranslations.getAreaName(item.area, lang),
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
 
                   // Office Name
-                  Text(
+                  AppTranslatedText(
                     item.name,
+                    targetLanguage: lang,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), height: 1.3),
@@ -542,12 +742,26 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                       const Icon(Icons.person_outline, size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
-                          item.officerName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                        ),
+                        child: isDefaultOfficer
+                            ? Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Officer In-Charge',
+                                  mr: 'प्रभारी अधिकारी',
+                                  hi: 'प्रभारी अधिकारी',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              )
+                            : AppTranslatedText(
+                                item.officerName,
+                                isName: true,
+                                targetLanguage: lang,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                       ),
                     ],
                   ),
@@ -559,8 +773,9 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                       const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
+                        child: AppTranslatedText(
                           item.address,
+                          targetLanguage: lang,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
@@ -581,7 +796,8 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                       children: [
                         InkWell(
                           onTap: () async {
-                            final uri = Uri.parse('tel:${item.contactNumber}');
+                            final asciiPhone = AppTranslations.normalizeAsciiDigits(item.contactNumber);
+                            final uri = Uri.parse('tel:$asciiPhone');
                             if (await canLaunchUrl(uri)) {
                               await launchUrl(uri);
                             }
@@ -599,7 +815,7 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                                 const Icon(Icons.phone, size: 13, color: Color(0xFF16A34A)),
                                 const SizedBox(width: 6),
                                 Text(
-                                  item.contactNumber,
+                                  AppTranslations.formatDigits(item.contactNumber, lang),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                                 ),
                               ],
@@ -609,7 +825,7 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFDC2626)),
                           onPressed: () => _showDeleteConfirm(item),
-                          tooltip: 'Delete',
+                          tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
                         ),
                       ],
                     ),

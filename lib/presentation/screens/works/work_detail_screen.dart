@@ -8,7 +8,6 @@ import '../../../data/repositories/work_history_repository.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -61,25 +60,38 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
   }
 
   void _showDeleteConfirmation() {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Delete Work Record'),
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.red),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(lang, en: 'Delete Work Record', mr: 'कामाची नोंद हटवायची का?', hi: 'कार्य रिकॉर्ड हटाएँ?'),
+              ),
+            ),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to delete this development work record? This action cannot be undone.',
-          style: TextStyle(fontSize: 14, color: Color(0xFF475569)),
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to delete this development work record? This action cannot be undone.',
+            mr: 'तुम्हाला ही विकास कामाची नोंद कायमची हटवायची आहे का? ही कृती पूर्ववत करता येणार नाही.',
+            hi: 'क्या आप वाकई इस विकास कार्य रिकॉर्ड को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।',
+          ),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -94,15 +106,22 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
               await repo.deleteWork(_currentWork.id);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Work record deleted successfully'),
+                  SnackBar(
+                    content: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Work record deleted successfully',
+                        mr: 'कामाची नोंद यशस्वीरित्या हटवली',
+                        hi: 'कार्य रिकॉर्ड सफलतापूर्वक हटाया गया',
+                      ),
+                    ),
                     backgroundColor: Colors.red,
                   ),
                 );
                 Navigator.pop(context, true);
               }
             },
-            child: const Text('Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ')),
           ),
         ],
       ),
@@ -110,7 +129,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
   }
 
   void _showEditModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController(text: _currentWork.title);
     final descCtrl = TextEditingController(text: _currentWork.description);
     final locCtrl = TextEditingController(text: _currentWork.location);
@@ -167,8 +186,8 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                 children: [
                   AppModalHeader(
                     icon: Icons.edit_note_rounded,
-                    title: isMr ? 'विकास प्रकल्प संपादित करा' : 'Edit Development Project',
-                    subtitle: isMr ? 'प्रकल्प माहिती व स्थिती अद्यतन' : 'Project Information & Status Update',
+                    title: AppTranslations.pick(lang, en: 'Edit Development Project', mr: 'विकास प्रकल्प संपादित करा', hi: 'विकास परियोजना संपादित करें'),
+                    subtitle: AppTranslations.pick(lang, en: 'Project Information & Status Update', mr: 'प्रकल्प माहिती व स्थिती अद्यतन', hi: 'परियोजना जानकारी और स्थिति अपडेट'),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
                   Flexible(
@@ -177,184 +196,213 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                       padding: EdgeInsets.fromLTRB(18, 14, 18, 16 + MediaQuery.of(sheetCtx).viewInsets.bottom),
                       children: [
                         // Project Title
-                        AppFieldLabel(label: isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title', isRequired: true),
+                        AppFieldLabel(
+                          label: AppTranslations.pick(lang, en: 'Project Title', mr: 'कामाचे नाव / प्रकल्प शीर्षक', hi: 'कार्य का नाम / परियोजना शीर्षक'),
+                          isRequired: true,
+                        ),
                         TextField(
                           controller: titleCtrl,
-                          decoration: inputDec(hint: isMr ? 'उदा. मुख्य रस्ता डांबरीकरण' : 'Project Title...'),
+                          decoration: inputDec(hint: AppTranslations.pick(lang, en: 'Project Title...', mr: 'उदा. मुख्य रस्ता डांबरीकरण', hi: 'परियोजना का नाम...')),
                         ),
                         const SizedBox(height: 14),
 
                         // Description
-                        AppFieldLabel(label: isMr ? 'कामाचा तपशील / वर्णन' : 'Description'),
-                    TextField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      decoration: inputDec(hint: isMr ? 'कामाचे सविस्तर वर्णन...' : 'Description...'),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Side-by-side: Location & Area
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppFieldLabel(label: isMr ? 'स्थान / लँडमार्क' : 'Location / Landmark'),
-                              TextField(
-                                controller: locCtrl,
-                                decoration: inputDec(hint: isMr ? 'उदा. मुख्य चौक' : 'Location...'),
-                              ),
-                            ],
-                          ),
+                        AppFieldLabel(label: AppTranslations.pick(lang, en: 'Description', mr: 'कामाचा तपशील / वर्णन', hi: 'कार्य का विवरण')),
+                        TextField(
+                          controller: descCtrl,
+                          maxLines: 3,
+                          decoration: inputDec(hint: AppTranslations.pick(lang, en: 'Description...', mr: 'कामाचे सविस्तर वर्णन...', hi: 'विस्तृत विवरण...')),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppFieldLabel(label: isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
-                              TextField(
-                                controller: areaCtrl,
-                                decoration: inputDec(hint: isMr ? 'उदा. प्रभाग १२' : 'Area...'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-                    // Side-by-side: Status & Completion Date
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppDropdownFormField<String>(
-                                label: isMr ? 'कामाची स्थिती' : 'Work Status',
-                                isRequired: true,
-                                value: status,
-                                items: [
-                                  DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित (Planned)' : 'Planned')),
-                                  DropdownMenuItem(value: 'InProgress', child: Text(isMr ? 'सुरू (In Progress)' : 'In Progress')),
-                                  DropdownMenuItem(value: 'Completed', child: Text(isMr ? 'पूर्ण (Completed)' : 'Completed')),
+                        // Side-by-side: Location & Area
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'Location / Landmark', mr: 'स्थान / लँडमार्क', hi: 'स्थान / लैंडमार्क')),
+                                  TextField(
+                                    controller: locCtrl,
+                                    decoration: inputDec(hint: AppTranslations.pick(lang, en: 'Location...', mr: 'उदा. मुख्य चौक', hi: 'स्थान...')),
+                                  ),
                                 ],
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => status = val);
-                                },
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppFieldLabel(label: isMr ? 'अंदाजित / पूर्ण तारीख' : 'Completion Date'),
-                              TextField(
-                                controller: dateCtrl,
-                                decoration: inputDec(hint: 'YYYY-MM-DD'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Side-by-side: Citizens Benefited & Expenditure
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppFieldLabel(label: isMr ? 'लाभार्थी संख्या' : 'Citizens Benefited'),
-                              TextField(
-                                controller: benCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: inputDec(hint: 'उदा. 5000'),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppFieldLabel(label: isMr ? 'खर्च झालेली रक्कम (₹)' : 'Expenditure (₹)'),
-                              TextField(
-                                controller: amtCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: inputDec(hint: 'उदा. 850000', prefixText: '₹ '),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Save Button (Scrolls together with form)
-                    SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: () async {
-                        final updated = _currentWork.copyWith(
-                          title: titleCtrl.text.trim(),
-                          description: descCtrl.text.trim(),
-                          location: locCtrl.text.trim(),
-                          area: areaCtrl.text.trim(),
-                          status: status,
-                          date: dateCtrl.text.trim(),
-                          peopleBenefited: int.tryParse(benCtrl.text.trim()),
-                          amount: double.tryParse(amtCtrl.text.trim()),
-                        );
-
-                        final repo = ref.read(workHistoryRepoProvider);
-                        await repo.updateWork(updated);
-                        if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                        if (mounted) {
-                          setState(() => _currentWork = updated);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(isMr ? 'प्रकल्प यशस्वीरित्या अद्यतनित केला!' : 'Project updated successfully'),
-                              backgroundColor: const Color(0xFF16A34A),
                             ),
-                          );
-                        }
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.save_rounded, size: 18),
-                          const SizedBox(width: 8),
-                          Text(isMr ? 'बदल जतन करा' : 'Save Changes', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                        ],
-                      ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'Area / Locality', mr: 'परिसर / प्रभाग', hi: 'क्षेत्र / वार्ड')),
+                                  TextField(
+                                    controller: areaCtrl,
+                                    decoration: inputDec(
+                                      hint: AppTranslations.formatDigits(
+                                        AppTranslations.pick(lang, en: 'Area...', mr: 'उदा. प्रभाग 12', hi: 'उदा. वार्ड 12'),
+                                        lang,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Side-by-side: Status & Completion Date
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppDropdownFormField<String>(
+                                    label: AppTranslations.pick(lang, en: 'Work Status', mr: 'कामाची स्थिती', hi: 'कार्य स्थिति'),
+                                    isRequired: true,
+                                    value: status,
+                                    items: [
+                                      DropdownMenuItem(value: 'Planned', child: Text(AppTranslations.getStatus('Planned', lang))),
+                                      DropdownMenuItem(value: 'InProgress', child: Text(AppTranslations.getStatus('In Progress', lang))),
+                                      DropdownMenuItem(value: 'Completed', child: Text(AppTranslations.getStatus('Completed', lang))),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) setModalState(() => status = val);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'Completion Date', mr: 'अंदाजित / पूर्ण तारीख', hi: 'पूर्ण होने की तिथि')),
+                                  TextField(
+                                    controller: dateCtrl,
+                                    decoration: inputDec(hint: 'YYYY-MM-DD'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Side-by-side: Citizens Benefited & Expenditure
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'Citizens Benefited', mr: 'लाभार्थी संख्या', hi: 'लाभान्वित नागरिक')),
+                                  TextField(
+                                    controller: benCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: inputDec(
+                                      hint: AppTranslations.formatDigits(
+                                        AppTranslations.pick(lang, en: 'e.g. 5000', mr: 'उदा. 5000', hi: 'उदा. 5000'),
+                                        lang,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'Expenditure (₹)', mr: 'खर्च झालेली रक्कम (₹)', hi: 'व्यय राशि (₹)')),
+                                  TextField(
+                                    controller: amtCtrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: inputDec(
+                                      hint: AppTranslations.formatDigits(
+                                        AppTranslations.pick(lang, en: 'e.g. 850000', mr: 'उदा. 850000', hi: 'उदा. 850000'),
+                                        lang,
+                                      ),
+                                      prefixText: '₹ ',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Save Button (Scrolls together with form)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: () async {
+                              final updated = _currentWork.copyWith(
+                                title: titleCtrl.text.trim(),
+                                description: descCtrl.text.trim(),
+                                location: locCtrl.text.trim(),
+                                area: areaCtrl.text.trim(),
+                                status: status,
+                                date: AppTranslations.normalizeAsciiDigits(dateCtrl.text.trim()),
+                                peopleBenefited: int.tryParse(AppTranslations.normalizeAsciiDigits(benCtrl.text.trim())),
+                                amount: double.tryParse(AppTranslations.normalizeAsciiDigits(amtCtrl.text.trim())),
+                              );
+
+                              final repo = ref.read(workHistoryRepoProvider);
+                              await repo.updateWork(updated);
+                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                              if (mounted) {
+                                setState(() => _currentWork = updated);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Project updated successfully',
+                                        mr: 'प्रकल्प यशस्वीरित्या अद्यतनित केला!',
+                                        hi: 'परियोजना सफलतापूर्वक अपडेट की गई!',
+                                      ),
+                                    ),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.save_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल जतन करा', hi: 'परिवर्तन सहेजें'),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
+            );
           },
         );
       },
@@ -362,7 +410,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
   }
 
   void _showAddFeedbackModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameCtrl = TextEditingController();
     final commentCtrl = TextEditingController();
     int rating = 5;
@@ -415,8 +463,8 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                 children: [
                   AppModalHeader(
                     icon: Icons.rate_review_outlined,
-                    title: isMr ? 'नागरिक प्रतिक्रिया जोडा' : 'Add Citizen Feedback',
-                    subtitle: isMr ? 'प्रकल्पाबाबत नागरिकांचा अभिप्राय' : 'Citizen remarks on project quality',
+                    title: AppTranslations.pick(lang, en: 'Add Citizen Feedback', mr: 'नागरिक प्रतिक्रिया जोडा', hi: 'नागरिक प्रतिक्रिया जोड़ें'),
+                    subtitle: AppTranslations.pick(lang, en: 'Citizen remarks on project quality', mr: 'प्रकल्पाबाबत नागरिकांचा अभिप्राय', hi: 'परियोजना गुणवत्ता पर नागरिक टिप्पणी'),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
                   Flexible(
@@ -425,14 +473,14 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppFieldLabel(label: isMr ? 'नागरिकाचे नाव' : 'Citizen Name', isRequired: true),
+                          AppFieldLabel(label: AppTranslations.pick(lang, en: 'Citizen Name', mr: 'नागरिकाचे नाव', hi: 'नागरिक का नाम'), isRequired: true),
                           TextField(
                             controller: nameCtrl,
-                            decoration: inputDec(hint: isMr ? 'उदा. सुरेश शिंदे' : 'e.g. Suresh Shinde'),
+                            decoration: inputDec(hint: AppTranslations.pick(lang, en: 'e.g. Suresh Shinde', mr: 'उदा. सुरेश शिंदे', hi: 'उदा. सुरेश शिंदे')),
                           ),
                           const SizedBox(height: 12),
 
-                          AppFieldLabel(label: isMr ? 'रेटिंग (गुणवत्ता दर्जा)' : 'Rating', isRequired: true),
+                          AppFieldLabel(label: AppTranslations.pick(lang, en: 'Rating', mr: 'रेटिंग (गुणवत्ता दर्जा)', hi: 'रेटिंग (गुणवत्ता स्तर)'), isRequired: true),
                           Row(
                             children: List.generate(5, (index) {
                               final starIndex = index + 1;
@@ -448,62 +496,83 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           ),
                           const SizedBox(height: 12),
 
-                          AppFieldLabel(label: isMr ? 'अभिप्राय / शेरा' : 'Review / Comment', isRequired: true),
+                          AppFieldLabel(label: AppTranslations.pick(lang, en: 'Review / Comment', mr: 'अभिप्राय / शेरा', hi: 'समीक्षा / टिप्पणी'), isRequired: true),
                           TextField(
                             controller: commentCtrl,
                             maxLines: 3,
                             decoration: inputDec(
-                              hint: isMr ? 'कामाच्या गुणवत्तेबाबत आणि उपयुक्ततेबाबत शेरा...' : 'Share remarks on the quality and durability of this work...',
+                              hint: AppTranslations.pick(
+                                lang,
+                                en: 'Share remarks on the quality and durability of this work...',
+                                mr: 'कामाच्या गुणवत्तेबाबत आणि उपयुक्ततेबाबत शेरा...',
+                                hi: 'इस कार्य की गुणवत्ता और उपयोगिता पर टिप्पणी साझा करें...',
+                              ),
                             ),
                           ),
                           const SizedBox(height: 20),
 
                           // Submit Button (Scrolls together with form)
                           SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          onPressed: () async {
-                            if (nameCtrl.text.trim().isEmpty || commentCtrl.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(isMr ? 'कृपया नागरिकाचे नाव आणि शेरा प्रविष्ट करा' : 'Please enter citizen name and comment')),
-                              );
-                              return;
-                            }
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () async {
+                                if (nameCtrl.text.trim().isEmpty || commentCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Please enter citizen name and comment',
+                                          mr: 'कृपया नागरिकाचे नाव आणि शेरा प्रविष्ट करा',
+                                          hi: 'कृपया नागरिक का नाम और टिप्पणी दर्ज करें',
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
 
-                            final fb = WorkFeedbackModel(
-                              id: 'fb-${DateTime.now().millisecondsSinceEpoch}',
-                              citizenName: nameCtrl.text.trim(),
-                              rating: rating,
-                              comment: commentCtrl.text.trim(),
-                              createdAt: DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now()),
-                            );
+                                final fb = WorkFeedbackModel(
+                                  id: 'fb-${DateTime.now().millisecondsSinceEpoch}',
+                                  citizenName: nameCtrl.text.trim(),
+                                  rating: rating,
+                                  comment: commentCtrl.text.trim(),
+                                  createdAt: DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now()),
+                                );
 
-                            final repo = ref.read(workHistoryRepoProvider);
-                            await repo.addFeedback(_currentWork.id, fb);
-                            await _refreshWorkDetails();
-                            if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(isMr ? 'प्रतिक्रिया यशस्वीरित्या जोडली गेली!' : 'Feedback added successfully!'),
-                                  backgroundColor: const Color(0xFF16A34A),
-                                ),
-                              );
-                            }
-                          },
-                          child: Text(
-                            isMr ? 'प्रतिक्रिया जतन करा' : 'Submit Feedback',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                final repo = ref.read(workHistoryRepoProvider);
+                                await repo.addFeedback(_currentWork.id, fb);
+                                await _refreshWorkDetails();
+                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Feedback added successfully!',
+                                          mr: 'प्रतिक्रिया यशस्वीरित्या जोडली गेली!',
+                                          hi: 'प्रतिक्रिया सफलतापूर्वक जोड़ी गई!',
+                                        ),
+                                      ),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                AppTranslations.pick(lang, en: 'Submit Feedback', mr: 'प्रतिक्रिया जतन करा', hi: 'प्रतिक्रिया सहेजें'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ),
                           ),
-                        ),
-                        ),
                           const SizedBox(height: 10),
                         ],
                       ),
@@ -512,16 +581,24 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                 ],
               ),
             );
-    },
+          },
         );
       },
     );
   }
 
+  String _formatWorkDate(String raw, String lang) {
+    if (raw.trim().isEmpty) return AppTranslations.getStatus('In Progress', lang);
+    final dt = DateTime.tryParse(raw.trim());
+    if (dt != null) {
+      return AppTranslations.formatDate(dt, lang, pattern: 'dd MMM yyyy');
+    }
+    return AppTranslations.formatDigits(raw, lang);
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final w = _currentWork;
     final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ', decimalDigits: 0);
 
@@ -541,7 +618,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
           scrolledUnderElevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-            tooltip: 'Back',
+            tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'पीछे'),
             onPressed: () => Navigator.pop(context),
           ),
           titleSpacing: 0,
@@ -550,9 +627,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                lang == 'mr'
-                    ? 'कामाचा तपशील'
-                    : (lang == 'hi' ? 'कार्य विवरण' : 'Work Details'),
+                AppTranslations.pick(lang, en: 'Work Details', mr: 'कामाचा तपशील', hi: 'कार्य विवरण'),
                 style: const TextStyle(
                   fontSize: 17.5,
                   fontWeight: FontWeight.w800,
@@ -561,7 +636,12 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                 ),
               ),
               Text(
-                w.area.isNotEmpty ? '${w.area} • Ward No. 12' : 'Ward No. 12',
+                AppTranslations.formatDigits(
+                  w.area.isNotEmpty
+                      ? '${AppTranslations.getAreaName(w.area, lang)} • ${AppTranslations.pick(lang, en: "Ward No. 12", mr: "प्रभाग क्र. 12", hi: "वार्ड नं. 12")}'
+                      : AppTranslations.pick(lang, en: 'Ward No. 12', mr: 'प्रभाग क्र. 12', hi: 'वार्ड नं. 12'),
+                  lang,
+                ),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
@@ -575,7 +655,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                  tooltip: AppTranslations.pick(lang, en: 'Download Report', mr: 'अहवाल डाउनलोड करा', hi: 'रिपोर्ट डाउनलोड करें'),
                   onPressed: () => AhwalReportGenerator.generateAndPrintAhwal(
                     selectedWorks: [_currentWork],
                     lang: lang,
@@ -585,12 +665,12 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.white),
-              tooltip: 'Edit Project',
+              tooltip: AppTranslations.pick(lang, en: 'Edit Project', mr: 'प्रकल्प संपादित करा', hi: 'परियोजना संपादित करें'),
               onPressed: _showEditModal,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-              tooltip: 'Delete Project',
+              tooltip: AppTranslations.pick(lang, en: 'Delete Project', mr: 'प्रकल्प हटवा', hi: 'परियोजना हटाएँ'),
               onPressed: _showDeleteConfirmation,
             ),
           ],
@@ -645,7 +725,9 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                         Icon(w.sourceIcon, size: 13, color: const Color(0xFF1D4ED8)),
                                         const SizedBox(width: 4),
                                         Text(
-                                          isMr ? w.sourceDisplayMr : w.sourceDisplayEn,
+                                          lang == 'mr'
+                                              ? w.sourceDisplayMr
+                                              : (lang == 'hi' ? AppTranslations.translateDirect(w.sourceDisplayEn, lang: lang) : w.sourceDisplayEn),
                                           style: const TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
@@ -663,8 +745,9 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                         color: const Color(0xFFF1F5F9),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
-                                      child: Text(
+                                      child: AppTranslatedText(
                                         w.area,
+                                        targetLanguage: lang,
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.w500),
                                       ),
                                     ),
@@ -719,8 +802,14 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                 child: _metaInfoTile(
                                   icon: Icons.place_outlined,
                                   iconColor: Colors.red.shade600,
-                                  label: isMr ? 'ठिकाण (Location)' : 'Location',
-                                  value: w.location.isNotEmpty ? w.location : (w.area.isNotEmpty ? w.area : 'Prabhag Area'),
+                                  label: AppTranslations.pick(lang, en: 'Location', mr: 'ठिकाण', hi: 'स्थान'),
+                                  value: w.location.isNotEmpty
+                                      ? w.location
+                                      : (w.area.isNotEmpty
+                                          ? w.area
+                                          : AppTranslations.pick(lang, en: 'Prabhag Area', mr: 'प्रभाग परिसर', hi: 'वार्ड क्षेत्र')),
+                                  lang: lang,
+                                  translateValue: true,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -728,8 +817,9 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                 child: _metaInfoTile(
                                   icon: Icons.calendar_today_outlined,
                                   iconColor: const Color(0xFF0284C7),
-                                  label: isMr ? 'पूर्ण झालेली तारीख' : 'Completion Date',
-                                  value: w.date.isNotEmpty ? w.date : 'In Progress',
+                                  label: AppTranslations.pick(lang, en: 'Completion Date', mr: 'पूर्ण झालेली तारीख', hi: 'पूर्ण होने की तिथि'),
+                                  value: _formatWorkDate(w.date, lang),
+                                  lang: lang,
                                 ),
                               ),
                             ],
@@ -741,10 +831,11 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                 child: _metaInfoTile(
                                   icon: Icons.people_alt_outlined,
                                   iconColor: Colors.purple.shade600,
-                                  label: isMr ? 'लाभार्थी नागरिक' : 'Benefited Citizens',
+                                  label: AppTranslations.pick(lang, en: 'Benefited Citizens', mr: 'लाभार्थी नागरिक', hi: 'लाभान्वित नागरिक'),
                                   value: w.peopleBenefited != null
-                                      ? NumberFormat.decimalPattern().format(w.peopleBenefited)
-                                      : 'All Prabhag Citizens',
+                                      ? AppTranslations.formatDigits(NumberFormat.decimalPattern().format(w.peopleBenefited), lang)
+                                      : AppTranslations.pick(lang, en: 'All Prabhag Citizens', mr: 'सर्व प्रभाग नागरिक', hi: 'सभी वार्ड नागरिक'),
+                                  lang: lang,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -752,8 +843,11 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                 child: _metaInfoTile(
                                   icon: Icons.currency_rupee_rounded,
                                   iconColor: const Color(0xFF16A34A),
-                                  label: isMr ? 'सार्वजनिक खर्च' : 'Expenditure',
-                                  value: w.amount != null ? numFormat.format(w.amount) : 'PMC Ward Fund',
+                                  label: AppTranslations.pick(lang, en: 'Expenditure', mr: 'सार्वजनिक खर्च', hi: 'सार्वजनिक व्यय'),
+                                  value: w.amount != null
+                                      ? AppTranslations.formatDigits(numFormat.format(w.amount), lang)
+                                      : AppTranslations.pick(lang, en: 'PMC Ward Fund', mr: 'महानगरपालिका प्रभाग निधी', hi: 'नगर निगम वार्ड निधि'),
+                                  lang: lang,
                                 ),
                               ),
                             ],
@@ -785,23 +879,28 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    isMr ? 'नागरिक प्रतिसाद व रेटिंग' : 'Citizen Feedback & Ratings',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        AppTranslations.pick(lang, en: 'Citizen Feedback & Ratings', mr: 'नागरिक प्रतिसाद व रेटिंग', hi: 'नागरिक प्रतिक्रिया और रेटिंग'),
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                               TextButton.icon(
                                 icon: const Icon(Icons.add_comment_outlined, size: 16),
-                                label: Text(isMr ? '+ मत नोंदवा' : '+ Review'),
+                                label: Text(AppTranslations.pick(lang, en: '+ Review', mr: '+ मत नोंदवा', hi: '+ समीक्षा')),
                                 style: TextButton.styleFrom(
                                   foregroundColor: const Color(0xFF0284C7),
                                   textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -828,7 +927,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      w.feedbackRating > 0 ? '${w.feedbackRating}' : '4.8',
+                                      AppTranslations.formatDigits(w.feedbackRating > 0 ? '${w.feedbackRating}' : '4.8', lang),
                                       style: const TextStyle(
                                         fontSize: 28,
                                         fontWeight: FontWeight.w900,
@@ -842,7 +941,10 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${w.feedbackCount} ${isMr ? "प्रतिक्रिया" : "Reviews"}',
+                                      AppTranslations.formatDigits(
+                                        '${w.feedbackCount} ${AppTranslations.pick(lang, en: 'Reviews', mr: 'प्रतिक्रिया', hi: 'समीक्षाएं')}',
+                                        lang,
+                                      ),
                                       style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                     ),
                                   ],
@@ -860,15 +962,17 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          children: const [
-                                            Icon(Icons.auto_awesome, size: 14, color: Colors.purple),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'AI Citizen Sentiment',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF6B21A8),
+                                          children: [
+                                            const Icon(Icons.auto_awesome, size: 14, color: Colors.purple),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                AppTranslations.pick(lang, en: 'AI Citizen Sentiment', mr: 'AI नागरिक प्रतिसाद विश्लेषण', hi: 'AI नागरिक भावना विश्लेषण'),
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF6B21A8),
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -876,8 +980,21 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                         const SizedBox(height: 4),
                                         Text(
                                           w.feedbackCount > 0
-                                              ? 'Strong public approval (94%) praising durable construction, reliable drainage, and prompt delivery by the ward committee.'
-                                              : 'Early feedback positive. Verified project scope has received constructive appreciation from local residents.',
+                                              ? AppTranslations.formatDigits(
+                                                  AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Strong public approval (94%) praising durable construction, reliable drainage, and prompt delivery by the ward committee.',
+                                                    mr: 'प्रभाग समितीच्या टिकाऊ बांधकामास व वेगवान कामास नागरिकांचा 94% सकारात्मक प्रतिसाद.',
+                                                    hi: 'वार्ड समिति के टिकाऊ निर्माण और समय पर कार्य निष्पादन पर नागरिकों का 94% सकारात्मक समर्थन।',
+                                                  ),
+                                                  lang,
+                                                )
+                                              : AppTranslations.pick(
+                                                  lang,
+                                                  en: 'Early feedback positive. Verified project scope has received constructive appreciation from local residents.',
+                                                  mr: 'प्राथमिक प्रतिसाद सकारात्मक. स्थानिक रहिवाशांकडून कामाचे स्वागत.',
+                                                  hi: 'प्रारंभिक प्रतिक्रिया सकारात्मक। स्थानीय निवासियों द्वारा कार्य की सराहना की गई है।',
+                                                ),
                                           style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
                                         ),
                                       ],
@@ -902,7 +1019,12 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                               ),
                               child: Center(
                                 child: Text(
-                                  isMr ? 'कोणतीही प्रतिक्रिया अद्याप नोंदवली नाही' : 'No citizen feedback registered yet.',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'No citizen feedback registered yet.',
+                                    mr: 'कोणतीही प्रतिक्रिया अद्याप नोंदवली नाही',
+                                    hi: 'अभी तक कोई नागरिक प्रतिक्रिया दर्ज नहीं की गई है।',
+                                  ),
                                   style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                 ),
                               ),
@@ -928,9 +1050,13 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
-                                            fb.citizenName,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                                          Expanded(
+                                            child: AppTranslatedText(
+                                              fb.citizenName,
+                                              isName: true,
+                                              targetLanguage: lang,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                                            ),
                                           ),
                                           Row(
                                             children: List.generate(fb.rating, (_) {
@@ -942,13 +1068,14 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                                       if (fb.createdAt.isNotEmpty) ...[
                                         const SizedBox(height: 2),
                                         Text(
-                                          fb.createdAt,
+                                          AppTranslations.formatDigits(fb.createdAt, lang),
                                           style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                                         ),
                                       ],
                                       const SizedBox(height: 6),
-                                      Text(
+                                      AppTranslatedText(
                                         fb.comment,
+                                        targetLanguage: lang,
                                         style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
                                       ),
                                     ],
@@ -961,7 +1088,7 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                               totalPages: _totalFeedbackPages,
                               totalItems: w.feedbacks.length,
                               pageSize: _feedbackPageSize,
-                              label: isMr ? 'प्रतिक्रिया' : 'feedbacks',
+                              label: AppTranslations.pick(lang, en: 'feedbacks', mr: 'प्रतिक्रिया', hi: 'प्रतिक्रियाएं'),
                               onPageChanged: (page) => setState(() => _feedbackPage = page),
                             ),
                           ],
@@ -980,6 +1107,8 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
     required Color iconColor,
     required String label,
     required String value,
+    required String lang,
+    bool translateValue = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(10),
@@ -1010,12 +1139,20 @@ class _WorkDetailScreenState extends ConsumerState<WorkDetailScreen> {
                   style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                translateValue
+                    ? AppTranslatedText(
+                        value,
+                        targetLanguage: lang,
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : Text(
+                        value,
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
               ],
             ),
           ),

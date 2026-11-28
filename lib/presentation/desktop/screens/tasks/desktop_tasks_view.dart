@@ -79,7 +79,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
     final dates = <String>{};
     for (final t in _tasks) {
       if (t.dueDate != null) {
-        dates.add(DateFormat('MMM d, yyyy').format(t.dueDate!));
+        dates.add(DateFormat('yyyy-MM-dd').format(t.dueDate!));
       }
     }
     final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
@@ -94,15 +94,14 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
         if (!matches) return false;
       }
       if (_selectedDateFilter != 'All') {
-        if (t.dueDate != null) {
-          final formatted = DateFormat('MMM d, yyyy').format(t.dueDate!);
-          if (!formatted.toLowerCase().contains(_selectedDateFilter.toLowerCase())) {
-            return false;
-          }
+        if (t.dueDate == null) return false;
+        final formatted = DateFormat('yyyy-MM-dd').format(t.dueDate!);
+        if (formatted != _selectedDateFilter) {
+          return false;
         }
       }
       if (_searchQuery.trim().isNotEmpty) {
-        final q = _searchQuery.toLowerCase().trim();
+        final q = AppTranslations.normalizeAsciiDigits(_searchQuery).toLowerCase().trim();
         final matchTitle = t.title.toLowerCase().contains(q);
         final matchDesc = (t.description ?? '').toLowerCase().contains(q);
         final matchStaff = (t.assignedStaffName ?? '').toLowerCase().contains(q);
@@ -137,84 +136,134 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
     final descCtrl = TextEditingController();
     final addressCtrl = TextEditingController();
     String priority = 'Medium';
-    DateTime dueDate = DateTime.now();
-    TimeOfDay dueTime = TimeOfDay.now();
+    final DateTime dueDate = DateTime.now();
+    final TimeOfDay dueTime = TimeOfDay.now();
 
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => DesktopModalDialog(
-          title: 'New Task',
-          subtitle: 'Create and assign follow-up tasks, reminders and deadlines',
-          icon: Icons.assignment_rounded,
-          width: 540,
-          onClose: () => Navigator.pop(ctx),
-          actions: [
-            DesktopModalDialog.cancelButton(ctx),
-            const SizedBox(width: 12),
-            DesktopModalDialog.primaryButton(
-              text: 'Save Task',
-              onPressed: () async {
-                if (titleCtrl.text.trim().isEmpty) return;
-                final newTask = DiaryTaskModel(
-                  id: '',
-                  title: titleCtrl.text.trim(),
-                  description: descCtrl.text.trim(),
-                  priority: priority,
-                  status: 'Pending',
-                  dueDate: dueDate,
-                  dueTime: '${dueTime.hour.toString().padLeft(2, '0')}:${dueTime.minute.toString().padLeft(2, '0')}',
-                  address: addressCtrl.text.trim(),
-                );
-                await ref.read(diaryTasksRepoProvider).addTask(newTask);
-                if (ctx.mounted) Navigator.pop(ctx);
-                _loadTasks();
-              },
+      builder: (ctx) => ValueListenableBuilder<String>(
+        valueListenable: appLanguageValueNotifier,
+        builder: (ctx, dlgLang, _) => StatefulBuilder(
+          builder: (ctx, setDlgState) => DesktopModalDialog(
+            title: AppTranslations.pick(dlgLang, en: 'New Task', mr: 'नवीन कार्य', hi: 'नया कार्य'),
+            subtitle: AppTranslations.pick(
+              dlgLang,
+              en: 'Create and assign follow-up tasks, reminders and deadlines',
+              mr: 'पाठपुरावा कामे, स्मरणपत्रे आणि अंतिम मुदती तयार करा',
+              hi: 'फ़ॉलो-अप कार्य, रिमाइंडर और समय-सीमा बनाएं और सौंपें',
             ),
-          ],
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Task Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: titleCtrl,
-                decoration: desktopInputDecoration(hintText: 'Enter task title...'),
-              ),
-              const SizedBox(height: 14),
-              const Text('Description', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: descCtrl,
-                maxLines: 2,
-                decoration: desktopInputDecoration(hintText: 'Optional details or instructions...'),
-              ),
-              const SizedBox(height: 14),
-              const Text('Location / Office Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: addressCtrl,
-                decoration: desktopInputDecoration(hintText: 'e.g. Ward Office, Civic Center...'),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Text('Priority: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                  const SizedBox(width: 10),
-                  ...['Low', 'Medium', 'High'].map((p) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(p, style: TextStyle(fontSize: 12, fontWeight: priority == p ? FontWeight.bold : FontWeight.normal)),
-                          selected: priority == p,
-                          selectedColor: AppColors.brand100,
-                          onSelected: (_) => setDlgState(() => priority = p),
-                        ),
-                      )),
-                ],
+            icon: Icons.assignment_rounded,
+            width: 540,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: AppTranslations.pick(dlgLang, en: 'Save Task', mr: 'कार्य जतन करा', hi: 'कार्य सहेजें'),
+                onPressed: () async {
+                  if (titleCtrl.text.trim().isEmpty) return;
+                  final newTask = DiaryTaskModel(
+                    id: '',
+                    title: titleCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    priority: priority,
+                    status: 'Pending',
+                    dueDate: dueDate,
+                    dueTime: '${dueTime.hour.toString().padLeft(2, '0')}:${dueTime.minute.toString().padLeft(2, '0')}',
+                    address: addressCtrl.text.trim(),
+                  );
+                  await ref.read(diaryTasksRepoProvider).addTask(newTask);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _loadTasks();
+                },
               ),
             ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppTranslations.pick(dlgLang, en: 'Task Title *', mr: 'कामाचे शीर्षक *', hi: 'कार्य शीर्षक *'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: titleCtrl,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      dlgLang,
+                      en: 'Enter task title...',
+                      mr: 'कामाचे शीर्षक लिहा...',
+                      hi: 'कार्य शीर्षक दर्ज करें...',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  AppTranslations.pick(dlgLang, en: 'Description', mr: 'वर्णन', hi: 'विवरण'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 2,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      dlgLang,
+                      en: 'Optional details or instructions...',
+                      mr: 'ऐच्छिक तपशील किंवा सूचना...',
+                      hi: 'वैकल्पिक विवरण या निर्देश...',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  AppTranslations.pick(
+                    dlgLang,
+                    en: 'Location / Office Name',
+                    mr: 'ठिकाण / कार्यालयाचे नाव',
+                    hi: 'स्थान / कार्यालय का नाम',
+                  ),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: addressCtrl,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      dlgLang,
+                      en: 'e.g. Ward Office, Civic Center...',
+                      mr: 'उदा. प्रभाग कार्यालय, नागरी केंद्र...',
+                      hi: 'जैसे वार्ड कार्यालय, नागरिक केंद्र...',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      AppTranslations.pick(dlgLang, en: 'Priority:', mr: 'प्राधान्य:', hi: 'प्राथमिकता:'),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
+                    ...['Low', 'Medium', 'High'].map(
+                      (p) => ChoiceChip(
+                        label: Text(
+                          AppTranslations.getPriority(p, dlgLang),
+                          style: TextStyle(fontSize: 12, fontWeight: priority == p ? FontWeight.bold : FontWeight.normal),
+                        ),
+                        selected: priority == p,
+                        selectedColor: AppColors.brand100,
+                        onSelected: (_) => setDlgState(() => priority = p),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -474,10 +523,19 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueDates.map((date) {
+              String label;
+              if (date == 'All') {
+                label = allDatesLabel;
+              } else {
+                final parsed = DateTime.tryParse(date);
+                label = parsed != null
+                    ? AppTranslations.formatDate(parsed, lang, pattern: 'MMM d, yyyy')
+                    : AppTranslations.formatDigits(date, lang);
+              }
               return DropdownMenuItem(
                 value: date,
                 child: Text(
-                  date == 'All' ? allDatesLabel : AppTranslations.formatDigits(date, lang),
+                  label,
                   overflow: TextOverflow.ellipsis,
                 ),
               );
@@ -589,7 +647,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                             const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF0284C7)),
                             const SizedBox(width: 6),
                             Text(
-                              DateFormat('MMM d, yyyy').format(_selectedDate),
+                              AppTranslations.formatDate(_selectedDate, lang, pattern: 'MMM d, yyyy'),
                               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                             ),
                           ],
@@ -673,8 +731,54 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
     );
   }
 
+  String _formatTaskDate(DiaryTaskModel task, String lang) {
+    if (task.dueDate == null) return '-';
+    return AppTranslations.formatDate(task.dueDate!, lang, pattern: 'MMM d, yyyy');
+  }
+
+  String _formatTaskTime(DiaryTaskModel task, String lang) {
+    final raw = task.dueTime;
+    if (raw == null || raw.trim().isEmpty) return '';
+    final clean = AppTranslations.normalizeAsciiDigits(raw.trim());
+    final parts = clean.split(':');
+    if (parts.length >= 2) {
+      final h = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1].replaceAll(RegExp(r'[^0-9]'), ''));
+      if (h != null && m != null && h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+        return AppTranslations.formatTime(DateTime(2026, 1, 1, h, m), lang);
+      }
+    }
+    return AppTranslations.formatDigits(task.formattedTime, lang);
+  }
+
+  Widget _buildLocalizedLocationText(
+    String raw,
+    String lang, {
+    TextStyle? style,
+    TextOverflow? overflow,
+  }) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || trimmed == '-') {
+      return Text(raw, style: style, overflow: overflow);
+    }
+    final mapped = AppTranslations.getAreaName(trimmed, lang);
+    final changed = mapped.trim().toLowerCase() != trimmed.toLowerCase() &&
+        mapped != AppTranslations.formatDigits(trimmed, lang);
+    if (changed || (lang == 'en' && !DynamicTranslationService.containsDevanagari(trimmed))) {
+      return Text(mapped, style: style, overflow: overflow);
+    }
+    return AppTranslatedText(
+      trimmed,
+      targetLanguage: lang,
+      style: style,
+      overflow: overflow,
+    );
+  }
+
   Widget _buildTaskCard(DiaryTaskModel task, String lang) {
     final isDone = task.isCompleted;
+    final dateLabel = _formatTaskDate(task, lang);
+    final timeLabel = _formatTaskTime(task, lang);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -701,6 +805,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               Expanded(
                 child: AppTranslatedText(
                   task.title,
+                  targetLanguage: lang,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -745,6 +850,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             Expanded(
               child: AppTranslatedText(
                 task.description!,
+                targetLanguage: lang,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.35),
@@ -768,7 +874,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                 const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
                 const SizedBox(width: 5),
                 Text(
-                  '${task.formattedDate}${task.formattedTime.isNotEmpty ? ' • ${task.formattedTime}' : ''}',
+                  '$dateLabel${timeLabel.isNotEmpty ? ' • $timeLabel' : ''}',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
               ],
@@ -777,14 +883,16 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           ],
 
           // Location / Office info
-          if (task.address != null || task.officeName != null) ...[
+          if ((task.address != null && task.address!.trim().isNotEmpty) ||
+              (task.officeName != null && task.officeName!.trim().isNotEmpty)) ...[
             Row(
               children: [
                 const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF94A3B8)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(
+                  child: _buildLocalizedLocationText(
                     task.address ?? task.officeName ?? '',
+                    lang,
                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -834,6 +942,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
         separatorBuilder: (_, __) => const SizedBox(height: 20),
         itemBuilder: (context, index) {
           final task = items[index];
+          final timeStr = _formatTaskTime(task, lang);
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -841,7 +950,7 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
               SizedBox(
                 width: 90,
                 child: Text(
-                  task.formattedTime.isNotEmpty ? task.formattedTime : (lang == 'mr' ? 'कधीही' : (lang == 'hi' ? 'कभी भी' : 'Anytime')),
+                  timeStr.isNotEmpty ? timeStr : AppTranslations.pick(lang, en: 'Anytime', mr: 'कधीही', hi: 'कभी भी'),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
                 ),
               ),
@@ -874,11 +983,16 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
                     children: [
                       AppTranslatedText(
                         task.title,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                       ),
                       if (task.description != null && task.description!.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        AppTranslatedText(task.description!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        AppTranslatedText(
+                          task.description!,
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
                       ],
                     ],
                   ),
@@ -910,13 +1024,20 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
             DataColumn(label: Text(AppTranslations.getReportColumn('location_area', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.map((task) {
+            final locRaw = task.address ?? task.officeName ?? '-';
             return DataRow(
               cells: [
-                DataCell(AppTranslatedText(task.title, style: const TextStyle(fontWeight: FontWeight.w600))),
+                DataCell(
+                  AppTranslatedText(
+                    task.title,
+                    targetLanguage: lang,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
                 DataCell(_buildPriorityBadge(task.priority, lang)),
                 DataCell(Text(AppTranslations.getStatus(task.status, lang))),
-                DataCell(Text(task.formattedDate)),
-                DataCell(AppTranslatedText(task.address ?? task.officeName ?? '-')),
+                DataCell(Text(_formatTaskDate(task, lang))),
+                DataCell(_buildLocalizedLocationText(locRaw, lang)),
               ],
             );
           }).toList(),

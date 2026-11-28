@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/opposition_model.dart';
 import '../../../data/repositories/opposition_repository.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_dropdown.dart';
@@ -45,7 +47,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
 
   Future<void> _makePhoneCall(String? phone) async {
     if (phone == null || phone.isEmpty) return;
-    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final clean = AppTranslations.normalizeAsciiDigits(phone).replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -54,7 +56,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
 
   Future<void> _openWhatsApp(String? phone) async {
     if (phone == null || phone.isEmpty) return;
-    final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final clean = AppTranslations.normalizeAsciiDigits(phone).replaceAll(RegExp(r'[^0-9]'), '');
     final uri = Uri.parse('https://wa.me/$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -97,7 +99,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
   // LOG CAMPAIGN ACTIVITY MODAL
   // ===========================================================================
   void _showAddActivityModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController();
     final locCtrl = TextEditingController(text: _member.area ?? '');
     final descCtrl = TextEditingController();
@@ -127,8 +129,18 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
             children: [
               AppModalHeader(
                 icon: Icons.event_note_rounded,
-                title: isMr ? 'प्रचार उपक्रमाची नोंद करा' : 'Record Campaign Activity',
-                subtitle: isMr ? 'उपक्रमाचे तपशील भरा' : 'Fill campaign activity details',
+                title: AppTranslations.pick(
+                  lang,
+                  en: 'Record Campaign Activity',
+                  mr: 'प्रचार उपक्रमाची नोंद करा',
+                  hi: 'प्रचार गतिविधि दर्ज करें',
+                ),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Fill campaign activity details',
+                  mr: 'उपक्रमाचे तपशील भरा',
+                  hi: 'गतिविधि का विवरण भरें',
+                ),
                 onClose: () => Navigator.pop(ctx),
               ),
               Expanded(
@@ -150,7 +162,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppFieldLabel(
-                                label: isMr ? 'तारीख' : 'Activity Date',
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Activity Date',
+                                  mr: 'तारीख',
+                                  hi: 'तिथि',
+                                ),
                                 isRequired: true,
                               ),
                               InkWell(
@@ -175,9 +192,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        DateFormat('yyyy-MM-dd').format(selectedDate),
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                      Expanded(
+                                        child: Text(
+                                          AppTranslations.formatDate(selectedDate, lang),
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                        ),
                                       ),
                                       const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
                                     ],
@@ -194,13 +214,23 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppFieldLabel(
-                                label: isMr ? 'उपक्रमाचे नाव / शीर्षक' : 'Activity Title',
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Activity Title',
+                                  mr: 'उपक्रमाचे नाव / शीर्षक',
+                                  hi: 'गतिविधि का शीर्षक',
+                                ),
                                 isRequired: true,
                               ),
                               TextField(
                                 controller: titleCtrl,
                                 decoration: appInputDecoration(
-                                  hint: isMr ? 'उदा. जनआक्रोश मोर्चा, शिबीर' : 'e.g. Citizen Rights March',
+                                  hint: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Citizen Rights March',
+                                    mr: 'उदा. जनआक्रोश मोर्चा, शिबीर',
+                                    hi: 'उदा. जन आक्रोश मार्च, शिविर',
+                                  ),
                                 ),
                               ),
                             ],
@@ -211,22 +241,46 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                     const SizedBox(height: 14),
 
                     // Location / Vicinity
-                    AppFieldLabel(label: isMr ? 'स्थान / परिसर' : 'Location / Vicinity'),
+                    AppFieldLabel(
+                      label: AppTranslations.pick(
+                        lang,
+                        en: 'Location / Vicinity',
+                        mr: 'स्थान / परिसर',
+                        hi: 'स्थान / क्षेत्र',
+                      ),
+                    ),
                     TextField(
                       controller: locCtrl,
                       decoration: appInputDecoration(
-                        hint: isMr ? 'उदा. सेक्टर ३ चौक, मुख्य रस्ता' : 'e.g. Sector 3 Chowk',
+                        hint: AppTranslations.pick(
+                          lang,
+                          en: 'e.g. Sector 3 Chowk',
+                          mr: 'उदा. सेक्टर ३ चौक, मुख्य रस्ता',
+                          hi: 'उदा. सेक्टर ३ चौक, मुख्य मार्ग',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
 
                     // Description & Notes
-                    AppFieldLabel(label: isMr ? 'तपशील व निरीक्षणे' : 'Activity Description & Notes'),
+                    AppFieldLabel(
+                      label: AppTranslations.pick(
+                        lang,
+                        en: 'Activity Description & Notes',
+                        mr: 'तपशील व निरीक्षणे',
+                        hi: 'गतिविधि विवरण और टिप्पणियाँ',
+                      ),
+                    ),
                     TextField(
                       controller: descCtrl,
                       maxLines: 3,
                       decoration: appInputDecoration(
-                        hint: isMr ? 'उपक्रमाचे स्वरूप, प्रमुख मागण्या व प्रभाव...' : 'Nature of activity, key demands, and political impact...',
+                        hint: AppTranslations.pick(
+                          lang,
+                          en: 'Nature of activity, key demands, and political impact...',
+                          mr: 'उपक्रमाचे स्वरूप, प्रमुख मागण्या व प्रभाव...',
+                          hi: 'गतिविधि का स्वरूप, प्रमुख माँगें और प्रभाव...',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -246,7 +300,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         ),
                         icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                         label: Text(
-                          isMr ? 'उपक्रम जतन करा' : 'Save Activity',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Save Activity',
+                            mr: 'उपक्रम जतन करा',
+                            hi: 'गतिविधि सहेजें',
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         onPressed: () async {
@@ -254,9 +313,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  isMr
-                                      ? 'कृपया उपक्रमाचे नाव प्रविष्ट करा.'
-                                      : 'Please enter activity title.',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Please enter activity title.',
+                                    mr: 'कृपया उपक्रमाचे नाव प्रविष्ट करा.',
+                                    hi: 'कृपया गतिविधि का शीर्षक दर्ज करें।',
+                                  ),
                                 ),
                               ),
                             );
@@ -282,9 +344,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  isMr
-                                      ? 'उपक्रम यशस्वीरित्या नोंदवला गेला!'
-                                      : 'Activity recorded successfully!',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Activity recorded successfully!',
+                                    mr: 'उपक्रम यशस्वीरित्या नोंदवला गेला!',
+                                    hi: 'गतिविधि सफलतापूर्वक दर्ज की गई!',
+                                  ),
                                 ),
                                 backgroundColor: const Color(0xFF16A34A),
                               ),
@@ -308,7 +373,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
   // ADD / EDIT CONTROVERSY / NEGATIVE STORY MODAL
   // ===========================================================================
   void _showNegativeStoryModal({OppositionNegativeStoryModel? storyToEdit}) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController(text: storyToEdit?.title ?? '');
     final sourceCtrl = TextEditingController(text: storyToEdit?.source ?? '');
     final descCtrl = TextEditingController(text: storyToEdit?.description ?? '');
@@ -340,9 +405,24 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
               AppModalHeader(
                 icon: Icons.warning_amber_rounded,
                 title: storyToEdit == null
-                    ? (isMr ? 'वादग्रस्त घटना / प्रकरण नोंदवा' : 'Record Controversy / Incident')
-                    : (isMr ? 'वादग्रस्त प्रकरण संपादित करा' : 'Edit Controversy / Incident'),
-                subtitle: isMr ? 'प्रकरणाचा तपशील व पुरावा संदर्भ' : 'Incident details & evidence reference',
+                    ? AppTranslations.pick(
+                        lang,
+                        en: 'Record Controversy / Incident',
+                        mr: 'वादग्रस्त घटना / प्रकरण नोंदवा',
+                        hi: 'विवादास्पद घटना / प्रकरण दर्ज करें',
+                      )
+                    : AppTranslations.pick(
+                        lang,
+                        en: 'Edit Controversy / Incident',
+                        mr: 'वादग्रस्त प्रकरण संपादित करा',
+                        hi: 'विवादास्पद प्रकरण संपादित करें',
+                      ),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Incident details & evidence reference',
+                  mr: 'प्रकरणाचा तपशील व पुरावा संदर्भ',
+                  hi: 'प्रकरण का विवरण व साक्ष्य संदर्भ',
+                ),
                 onClose: () => Navigator.pop(ctx),
               ),
               Expanded(
@@ -364,7 +444,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppFieldLabel(
-                                label: isMr ? 'घटनेची तारीख' : 'Incident Date',
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Incident Date',
+                                  mr: 'घटनेची तारीख',
+                                  hi: 'घटना की तिथि',
+                                ),
                                 isRequired: true,
                               ),
                               InkWell(
@@ -389,9 +474,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        DateFormat('yyyy-MM-dd').format(selectedDate),
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                      Expanded(
+                                        child: Text(
+                                          AppTranslations.formatDate(selectedDate, lang),
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                        ),
                                       ),
                                       const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFFDC2626)),
                                     ],
@@ -408,12 +496,22 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppFieldLabel(
-                                label: isMr ? 'स्रोत / पुरावा संदर्भ' : 'Source / Reference',
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Source / Reference',
+                                  mr: 'स्रोत / पुरावा संदर्भ',
+                                  hi: 'स्रोत / साक्ष्य संदर्भ',
+                                ),
                               ),
                               TextField(
                                 controller: sourceCtrl,
                                 decoration: appInputDecoration(
-                                  hint: isMr ? 'उदा. बातमी, व्हिडिओ लिंक' : 'e.g. News clipping, video link',
+                                  hint: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. News clipping, video link',
+                                    mr: 'उदा. बातमी, व्हिडिओ लिंक',
+                                    hi: 'उदा. समाचार कतरन, वीडियो लिंक',
+                                  ),
                                 ),
                               ),
                             ],
@@ -433,13 +531,23 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppFieldLabel(
-                                label: isMr ? 'प्रकरणाचे शीर्षक' : 'Controversy Title',
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Controversy Title',
+                                  mr: 'प्रकरणाचे शीर्षक',
+                                  hi: 'प्रकरण का शीर्षक',
+                                ),
                                 isRequired: true,
                               ),
                               TextField(
                                 controller: titleCtrl,
                                 decoration: appInputDecoration(
-                                  hint: isMr ? 'उदा. बेकायदेशीर बांधकाम...' : 'e.g. Tender irregularities...',
+                                  hint: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Tender irregularities...',
+                                    mr: 'उदा. बेकायदेशीर बांधकाम...',
+                                    hi: 'उदा. निविदा अनियमितता...',
+                                  ),
                                 ),
                               ),
                             ],
@@ -452,30 +560,35 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppFieldLabel(
-                                label: isMr ? 'तीव्रता / प्रभाव' : 'Severity / Impact',
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Severity / Impact',
+                                  mr: 'तीव्रता / प्रभाव',
+                                  hi: 'गंभीरता / प्रभाव',
+                                ),
                                 isRequired: true,
                               ),
                               Row(
                                 children: [
                                   _buildSeverityOption(
-                                    isMr ? 'उच्च' : 'High',
                                     'High',
+                                    AppTranslations.pick(lang, en: 'High', mr: 'उच्च', hi: 'उच्च'),
                                     const Color(0xFFDC2626),
                                     severity,
                                     (val) => setModalState(() => severity = val),
                                   ),
                                   const SizedBox(width: 6),
                                   _buildSeverityOption(
-                                    isMr ? 'मध्यम' : 'Med',
                                     'Medium',
+                                    AppTranslations.pick(lang, en: 'Med', mr: 'मध्यम', hi: 'मध्यम'),
                                     const Color(0xFFD97706),
                                     severity,
                                     (val) => setModalState(() => severity = val),
                                   ),
                                   const SizedBox(width: 6),
                                   _buildSeverityOption(
-                                    isMr ? 'कमी' : 'Low',
                                     'Low',
+                                    AppTranslations.pick(lang, en: 'Low', mr: 'कमी', hi: 'कम'),
                                     const Color(0xFF0284C7),
                                     severity,
                                     (val) => setModalState(() => severity = val),
@@ -491,14 +604,24 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
 
                     // Description
                     AppFieldLabel(
-                      label: isMr ? 'प्रकरणाचा तपशील' : 'Controversy Details',
+                      label: AppTranslations.pick(
+                        lang,
+                        en: 'Controversy Details',
+                        mr: 'प्रकरणाचा तपशील',
+                        hi: 'प्रकरण का विवरण',
+                      ),
                       isRequired: true,
                     ),
                     TextField(
                       controller: descCtrl,
                       maxLines: 3,
                       decoration: appInputDecoration(
-                        hint: isMr ? 'आरोप, स्थानिक मतदारांची प्रतिक्रिया व राजकीय रणनीती...' : 'Details, allegations, voter reaction, and strategy notes...',
+                        hint: AppTranslations.pick(
+                          lang,
+                          en: 'Details, allegations, voter reaction, and strategy notes...',
+                          mr: 'आरोप, स्थानिक मतदारांची प्रतिक्रिया व राजकीय रणनीती...',
+                          hi: 'आरोप, स्थानीय मतदाता प्रतिक्रिया और राजनीतिक रणनीति...',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -519,8 +642,18 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                         label: Text(
                           storyToEdit == null
-                              ? (isMr ? 'प्रकरण नोंदवा' : 'Record Incident')
-                              : (isMr ? 'बदल जतन करा' : 'Save Changes'),
+                              ? AppTranslations.pick(
+                                  lang,
+                                  en: 'Record Incident',
+                                  mr: 'प्रकरण नोंदवा',
+                                  hi: 'प्रकरण दर्ज करें',
+                                )
+                              : AppTranslations.pick(
+                                  lang,
+                                  en: 'Save Changes',
+                                  mr: 'बदल जतन करा',
+                                  hi: 'बदलाव सहेजें',
+                                ),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         onPressed: () async {
@@ -528,9 +661,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  isMr
-                                      ? 'कृपया शीर्षक आणि तपशील प्रविष्ट करा.'
-                                      : 'Please enter title and details.',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Please enter title and details.',
+                                    mr: 'कृपया शीर्षक आणि तपशील प्रविष्ट करा.',
+                                    hi: 'कृपया शीर्षक और विवरण दर्ज करें।',
+                                  ),
                                 ),
                               ),
                             );
@@ -563,8 +699,18 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               SnackBar(
                                 content: Text(
                                   storyToEdit == null
-                                      ? (isMr ? 'प्रकरण यशस्वीरित्या नोंदवले गेले!' : 'Controversy recorded successfully!')
-                                      : (isMr ? 'तपशील अद्यतनित केले!' : 'Controversy updated!'),
+                                      ? AppTranslations.pick(
+                                          lang,
+                                          en: 'Controversy recorded successfully!',
+                                          mr: 'प्रकरण यशस्वीरित्या नोंदवले गेले!',
+                                          hi: 'प्रकरण सफलतापूर्वक दर्ज किया गया!',
+                                        )
+                                      : AppTranslations.pick(
+                                          lang,
+                                          en: 'Controversy updated!',
+                                          mr: 'तपशील अद्यतनित केले!',
+                                          hi: 'विवरण अपडेट किए गए!',
+                                        ),
                                 ),
                                 backgroundColor: const Color(0xFF16A34A),
                               ),
@@ -613,16 +759,29 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
   // ===========================================================================
   // ADD TEAM MEMBER TO CANDIDATE MODAL
   // ===========================================================================
-  void _showAddTeamMemberModal() {
-    final isMr = ref.read(isMarathiProvider);
+  Future<void> _showAddTeamMemberModal() async {
+    final lang = ref.read(appLanguageProvider);
     final repo = ref.read(oppositionRepoProvider);
     final unassigned = repo.getUnassignedWorkers();
+    final translatedMemberName = await DynamicTranslationService.translateOrRaw(
+      _member.name,
+      lang,
+      isName: true,
+    );
+    if (!mounted) return;
     int activeTab = 0; // 0 = Link Existing, 1 = Quick Create
     String? selectedWorkerId = unassigned.isNotEmpty ? unassigned.first.id : null;
 
     final nameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
-    final roleCtrl = TextEditingController(text: 'Booth Cadre');
+    final roleCtrl = TextEditingController(
+      text: AppTranslations.pick(
+        lang,
+        en: 'Booth Cadre',
+        mr: 'बूथ कार्यकर्ता',
+        hi: 'बूथ कार्यकर्ता',
+      ),
+    );
     final areaCtrl = TextEditingController(text: _member.area ?? '');
 
     showModalBottomSheet(
@@ -649,8 +808,18 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
             children: [
               AppModalHeader(
                 icon: Icons.group_add_rounded,
-                title: isMr ? 'कार्यकर्ता जोडा (${_member.name})' : 'Add Cadre for ${_member.name}',
-                subtitle: isMr ? 'विरोधी गटाचा कार्यकर्ता संबद्ध करा' : 'Link or create opposition cadre',
+                title: AppTranslations.pick(
+                  lang,
+                  en: 'Add Cadre for $translatedMemberName',
+                  mr: 'कार्यकर्ता जोडा ($translatedMemberName)',
+                  hi: 'कार्यकर्ता जोड़ें ($translatedMemberName)',
+                ),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Link or create opposition cadre',
+                  mr: 'विरोधी गटाचा कार्यकर्ता संबद्ध करा',
+                  hi: 'विपक्षी गुट का कार्यकर्ता संबद्ध करें',
+                ),
                 onClose: () => Navigator.pop(ctx),
               ),
               Expanded(
@@ -683,7 +852,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                   boxShadow: activeTab == 0 ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
                                 ),
                                 child: Text(
-                                  isMr ? 'विद्यमान जोडा' : 'Link Existing',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Link Existing',
+                                    mr: 'विद्यमान जोडा',
+                                    hi: 'मौजूदा जोड़ें',
+                                  ),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -701,7 +875,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                   boxShadow: activeTab == 1 ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
                                 ),
                                 child: Text(
-                                  isMr ? 'नवीन तयार करा' : 'Create New',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Create New',
+                                    mr: 'नवीन तयार करा',
+                                    hi: 'नया बनाएँ',
+                                  ),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -724,9 +903,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           ),
                           child: Center(
                             child: Text(
-                              isMr
-                                  ? 'कोणताही असंबद्ध कार्यकर्ता उपलब्ध नाही.\nकृपया "नवीन तयार करा" टॅब वापरा.'
-                                  : 'No unlinked cadre available.\nPlease use "Create New" tab.',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'No unlinked cadre available.\nPlease use "Create New" tab.',
+                                mr: 'कोणताही असंबद्ध कार्यकर्ता उपलब्ध नाही.\nकृपया "नवीन तयार करा" टॅब वापरा.',
+                                hi: 'कोई असंबद्ध कार्यकर्ता उपलब्ध नहीं है।\nकृपया "नया बनाएँ" टैब का उपयोग करें।',
+                              ),
                               textAlign: TextAlign.center,
                               style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                             ),
@@ -734,15 +916,23 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         )
                       else ...[
                         AppDropdownFormField<String>(
-                                label: isMr ? 'विरोधी कार्यकर्ता निवडा' : 'Select Opposition Cadre',
-                                isRequired: true,
-                                value: selectedWorkerId,
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Select Opposition Cadre',
+                            mr: 'विरोधी कार्यकर्ता निवडा',
+                            hi: 'विपक्षी कार्यकर्ता चुनें',
+                          ),
+                          isRequired: true,
+                          value: selectedWorkerId,
                           isExpanded: true,
                           items: unassigned.map((w) {
                             return DropdownMenuItem<String>(
                               value: w.id,
-                              child: Text(
+                              child: AppTranslatedText(
                                 '${w.name} (${w.party} - ${w.role ?? w.area ?? "Cadre"})',
+                                targetLanguage: lang,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(fontSize: 13),
                               ),
                             );
@@ -766,7 +956,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             ),
                             icon: const Icon(Icons.link_rounded, size: 20),
                             label: Text(
-                              isMr ? 'कार्यकर्ता जोडा' : 'Link Cadre',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Link Cadre',
+                                mr: 'कार्यकर्ता जोडा',
+                                hi: 'कार्यकर्ता जोड़ें',
+                              ),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             onPressed: selectedWorkerId == null
@@ -781,9 +976,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            isMr
-                                                ? 'कार्यकर्ता यशस्वीरित्या जोडला गेला!'
-                                                : 'Cadre linked to team successfully!',
+                                            AppTranslations.pick(
+                                              lang,
+                                              en: 'Cadre linked to team successfully!',
+                                              mr: 'कार्यकर्ता यशस्वीरित्या जोडला गेला!',
+                                              hi: 'कार्यकर्ता सफलतापूर्वक टीम से जोड़ा गया!',
+                                            ),
                                           ),
                                           backgroundColor: const Color(0xFF16A34A),
                                         ),
@@ -804,13 +1002,23 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'पूर्ण नाव' : 'Cadre Full Name',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Cadre Full Name',
+                                    mr: 'पूर्ण नाव',
+                                    hi: 'पूरा नाम',
+                                  ),
                                   isRequired: true,
                                 ),
                                 TextField(
                                   controller: nameCtrl,
                                   decoration: appInputDecoration(
-                                    hint: isMr ? 'उदा. सचिन पवार' : 'e.g. Sachin Pawar',
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Sachin Pawar',
+                                      mr: 'उदा. सचिन पवार',
+                                      hi: 'उदा. सचिन पवार',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -822,13 +1030,18 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'मोबाईल नंबर' : 'Mobile Number',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Mobile Number',
+                                    mr: 'मोबाईल नंबर',
+                                    hi: 'मोबाइल नंबर',
+                                  ),
                                 ),
                                 TextField(
                                   controller: phoneCtrl,
                                   keyboardType: TextInputType.phone,
                                   decoration: appInputDecoration(
-                                    hint: '98220xxxxx',
+                                    hint: AppTranslations.formatDigits('98220xxxxx', lang),
                                   ),
                                 ),
                               ],
@@ -847,12 +1060,22 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'पद / हुद्दा' : 'Role / Designation',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Role / Designation',
+                                    mr: 'पद / हुद्दा',
+                                    hi: 'पद / भूमिका',
+                                  ),
                                 ),
                                 TextField(
                                   controller: roleCtrl,
                                   decoration: appInputDecoration(
-                                    hint: isMr ? 'उदा. बूथ कार्यकर्ता' : 'e.g. Booth Cadre',
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Booth Cadre',
+                                      mr: 'उदा. बूथ कार्यकर्ता',
+                                      hi: 'उदा. बूथ कार्यकर्ता',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -864,12 +1087,22 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'कार्यक्षेत्र' : 'Work Area',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Work Area',
+                                    mr: 'कार्यक्षेत्र',
+                                    hi: 'कार्यक्षेत्र',
+                                  ),
                                 ),
                                 TextField(
                                   controller: areaCtrl,
                                   decoration: appInputDecoration(
-                                    hint: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Ward 12',
+                                      mr: 'उदा. प्रभाग १२',
+                                      hi: 'उदा. वार्ड १२',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -893,7 +1126,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           ),
                           icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                           label: Text(
-                            isMr ? 'कार्यकर्ता तयार करा' : 'Create Cadre',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Create Cadre',
+                              mr: 'कार्यकर्ता तयार करा',
+                              hi: 'कार्यकर्ता बनाएँ',
+                            ),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           onPressed: () async {
@@ -901,19 +1139,23 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    isMr
-                                        ? 'कृपया कार्यकर्त्याचे नाव प्रविष्ट करा.'
-                                        : 'Please enter cadre name.',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Please enter cadre name.',
+                                      mr: 'कृपया कार्यकर्त्याचे नाव प्रविष्ट करा.',
+                                      hi: 'कृपया कार्यकर्ता का नाम दर्ज करें।',
+                                    ),
                                   ),
                                 ),
                               );
                               return;
                             }
 
+                            final normPhone = AppTranslations.normalizeAsciiDigits(phoneCtrl.text.trim());
                             final newWorker = OppositionMemberModel(
                               id: 'opp-wrk-${DateTime.now().millisecondsSinceEpoch}',
                               name: nameCtrl.text.trim(),
-                              mobile: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
+                              mobile: normPhone.isNotEmpty ? normPhone : null,
                               party: _member.party,
                               role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Cadre',
                               area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : _member.area,
@@ -931,9 +1173,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    isMr
-                                        ? 'नवीन कार्यकर्ता तयार करून यशस्वीरित्या जोडला!'
-                                        : 'New cadre created and linked successfully!',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'New cadre created and linked successfully!',
+                                      mr: 'नवीन कार्यकर्ता तयार करून यशस्वीरित्या जोडला!',
+                                      hi: 'नया कार्यकर्ता बनाकर सफलतापूर्वक जोड़ा गया!',
+                                    ),
                                   ),
                                   backgroundColor: const Color(0xFF16A34A),
                                 ),
@@ -956,6 +1201,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final partyColor = _getPartyColor(_member.party);
     final repo = ref.read(oppositionRepoProvider);
     final candidateTeam = _member.isCandidate ? repo.getCandidateTeam(_member.id) : <OppositionMemberModel>[];
@@ -963,8 +1209,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(
+        title: AppTranslatedText(
           _member.name,
+          targetLanguage: lang,
+          isName: true,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
         backgroundColor: const Color(0xFF0284C7),
@@ -975,12 +1225,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
             IconButton(
               icon: const Icon(Icons.phone_rounded, color: Colors.white),
               onPressed: () => _makePhoneCall(_member.mobile),
-              tooltip: 'Call',
+              tooltip: AppTranslations.pick(lang, en: 'Call', mr: 'कॉल करा', hi: 'कॉल करें'),
             ),
             IconButton(
               icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white),
               onPressed: () => _openWhatsApp(_member.mobile),
-              tooltip: 'WhatsApp',
+              tooltip: AppTranslations.pick(lang, en: 'WhatsApp', mr: 'व्हॉट्सॲप', hi: 'व्हाट्सएप'),
             ),
           ],
         ],
@@ -1039,8 +1289,10 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             Row(
                               children: [
                                 Expanded(
-                                  child: Text(
+                                  child: AppTranslatedText(
                                     _member.name,
+                                    targetLanguage: lang,
+                                    isName: true,
                                     style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                   ),
                                 ),
@@ -1056,8 +1308,15 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              _member.role ?? (_member.isCandidate ? 'Candidate' : 'Cadre'),
+                            AppTranslatedText(
+                              _member.role ??
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: _member.isCandidate ? 'Candidate' : 'Cadre',
+                                    mr: _member.isCandidate ? 'उमेदवार' : 'कार्यकर्ता',
+                                    hi: _member.isCandidate ? 'उम्मीदवार' : 'कार्यकर्ता',
+                                  ),
+                              targetLanguage: lang,
                               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 8),
@@ -1074,8 +1333,9 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(color: partyColor.withValues(alpha: 0.3)),
                                   ),
-                                  child: Text(
-                                    _member.partyFullLabel,
+                                  child: AppTranslatedText(
+                                    _member.partyFullLabelFor(lang),
+                                    targetLanguage: lang,
                                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: partyColor),
                                   ),
                                 ),
@@ -1086,7 +1346,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    _member.typeLabelMarathi,
+                                    _member.typeLabel(lang),
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -1117,7 +1377,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  _member.mobile!,
+                                  AppTranslations.formatDigits(_member.mobile!, lang),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                                 ),
                               ),
@@ -1131,8 +1391,9 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               const Icon(Icons.location_on_outlined, size: 15, color: Color(0xFF64748B)),
                               const SizedBox(width: 6),
                               Expanded(
-                                child: Text(
-                                  _member.area!,
+                                child: AppTranslatedText(
+                                  AppTranslations.getAreaName(_member.area!, lang),
+                                  targetLanguage: lang,
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                                 ),
                               ),
@@ -1156,10 +1417,17 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         children: [
                           const Icon(Icons.groups_rounded, size: 15, color: Color(0xFF16A34A)),
                           const SizedBox(width: 6),
-                          const Text('Candidate Team: ', style: TextStyle(fontSize: 11.5, color: Color(0xFF166534))),
                           Text(
-                            repo.getCandidateName(_member.candidateId!),
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                            '${AppTranslations.pick(lang, en: 'Candidate Team', mr: 'उमेदवाराची टीम', hi: 'उम्मीदवार की टीम')}: ',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF166534)),
+                          ),
+                          Expanded(
+                            child: AppTranslatedText(
+                              repo.getCandidateName(_member.candidateId!),
+                              targetLanguage: lang,
+                              isName: true,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                            ),
                           ),
                         ],
                       ),
@@ -1169,9 +1437,14 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                   // Strongholds
                   if (_member.strongholds.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    const Text(
-                      'Strongholds & Active Areas:',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                    Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Strongholds & Active Areas:',
+                        mr: 'प्रभाव क्षेत्रे आणि सक्रिय परिसर:',
+                        hi: 'गढ़ एवं सक्रिय क्षेत्र:',
+                      ),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                     ),
                     const SizedBox(height: 6),
                     Wrap(
@@ -1185,8 +1458,9 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: Text(
+                          child: AppTranslatedText(
                             s,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 11, color: Color(0xFF334155), fontWeight: FontWeight.w500),
                           ),
                         );
@@ -1212,13 +1486,18 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.how_to_vote_rounded, size: 18, color: Color(0xFF0284C7)),
-                        SizedBox(width: 6),
+                        const Icon(Icons.how_to_vote_rounded, size: 18, color: Color(0xFF0284C7)),
+                        const SizedBox(width: 6),
                         Text(
-                          'Election Candidacy Details',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Election Candidacy Details',
+                            mr: 'निवडणूक उमेदवारी तपशील',
+                            hi: 'चुनाव उम्मीदवारी विवरण',
+                          ),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                         ),
                       ],
                     ),
@@ -1229,9 +1508,24 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Constituency / Ward', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
                               Text(
-                                _member.constituency ?? 'Ward 12 (Pune PMC)',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Constituency / Ward',
+                                  mr: 'मतदारसंघ / प्रभाग',
+                                  hi: 'निर्वाचन क्षेत्र / वार्ड',
+                                ),
+                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                              ),
+                              AppTranslatedText(
+                                _member.constituency ??
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Ward 12 (Pune PMC)',
+                                      mr: 'प्रभाग १२ (पुणे मनपा)',
+                                      hi: 'वार्ड १२ (पुणे मनपा)',
+                                    ),
+                                targetLanguage: lang,
                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                               ),
                             ],
@@ -1241,9 +1535,25 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Opposing Candidate', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
                               Text(
-                                _member.opposingCandidate ?? 'Sitting Corporator',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Opposing Candidate',
+                                  mr: 'विरोधी उमेदवार',
+                                  hi: 'प्रतिद्वंदी उम्मीदवार',
+                                ),
+                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                              ),
+                              AppTranslatedText(
+                                _member.opposingCandidate ??
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Sitting Corporator',
+                                      mr: 'विद्यमान नगरसेवक',
+                                      hi: 'वर्तमान पार्षद',
+                                    ),
+                                targetLanguage: lang,
+                                isName: _member.opposingCandidate != null,
                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                               ),
                             ],
@@ -1254,7 +1564,10 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Text('Candidacy Status: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        Text(
+                          '${AppTranslations.pick(lang, en: 'Candidacy Status', mr: 'उमेदवारी स्थिती', hi: 'उम्मीदवारी स्थिति')}: ',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
@@ -1262,7 +1575,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            _member.candidacyStatusLabelMarathi,
+                            _member.candidacyStatusLabel(lang),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -1291,16 +1604,22 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.groups_outlined, size: 18, color: Color(0xFF0284C7)),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Candidate Team / Cadre (${candidateTeam.length})',
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            ),
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.groups_outlined, size: 18, color: Color(0xFF0284C7)),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  '${AppTranslations.pick(lang, en: 'Candidate Team / Cadre', mr: 'उमेदवाराची टीम / कार्यकर्ते', hi: 'उम्मीदवार की टीम / कार्यकर्ता')} (${AppTranslations.formatDigits('${candidateTeam.length}', lang)})',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         InkWell(
                           onTap: _showAddTeamMemberModal,
                           child: Container(
@@ -1309,13 +1628,13 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               color: const Color(0xFFE0F2FE),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Icon(Icons.add, size: 14, color: Color(0xFF0284C7)),
-                                SizedBox(width: 4),
+                                const Icon(Icons.add, size: 14, color: Color(0xFF0284C7)),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Add Cadre',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                  AppTranslations.pick(lang, en: 'Add Cadre', mr: 'कार्यकर्ता जोडा', hi: 'कार्यकर्ता जोड़ें'),
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                                 ),
                               ],
                             ),
@@ -1333,10 +1652,15 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
-                        child: const Text(
-                          'No cadre linked to this candidate yet.\nUse "+ Add Cadre" button to link members.',
+                        child: Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'No cadre linked to this candidate yet.\nUse "+ Add Cadre" button to link members.',
+                            mr: 'या उमेदवाराशी अद्याप कोणताही कार्यकर्ता जोडलेला नाही.\nसदस्य जोडण्यासाठी "+ कार्यकर्ता जोडा" बटण वापरा.',
+                            hi: 'इस उम्मीदवार से अभी तक कोई कार्यकर्ता नहीं जुड़ा है।\nसदस्यों को जोड़ने के लिए "+ कार्यकर्ता जोड़ें" बटन का उपयोग करें।',
+                          ),
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                         ),
                       )
                     else ...[
@@ -1372,12 +1696,15 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
+                                            AppTranslatedText(
                                               worker.name,
+                                              targetLanguage: lang,
+                                              isName: true,
                                               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                             ),
-                                            Text(
+                                            AppTranslatedText(
                                               '${worker.role ?? "Cadre"} • ${worker.area ?? ""}',
+                                              targetLanguage: lang,
                                               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                             ),
                                           ],
@@ -1389,7 +1716,12 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                           await repo.unlinkWorker(worker.id);
                                           _refreshMember();
                                         },
-                                        tooltip: 'Remove from Team',
+                                        tooltip: AppTranslations.pick(
+                                          lang,
+                                          en: 'Remove from Team',
+                                          mr: 'टीममधून काढा',
+                                          hi: 'टीम से हटाएँ',
+                                        ),
                                       ),
                                     ],
                                   );
@@ -1400,7 +1732,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                 totalItems: candidateTeam.length,
                                 pageSize: _teamPageSize,
                                 onPageChanged: (p) => setState(() => _teamPage = p),
-                                label: 'members',
+                                label: AppTranslations.pick(lang, en: 'members', mr: 'सदस्य', hi: 'सदस्य'),
                               ),
                             ],
                           );
@@ -1428,19 +1760,25 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.lightbulb_outline_rounded, size: 16, color: Color(0xFFD97706)),
-                        SizedBox(width: 6),
+                        const Icon(Icons.lightbulb_outline_rounded, size: 16, color: Color(0xFFD97706)),
+                        const SizedBox(width: 6),
                         Text(
-                          'Notes & Internal Strategy',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Notes & Internal Strategy',
+                            mr: 'नोंदी आणि अंतर्गत रणनीती',
+                            hi: 'टिप्पणियाँ और आंतरिक रणनीति',
+                          ),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    AppTranslatedText(
                       _member.notes!,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
                     ),
                   ],
@@ -1465,16 +1803,22 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.warning_amber_rounded, size: 20, color: Color(0xFFDC2626)),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Controversies & Issues (${_member.negativeStories.length})',
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning_amber_rounded, size: 20, color: Color(0xFFDC2626)),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                '${AppTranslations.pick(lang, en: 'Controversies & Issues', mr: 'वादग्रस्त प्रकरणे आणि मुद्दे', hi: 'विवाद और मुद्दे')} (${AppTranslations.formatDigits('${_member.negativeStories.length}', lang)})',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       InkWell(
                         onTap: () => _showNegativeStoryModal(),
                         child: Container(
@@ -1484,13 +1828,18 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: const Color(0xFFFECACA)),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.add, size: 14, color: Color(0xFFDC2626)),
-                              SizedBox(width: 4),
+                              const Icon(Icons.add, size: 14, color: Color(0xFFDC2626)),
+                              const SizedBox(width: 4),
                               Text(
-                                'Record Incident',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Record Incident',
+                                  mr: 'प्रकरण नोंदवा',
+                                  hi: 'प्रकरण दर्ज करें',
+                                ),
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
                               ),
                             ],
                           ),
@@ -1508,10 +1857,15 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
-                        'No controversies or negative incidents recorded for this member yet.',
+                      child: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'No controversies or negative incidents recorded for this member yet.',
+                          mr: 'या सदस्याबद्दल अद्याप कोणतेही वादग्रस्त प्रकरण नोंदवलेले नाही.',
+                          hi: 'इस सदस्य के लिए अभी तक कोई विवाद या नकारात्मक घटना दर्ज नहीं की गई है।',
+                        ),
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                       ),
                     )
                   else ...[
@@ -1531,6 +1885,10 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               separatorBuilder: (context, index) => const SizedBox(height: 10),
                               itemBuilder: (ctx, idx) {
                                 final story = pagedStories[idx];
+                                final parsedStoryDate = DateTime.tryParse(story.date);
+                                final storyDateText = parsedStoryDate != null
+                                    ? AppTranslations.formatDate(parsedStoryDate, lang)
+                                    : AppTranslations.formatDigits(story.date, lang);
                                 Color badgeColor = const Color(0xFF64748B);
                                 Color cardBg = const Color(0xFFF8FAFC);
                                 if (story.severity == 'High') {
@@ -1566,7 +1924,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                                   borderRadius: BorderRadius.circular(4),
                                                 ),
                                                 child: Text(
-                                                  story.date,
+                                                  storyDateText,
                                                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                                                 ),
                                               ),
@@ -1578,7 +1936,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                                   borderRadius: BorderRadius.circular(4),
                                                 ),
                                                 child: Text(
-                                                  story.severityLabelMarathi,
+                                                  story.severityLabel(lang),
                                                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
                                                 ),
                                               ),
@@ -1589,6 +1947,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                               IconButton(
                                                 padding: EdgeInsets.zero,
                                                 constraints: const BoxConstraints(),
+                                                tooltip: AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें'),
                                                 icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
                                                 onPressed: () => _showNegativeStoryModal(storyToEdit: story),
                                               ),
@@ -1596,6 +1955,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                               IconButton(
                                                 padding: EdgeInsets.zero,
                                                 constraints: const BoxConstraints(),
+                                                tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ'),
                                                 icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
                                                 onPressed: () async {
                                                   await repo.deleteNegativeStory(_member.id, story.id);
@@ -1607,13 +1967,15 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                         ],
                                       ),
                                       const SizedBox(height: 6),
-                                      Text(
+                                      AppTranslatedText(
                                         story.title,
+                                        targetLanguage: lang,
                                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
+                                      AppTranslatedText(
                                         story.description,
+                                        targetLanguage: lang,
                                         style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
                                       ),
                                       if (story.source.isNotEmpty) ...[
@@ -1622,12 +1984,24 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                           children: [
                                             const Icon(Icons.link_rounded, size: 13, color: Color(0xFF0284C7)),
                                             const SizedBox(width: 4),
+                                            Text(
+                                              '${AppTranslations.pick(lang, en: 'Source', mr: 'स्रोत', hi: 'स्रोत')}: ',
+                                              style: const TextStyle(fontSize: 10.5, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
+                                            ),
                                             Expanded(
-                                              child: Text(
-                                                'Source: ${story.source}',
-                                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
+                                              child: story.source.trim().startsWith('http')
+                                                  ? Text(
+                                                      story.source,
+                                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    )
+                                                  : AppTranslatedText(
+                                                      story.source,
+                                                      targetLanguage: lang,
+                                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
                                             ),
                                           ],
                                         ),
@@ -1642,7 +2016,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               totalItems: _member.negativeStories.length,
                               pageSize: _storyPageSize,
                               onPageChanged: (p) => setState(() => _storyPage = p),
-                              label: 'stories',
+                              label: AppTranslations.pick(lang, en: 'stories', mr: 'प्रकरणे', hi: 'प्रकरण'),
                             ),
                           ],
                         );
@@ -1670,16 +2044,22 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.timeline_rounded, size: 20, color: Color(0xFF0284C7)),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Campaign Activities (${_member.activities.length})',
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.timeline_rounded, size: 20, color: Color(0xFF0284C7)),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                '${AppTranslations.pick(lang, en: 'Campaign Activities', mr: 'प्रचार उपक्रम', hi: 'प्रचार गतिविधियाँ')} (${AppTranslations.formatDigits('${_member.activities.length}', lang)})',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       InkWell(
                         onTap: _showAddActivityModal,
                         child: Container(
@@ -1688,13 +2068,18 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                             color: const Color(0xFFE0F2FE),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.add, size: 14, color: Color(0xFF0284C7)),
-                              SizedBox(width: 4),
+                              const Icon(Icons.add, size: 14, color: Color(0xFF0284C7)),
+                              const SizedBox(width: 4),
                               Text(
-                                'Record Activity',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Record Activity',
+                                  mr: 'उपक्रम नोंदवा',
+                                  hi: 'गतिविधि दर्ज करें',
+                                ),
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                               ),
                             ],
                           ),
@@ -1712,10 +2097,15 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
-                        'No recent public campaign activities recorded.',
+                      child: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'No recent public campaign activities recorded.',
+                          mr: 'अलीकडील कोणताही प्रचार उपक्रम नोंदवलेला नाही.',
+                          hi: 'हाल की कोई जन प्रचार गतिविधि दर्ज नहीं की गई है।',
+                        ),
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                       ),
                     )
                   else ...[
@@ -1735,6 +2125,10 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               separatorBuilder: (context, index) => const Divider(height: 16),
                               itemBuilder: (ctx, idx) {
                                 final act = pagedActivities[idx];
+                                final parsedActDate = DateTime.tryParse(act.date);
+                                final actDateText = parsedActDate != null
+                                    ? AppTranslations.formatDate(parsedActDate, lang)
+                                    : AppTranslations.formatDigits(act.date, lang);
                                 return Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1757,12 +2151,13 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
-                                                act.date,
+                                                actDateText,
                                                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                                               ),
                                               IconButton(
                                                 padding: EdgeInsets.zero,
                                                 constraints: const BoxConstraints(),
+                                                tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ'),
                                                 icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFF94A3B8)),
                                                 onPressed: () async {
                                                   await repo.deleteActivity(_member.id, act.id);
@@ -1771,8 +2166,9 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                               ),
                                             ],
                                           ),
-                                          Text(
+                                          AppTranslatedText(
                                             act.title,
+                                            targetLanguage: lang,
                                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                           ),
                                           if (act.location.isNotEmpty) ...[
@@ -1781,14 +2177,21 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                                               children: [
                                                 const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF64748B)),
                                                 const SizedBox(width: 4),
-                                                Text(act.location, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                                Expanded(
+                                                  child: AppTranslatedText(
+                                                    act.location,
+                                                    targetLanguage: lang,
+                                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ],
                                           if (act.description.isNotEmpty) ...[
                                             const SizedBox(height: 4),
-                                            Text(
+                                            AppTranslatedText(
                                               act.description,
+                                              targetLanguage: lang,
                                               style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.3),
                                             ),
                                           ],
@@ -1804,7 +2207,7 @@ class _OppositionDetailScreenState extends ConsumerState<OppositionDetailScreen>
                               totalItems: _member.activities.length,
                               pageSize: _activityPageSize,
                               onPageChanged: (p) => setState(() => _activityPage = p),
-                              label: 'activities',
+                              label: AppTranslations.pick(lang, en: 'activities', mr: 'उपक्रम', hi: 'गतिविधियाँ'),
                             ),
                           ],
                         );

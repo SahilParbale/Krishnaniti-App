@@ -1,4 +1,5 @@
 // Form constants matching Nagarsevak-Managment ComplaintForm.tsx and PersonalRequestForm.tsx
+import '../../../core/localization/app_translations.dart';
 
 const Map<String, List<String>> kSocietiesByWard = {
   'Sector 5': [
@@ -136,9 +137,8 @@ class CategoryOption {
   });
 
   String getLabel(String lang) {
-    if (lang == 'mr') return mr;
-    if (lang == 'hi') return hi.isNotEmpty ? hi : mr;
-    return en;
+    final resolvedHi = hi.isNotEmpty ? hi : (AppTranslations.tr(en, lang: 'hi') ?? mr);
+    return AppTranslations.pick(lang, en: en, mr: mr, hi: resolvedHi);
   }
 }
 
@@ -159,4 +159,30 @@ const List<CategoryOption> kPersonalRequestCategories = [
   CategoryOption(key: 'Help', en: 'Help', mr: 'मदत', hi: 'सहायता'),
   CategoryOption(key: 'Personal Help', en: 'Personal Help', mr: 'वैयक्तिक मदत', hi: 'व्यक्तिगत सहायता'),
 ];
+
+/// Returns a 3-language localized display name for canonical ward keys in [kWardsList].
+String getLocalizedWardName(String wardKey, String lang) {
+  return AppTranslations.getAreaName(wardKey, lang);
+}
+
+/// Returns a 3-language localized label for any complaint or personal request category key.
+String getLocalizedComplaintCategory(String categoryKey, String lang) {
+  final lower = categoryKey.trim().toLowerCase();
+  for (final option in kComplaintCategories) {
+    if (option.key.toLowerCase() == lower) {
+      return option.getLabel(lang);
+    }
+  }
+  for (final option in kPersonalRequestCategories) {
+    if (option.key.toLowerCase() == lower) {
+      return option.getLabel(lang);
+    }
+  }
+  return AppTranslations.getComplaintType(categoryKey, lang);
+}
+
+/// Formats an indexed society label with localized numerals while preserving the canonical society name.
+String formatIndexedSocietyName(int oneBasedIndex, String societyName, String lang) {
+  return '${AppTranslations.formatDigits(oneBasedIndex, lang)} - $societyName';
+}
 

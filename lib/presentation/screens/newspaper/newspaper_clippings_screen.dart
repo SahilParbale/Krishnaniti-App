@@ -6,9 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../../data/models/newspaper_clipping_model.dart';
 import '../../../data/repositories/newspaper_clippings_repository.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -124,6 +124,7 @@ class _NewspaperClippingsScreenState
   }
 
   void _showHelpTutorial() {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) {
@@ -131,12 +132,19 @@ class _NewspaperClippingsScreenState
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
-            children: const [
-              Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7)),
-              SizedBox(width: 8),
-              Text(
-                'Newspaper Clipping Guide',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            children: [
+              const Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7)),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Newspaper Clipping Guide',
+                    mr: 'वृत्तपत्र कात्रण मार्गदर्शक',
+                    hi: 'समाचार पत्र कतरन मार्गदर्शिका',
+                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -144,38 +152,79 @@ class _NewspaperClippingsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Text(
-                  'Newspaper Clippings & Media Monitoring Guide',
-                  style: TextStyle(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Newspaper Clippings & Media Monitoring Guide',
+                    mr: 'वृत्तपत्र कात्रणे व माध्यम निरीक्षण मार्गदर्शक',
+                    hi: 'समाचार पत्र कतरन व मीडिया निगरानी मार्गदर्शिका',
+                  ),
+                  style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                       color: Color(0xFF0284C7)),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 _GuideStep(
-                  number: '1',
-                  title: 'Coverage Categories',
-                  desc:
-                      'Switch between "Positive" and "Negative" to track public appreciation versus critical issues requiring municipal resolution.',
+                  number: AppTranslations.formatDigits('1', lang),
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Coverage Categories',
+                    mr: 'कव्हरेज प्रकार',
+                    hi: 'कवरेज श्रेणियाँ',
+                  ),
+                  desc: AppTranslations.pick(
+                    lang,
+                    en: 'Switch between "Positive" and "Negative" to track public appreciation versus critical issues requiring municipal resolution.',
+                    mr: 'लोकाभिमुख कौतुक आणि महापालिका कार्यवाही आवश्यक असलेल्या समस्यांचा मागोवा घेण्यासाठी सकारात्मक/नकारात्मक निवडा.',
+                    hi: 'जन प्रशंसा व नगर निगम समाधान आवश्यक महत्वपूर्ण मुद्दों को ट्रैक करने के लिए सकारात्मक/नकारात्मक बदलें।',
+                  ),
                 ),
                 _GuideStep(
-                  number: '2',
-                  title: 'Add New Clipping',
-                  desc:
-                      'Upload news cutting images along with Marathi headline, page number, edition, and civic action taken report.',
+                  number: AppTranslations.formatDigits('2', lang),
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Add New Clipping',
+                    mr: 'नवीन कात्रण जोडा',
+                    hi: 'नई कतरन जोड़ें',
+                  ),
+                  desc: AppTranslations.pick(
+                    lang,
+                    en: 'Upload news cutting images along with headline, page number, edition, and civic action taken report.',
+                    mr: 'मथळा, पान क्रमांक, आवृत्ती आणि नागरी कार्यवाहीच्या माहितीसह बातमीचे कात्रण अपलोड करा.',
+                    hi: 'शीर्षक, पृष्ठ संख्या, संस्करण व नागरिक कार्रवाई रिपोर्ट के साथ समाचार कटिंग अपलोड करें।',
+                  ),
                 ),
                 _GuideStep(
-                  number: '3',
-                  title: 'Download Report',
-                  desc:
-                      'Generate landscape A4 print-ready reports with clippings ledger for ward party meetings and review.',
+                  number: AppTranslations.formatDigits('3', lang),
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Download Report',
+                    mr: 'अहवाल डाउनलोड करा',
+                    hi: 'रिपोर्ट डाउनलोड करें',
+                  ),
+                  desc: AppTranslations.pick(
+                    lang,
+                    en: 'Generate landscape A4 print-ready reports with clippings ledger for ward meetings and review.',
+                    mr: 'प्रभाग बैठका व आढाव्यासाठी कात्रण नोंदवहीसह लँडस्केप A4 प्रिंट-रेडी अहवाल तयार करा.',
+                    hi: 'वार्ड बैठकों व समीक्षा के लिए कतरन रजिस्टर सहित लैंडस्केप A4 प्रिंट रिपोर्ट बनाएं।',
+                  ),
                 ),
                 _GuideStep(
-                  number: '4',
-                  title: 'Dual Views',
-                  desc:
-                      'Toggle between rich visual news card grid and tabular audit report view.',
+                  number: AppTranslations.formatDigits('4', lang),
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Dual Views',
+                    mr: 'दुहेरी दृश्ये',
+                    hi: 'दोहरे दृश्य',
+                  ),
+                  desc: AppTranslations.pick(
+                    lang,
+                    en: 'Toggle between rich visual news card grid and tabular audit report view.',
+                    mr: 'व्हिज्युअल न्यूज कार्ड आणि तक्ता अहवाल स्वरूपात सहज बदला.',
+                    hi: 'विज़ुअल समाचार कार्ड ग्रिड और तालिका रिपोर्ट दृश्य के बीच बदलें।',
+                  ),
                 ),
               ],
             ),
@@ -189,7 +238,9 @@ class _NewspaperClippingsScreenState
                     borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Got it'),
+              child: Text(
+                AppTranslations.pick(lang, en: 'Got it', mr: 'समजले', hi: 'समझ गया'),
+              ),
             ),
           ],
         );
@@ -198,7 +249,7 @@ class _NewspaperClippingsScreenState
   }
 
   void _showAddClippingModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController();
     final urlCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -234,8 +285,10 @@ class _NewspaperClippingsScreenState
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
-            String dateFormatted =
+            final String dateStorage =
                 "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
+            final String dateDisplay =
+                AppTranslations.formatDate(selectedDate, lang, pattern: 'dd MMM yyyy');
 
             return Container(
               constraints: BoxConstraints(
@@ -257,10 +310,18 @@ class _NewspaperClippingsScreenState
                   // 1. FIXED HEADER
                   AppModalHeader(
                     icon: Icons.newspaper_rounded,
-                    title: isMr ? 'वृत्तपत्र कात्रण जोडा' : 'Add Newspaper Clipping',
-                    subtitle: isMr
-                        ? 'बातम्यांची कात्रणे, तारीख व स्वरूप नोंदवा'
-                        : 'Save print media clippings with sentiment and date',
+                    title: AppTranslations.pick(
+                      lang,
+                      en: 'Add Newspaper Clipping',
+                      mr: 'वृत्तपत्र कात्रण जोडा',
+                      hi: 'समाचार पत्र कतरन जोड़ें',
+                    ),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Save print media clippings with sentiment and date',
+                      mr: 'बातम्यांची कात्रणे, तारीख व स्वरूप नोंदवा',
+                      hi: 'तारीख व भावना के साथ प्रिंट समाचार कतरन सहेजें',
+                    ),
                     onClose: () => Navigator.pop(ctx),
                   ),
 
@@ -285,7 +346,12 @@ class _NewspaperClippingsScreenState
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'बातमी स्वरूप (प्रकार)' : 'Type / Sentiment',
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Type / Sentiment',
+                                      mr: 'बातमी स्वरूप (प्रकार)',
+                                      hi: 'समाचार प्रकार / भावना',
+                                    ),
                                     isRequired: true,
                                   ),
                                   Row(
@@ -304,7 +370,7 @@ class _NewspaperClippingsScreenState
                                             ),
                                             alignment: Alignment.center,
                                             child: Text(
-                                              isMr ? 'सकारात्मक' : 'Positive',
+                                              AppTranslations.pick(lang, en: 'Positive', mr: 'सकारात्मक', hi: 'सकारात्मक'),
                                               style: TextStyle(
                                                 color: sentiment == 'positive' ? Colors.white : const Color(0xFF334155),
                                                 fontWeight: FontWeight.bold,
@@ -329,7 +395,7 @@ class _NewspaperClippingsScreenState
                                             ),
                                             alignment: Alignment.center,
                                             child: Text(
-                                              isMr ? 'नकारात्मक' : 'Negative',
+                                              AppTranslations.pick(lang, en: 'Negative', mr: 'नकारात्मक', hi: 'नकारात्मक'),
                                               style: TextStyle(
                                                 color: sentiment == 'negative' ? Colors.white : const Color(0xFF334155),
                                                 fontWeight: FontWeight.bold,
@@ -351,7 +417,7 @@ class _NewspaperClippingsScreenState
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'तारीख' : 'Date',
+                                    label: AppTranslations.pick(lang, en: 'Date', mr: 'तारीख', hi: 'दिनांक'),
                                     isRequired: true,
                                   ),
                                   GestureDetector(
@@ -381,7 +447,7 @@ class _NewspaperClippingsScreenState
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              dateFormatted,
+                                              dateDisplay,
                                               style: const TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
@@ -402,22 +468,32 @@ class _NewspaperClippingsScreenState
 
                         // 3. TITLE
                         AppFieldLabel(
-                          label: isMr ? 'बातमी शीर्षक' : 'Title / Headline',
+                          label: AppTranslations.pick(lang, en: 'Title / Headline', mr: 'बातमी शीर्षक', hi: 'समाचार शीर्षक'),
                           isRequired: true,
                         ),
                         TextField(
                           controller: titleCtrl,
                           decoration: inputDec(
-                            hint: isMr ? 'उदा. प्रभाग १२ मध्ये रस्त्याचे डांबरीकरण...' : 'e.g. Major development fund sanctioned...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'e.g. Major development fund sanctioned...',
+                              mr: 'उदा. प्रभाग १२ मध्ये रस्त्याचे डांबरीकरण...',
+                              hi: 'उदा. वार्ड १२ में सड़क डामरीकरण...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
 
                         // 4. STANDARDIZED IMAGE FIELD (Camera & Phone Storage)
                         AppImagePickerField(
-                          label: isMr ? 'कात्रण फोटो (कॅमेरा व मोबाइल स्टोरेज)' : 'Clipping Image (Camera & Phone Storage)',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Clipping Image (Camera & Phone Storage)',
+                            mr: 'कात्रण फोटो (कॅमेरा व मोबाइल स्टोरेज)',
+                            hi: 'कतरन छवि (कैमरा व स्टोरेज)',
+                          ),
                           isRequired: false,
-                          isMarathi: isMr,
+                          isMarathi: lang == 'mr',
                           initialFiles: pickedImage != null ? [pickedImage!] : [],
                           onFilesChanged: (files) {
                             setModalState(() {
@@ -429,9 +505,14 @@ class _NewspaperClippingsScreenState
 
                         // 5. URL
                         AppFieldLabel(
-                          label: isMr ? 'बातमी लिंक / वेब URL' : 'Article / Web Link URL',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Article / Web Link URL',
+                            mr: 'बातमी लिंक / वेब URL',
+                            hi: 'लेख / वेब लिंक URL',
+                          ),
                           isRequired: false,
-                          optionalHint: isMr ? 'ऐच्छिक' : 'Optional',
+                          optionalHint: AppTranslations.pick(lang, en: 'Optional', mr: 'ऐच्छिक', hi: 'वैकल्पिक'),
                         ),
                         TextField(
                           controller: urlCtrl,
@@ -445,15 +526,25 @@ class _NewspaperClippingsScreenState
 
                         // 6. DESCRIPTION
                         AppFieldLabel(
-                          label: isMr ? 'बातमीचा तपशील / गोषवारा' : 'Description / Article Summary',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Description / Article Summary',
+                            mr: 'बातमीचा तपशील / गोषवारा',
+                            hi: 'विवरण / समाचार सारांश',
+                          ),
                           isRequired: false,
-                          optionalHint: isMr ? 'ऐच्छिक' : 'Optional',
+                          optionalHint: AppTranslations.pick(lang, en: 'Optional', mr: 'ऐच्छिक', hi: 'वैकल्पिक'),
                         ),
                         TextField(
                           controller: descCtrl,
                           maxLines: 3,
                           decoration: inputDec(
-                            hint: isMr ? 'बातम्यांचे थोडक्यात विश्लेषण किंवा तपशील...' : 'Enter article description / summary...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Enter article description / summary...',
+                              mr: 'बातम्यांचे थोडक्यात विश्लेषण किंवा तपशील...',
+                              hi: 'समाचार का संक्षिप्त विवरण या सारांश दर्ज करें...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -470,7 +561,7 @@ class _NewspaperClippingsScreenState
                                 ),
                                 onPressed: () => Navigator.pop(ctx),
                                 child: Text(
-                                  isMr ? 'रद्द करा' : 'Cancel',
+                                  AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
                                   style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -488,14 +579,23 @@ class _NewspaperClippingsScreenState
                                 ),
                                 icon: const Icon(Icons.check_rounded, size: 18),
                                 label: Text(
-                                  isMr ? 'कात्रण जतन करा' : 'Save Clipping',
+                                  AppTranslations.pick(lang, en: 'Save Clipping', mr: 'कात्रण जतन करा', hi: 'कतरन सहेजें'),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
                                 onPressed: () async {
                                   final title = titleCtrl.text.trim();
                                   if (title.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(isMr ? 'कृपया बातमीचे शीर्षक प्रविष्ट करा' : 'Please enter headline for clipping.')),
+                                      SnackBar(
+                                        content: Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Please enter headline for clipping.',
+                                            mr: 'कृपया बातमीचे शीर्षक प्रविष्ट करा',
+                                            hi: 'कृपया कतरन का शीर्षक दर्ज करें।',
+                                          ),
+                                        ),
+                                      ),
                                     );
                                     return;
                                   }
@@ -512,7 +612,7 @@ class _NewspaperClippingsScreenState
                                     title: title,
                                     titleMarathi: title,
                                     newspaper: 'Newspaper',
-                                    date: dateFormatted,
+                                    date: dateStorage,
                                     sentiment: sentiment,
                                     imageUrl: finalImageUrl,
                                     pageNumber: 'Page 1',
@@ -530,7 +630,14 @@ class _NewspaperClippingsScreenState
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(isMr ? 'कात्रण यशस्वीरित्या जोडले!' : 'Newspaper clipping added successfully!'),
+                                        content: Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Newspaper clipping added successfully!',
+                                            mr: 'कात्रण यशस्वीरित्या जोडले!',
+                                            hi: 'समाचार कतरन सफलतापूर्वक जोड़ी गई!',
+                                          ),
+                                        ),
                                         backgroundColor: const Color(0xFF16A34A),
                                       ),
                                     );
@@ -557,7 +664,6 @@ class _NewspaperClippingsScreenState
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMarathi = lang == 'mr';
     final filtered = _filteredClippings;
     final totalCount = _allClippings.length;
     final positiveCount = _allClippings.where((c) => c.isPositive).length;
@@ -578,7 +684,12 @@ class _NewspaperClippingsScreenState
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -694,8 +805,18 @@ class _NewspaperClippingsScreenState
                                 size: 20,
                               ),
                               tooltip: _viewMode == 'grid'
-                                  ? 'Switch to Table'
-                                  : 'Switch to Grid',
+                                  ? AppTranslations.pick(
+                                      lang,
+                                      en: 'Switch to Table',
+                                      mr: 'तक्त्यात पहा',
+                                      hi: 'तालिका में देखें',
+                                    )
+                                  : AppTranslations.pick(
+                                      lang,
+                                      en: 'Switch to Grid',
+                                      mr: 'कार्ड स्वरूपात पहा',
+                                      hi: 'कार्ड रूप में देखें',
+                                    ),
                               onPressed: () {
                                 setState(() {
                                   _viewMode = _viewMode == 'grid' ? 'table' : 'grid';
@@ -703,7 +824,7 @@ class _NewspaperClippingsScreenState
                               },
                             ),
                             AppPdfButton.icon(
-                              tooltip: 'Download Report',
+                              tooltip: AppTranslations.getDownloadReport(lang),
                               onPressed: () {
                                 NewspaperReportGenerator.generateAndPrintReport(
                                   clippings: filtered,
@@ -713,6 +834,7 @@ class _NewspaperClippingsScreenState
                                           ? 'Positive News'
                                           : 'Negative Issues'),
                                   newspaperFilter: _selectedNewspaper,
+                                  lang: lang,
                                 );
                               },
                             ),
@@ -736,8 +858,8 @@ class _NewspaperClippingsScreenState
                         totalCount: filtered.length,
                         pageSize: 20,
                         onLoadMore: () => setState(() => _displayedLimit += 20),
-                        label: isMarathi ? 'बातम्या' : 'clippings',
-                        isMarathi: isMarathi,
+                        label: AppTranslations.pick(lang, en: 'clippings', mr: 'बातम्या', hi: 'कतरनें'),
+                        isMarathi: lang == 'mr',
                       ),
                     ],
 
@@ -927,13 +1049,37 @@ class _NewspaperClippingsScreenState
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
-                  label: Text(
-                    '$paperName (${AppTranslations.formatDigits(count, lang)})',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                      color: isSel ? Colors.white : const Color(0xFF475569),
-                    ),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (paper == 'All')
+                        Text(
+                          paperName,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                            color: isSel ? Colors.white : const Color(0xFF475569),
+                          ),
+                        )
+                      else
+                        AppTranslatedText(
+                          paperName,
+                          targetLanguage: lang,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                            color: isSel ? Colors.white : const Color(0xFF475569),
+                          ),
+                        ),
+                      Text(
+                        ' (${AppTranslations.formatDigits(count, lang)})',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                          color: isSel ? Colors.white : const Color(0xFF475569),
+                        ),
+                      ),
+                    ],
                   ),
                   selected: isSel,
                   selectedColor: const Color(0xFF0284C7),
@@ -998,7 +1144,7 @@ class _NewspaperClippingsScreenState
             // Top Image Thumbnail
             Stack(
               children: [
-                _buildClippingThumbnail(item),
+                _buildClippingThumbnail(item, lang),
                 // Newspaper Tag
                 Positioned(
                   top: 10,
@@ -1010,8 +1156,9 @@ class _NewspaperClippingsScreenState
                       color: item.newspaperBrandColor,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(
+                    child: AppTranslatedText(
                       item.newspaper,
+                      targetLanguage: lang,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10.5,
@@ -1034,11 +1181,7 @@ class _NewspaperClippingsScreenState
                           Border.all(color: item.sentimentColor, width: 0.8),
                     ),
                     child: Text(
-                      lang == 'mr'
-                          ? item.sentimentLabelMarathi
-                          : (lang == 'hi'
-                              ? (item.isPositive ? 'सकारात्मक' : 'नकारात्मक')
-                              : (item.isPositive ? 'Positive' : 'Negative')),
+                      item.sentimentLabel(lang),
                       style: TextStyle(
                         color: item.sentimentColor,
                         fontSize: 10,
@@ -1077,8 +1220,9 @@ class _NewspaperClippingsScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.titleMarathi,
+                  AppTranslatedText(
+                    item.titleFor(lang),
+                    targetLanguage: lang,
                     style: const TextStyle(
                       fontSize: 13.5,
                       height: 1.4,
@@ -1087,8 +1231,9 @@ class _NewspaperClippingsScreenState
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    item.descriptionMarathi,
+                  AppTranslatedText(
+                    item.descriptionFor(lang),
+                    targetLanguage: lang,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1118,9 +1263,18 @@ class _NewspaperClippingsScreenState
                             color: item.sentimentColor,
                           ),
                           const SizedBox(width: 5),
+                          Text(
+                            '${AppTranslations.pick(lang, en: 'Action', mr: 'कारवाई', hi: 'कार्रवाई')}: ',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              color: Color(0xFF334155),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           Expanded(
-                            child: Text(
-                              '${lang == 'mr' ? 'कारवाई' : (lang == 'hi' ? 'कार्रवाई' : 'Action')}: ${item.actionTaken!}',
+                            child: AppTranslatedText(
+                              item.actionTaken!,
+                              targetLanguage: lang,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -1181,7 +1335,7 @@ class _NewspaperClippingsScreenState
     );
   }
 
-  Widget _buildClippingThumbnail(NewspaperClippingModel item) {
+  Widget _buildClippingThumbnail(NewspaperClippingModel item, String lang) {
     Widget placeholder() => Container(
           width: double.infinity,
           height: 140,
@@ -1192,8 +1346,9 @@ class _NewspaperClippingsScreenState
               Icon(Icons.newspaper_rounded,
                   size: 40, color: Colors.grey.shade400),
               const SizedBox(height: 6),
-              Text(
+              AppTranslatedText(
                 item.newspaper,
+                targetLanguage: lang,
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],
@@ -1268,8 +1423,9 @@ class _NewspaperClippingsScreenState
                       border: Border.all(
                           color: c.newspaperBrandColor, width: 0.5),
                     ),
-                    child: Text(
+                    child: AppTranslatedText(
                       c.newspaper,
+                      targetLanguage: lang,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -1281,8 +1437,9 @@ class _NewspaperClippingsScreenState
                 DataCell(
                   SizedBox(
                     width: 200,
-                    child: Text(
-                      c.titleMarathi,
+                    child: AppTranslatedText(
+                      c.titleFor(lang),
+                      targetLanguage: lang,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1299,11 +1456,7 @@ class _NewspaperClippingsScreenState
                           Border.all(color: c.sentimentColor, width: 0.5),
                     ),
                     child: Text(
-                      lang == 'mr'
-                          ? c.sentimentLabelMarathi
-                          : (lang == 'hi'
-                              ? (c.isPositive ? 'सकारात्मक' : 'नकारात्मक')
-                              : (c.isPositive ? 'Positive' : 'Negative')),
+                      c.sentimentLabel(lang),
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
@@ -1315,17 +1468,21 @@ class _NewspaperClippingsScreenState
                 DataCell(
                   SizedBox(
                     width: 160,
-                    child: Text(
-                      c.actionTaken ?? '-',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: c.actionTaken != null
+                        ? AppTranslatedText(
+                            c.actionTaken!,
+                            targetLanguage: lang,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : const Text('-'),
                   ),
                 ),
                 DataCell(
                   IconButton(
                     icon: const Icon(Icons.arrow_forward_rounded,
                         size: 16, color: Color(0xFF0284C7)),
+                    tooltip: AppTranslations.getDetails(lang),
                     onPressed: () {
                       Navigator.push(
                         context,

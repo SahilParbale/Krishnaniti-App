@@ -1,11 +1,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/sms_campaign_model.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'sms_history_report_generator.dart';
@@ -76,8 +78,8 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
     try {
       final list = await repo.getVotersWithMobile(
         name: _nameController.text.trim(),
-        address: _addressController.text.trim(),
-        houseNo: _houseNoController.text.trim(),
+        address: AppTranslations.normalizeAsciiDigits(_addressController.text.trim()),
+        houseNo: AppTranslations.normalizeAsciiDigits(_houseNoController.text.trim()),
         ageRange: _ageFilter,
         gender: _genderFilter,
         caste: _casteController.text.trim(),
@@ -163,11 +165,19 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
   }
 
   void _showConfirmationDialog() {
+    final lang = ref.read(appLanguageProvider);
     if (_selectedVoterIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one voter.'),
-          backgroundColor: Color(0xFFDC2626),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please select at least one voter.',
+              mr: 'कृपया किमान एक मतदार निवडा.',
+              hi: 'कृपया कम से कम एक मतदाता चुनें।',
+            ),
+          ),
+          backgroundColor: const Color(0xFFDC2626),
         ),
       );
       return;
@@ -175,105 +185,180 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
 
     if (_messageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter message text.'),
-          backgroundColor: Color(0xFFDC2626),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please enter message text.',
+              mr: 'कृपया संदेश मजकूर टाका.',
+              hi: 'कृपया संदेश पाठ दर्ज करें।',
+            ),
+          ),
+          backgroundColor: const Color(0xFFDC2626),
         ),
       );
-      
       return;
     }
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.sms_outlined, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Confirm SMS Campaign', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'I confirm that I have reviewed the recipients and message and wish to send this official SMS.',
-              style: TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
+      builder: (ctx) => Consumer(
+        builder: (ctx, dialogRef, _) {
+          final dialogLang = dialogRef.watch(appLanguageProvider);
+          final selectedCountStr = AppTranslations.formatDigits(_selectedVoterIds.length, dialogLang);
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.sms_outlined, color: Colors.white),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    AppTranslations.pick(
+                      dialogLang,
+                      en: 'Confirm SMS Campaign',
+                      mr: 'SMS मोहीम निश्चित करा',
+                      hi: 'एसएमएस अभियान की पुष्टि करें',
+                    ),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppTranslations.pick(
+                    dialogLang,
+                    en: 'I confirm that I have reviewed the recipients and message and wish to send this official SMS.',
+                    mr: 'मी प्राप्तकर्ते आणि संदेश तपासला असून हा अधिकृत SMS पाठवू इच्छितो याची पुष्टी करतो.',
+                    hi: 'मैं पुष्टि करता हूँ कि मैंने प्राप्तकर्ताओं और संदेश की समीक्षा कर ली है और यह आधिकारिक एसएमएस भेजना चाहता हूँ।',
+                  ),
+                  style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Selected Voters:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            AppTranslations.pick(
+                              dialogLang,
+                              en: 'Selected Voters:',
+                              mr: 'निवडलेले मतदार:',
+                              hi: 'चयनित मतदाता:',
+                            ),
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                          Text(
+                            AppTranslations.pick(
+                              dialogLang,
+                              en: '$selectedCountStr Voters',
+                              mr: '$selectedCountStr मतदार',
+                              hi: '$selectedCountStr मतदाता',
+                            ),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            AppTranslations.pick(
+                              dialogLang,
+                              en: 'Route / Channel:',
+                              mr: 'मार्ग / चॅनेल:',
+                              hi: 'रूट / चैनल:',
+                            ),
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                          Flexible(
+                            child: Text(
+                              AppTranslations.pick(
+                                dialogLang,
+                                en: 'DLT Government Header (SMS)',
+                                mr: 'DLT शासकीय हेडर (SMS)',
+                                hi: 'DLT सरकारी हेडर (SMS)',
+                              ),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 14, color: Color(0xFFE2E8F0)),
                       Text(
-                        '${_selectedVoterIds.length} Voters',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        AppTranslations.pick(
+                          dialogLang,
+                          en: 'Message Preview:',
+                          mr: 'संदेश पूर्वावलोकन:',
+                          hi: 'संदेश पूर्वावलोकन:',
+                        ),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: AppTranslatedText(
+                          _messageController.text.trim(),
+                          targetLanguage: dialogLang,
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF1E293B)),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Route / Channel:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                      const Text('DLT Government Header (SMS)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857))),
-                    ],
-                  ),
-                  const Divider(height: 14, color: Color(0xFFE2E8F0)),
-                  const Text('Message Preview:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                  const SizedBox(height: 4),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                    ),
-                    child: Text(
-                      _messageController.text.trim(),
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF1E293B)),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  AppTranslations.pick(dialogLang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                  style: const TextStyle(color: Color(0xFF64748B)),
+                ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _executeSendSms();
-            },
-            icon: const Icon(Icons.send_rounded, size: 16),
-            label: const Text('Confirm & Send', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _executeSendSms();
+                },
+                icon: const Icon(Icons.send_rounded, size: 16),
+                label: Text(
+                  AppTranslations.pick(dialogLang, en: 'Confirm & Send', mr: 'निश्चित करा व पाठवा', hi: 'पुष्टि करें और भेजें'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -281,13 +366,14 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
   Future<void> _executeSendSms() async {
     setState(() => _isSending = true);
     final repo = ref.read(smsRepoProvider);
+    final lang = ref.read(appLanguageProvider);
     final messenger = ScaffoldMessenger.of(context);
 
     try {
       final selectedVotersList = _voters.where((v) => _selectedVoterIds.contains(v.id)).toList();
       final campaignName = _selectedTemplate != null
           ? _selectedTemplate!.title
-          : 'SMS Campaign ${DateFormat('dd MMM HH:mm').format(DateTime.now())}';
+          : 'SMS Campaign ${AppTranslations.formatDate(DateTime.now(), 'en', pattern: 'dd MMM HH:mm')}';
 
       final campaign = await repo.sendSmsCampaign(
         campaignName: campaignName,
@@ -306,9 +392,17 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
           _campaignHistory.insert(0, campaign);
         });
 
+        final countStr = AppTranslations.formatDigits(campaign.totalRecipients, lang);
         messenger.showSnackBar(
           SnackBar(
-            content: Text('SMS broadcast queued for ${campaign.totalRecipients} voters!'),
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'SMS broadcast queued for $countStr voters!',
+                mr: '$countStr मतदारांसाठी SMS प्रसारण रांगेत ठेवले आहे!',
+                hi: '$countStr मतदाताओं के लिए एसएमएस प्रसारण कतार में लगाया गया है!',
+              ),
+            ),
             backgroundColor: const Color(0xFF047857),
             duration: const Duration(seconds: 3),
           ),
@@ -321,9 +415,16 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
       if (mounted) {
         setState(() => _isSending = false);
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Error sending SMS. Please try again.'),
-            backgroundColor: Color(0xFFDC2626),
+          SnackBar(
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Error sending SMS. Please try again.',
+                mr: 'SMS पाठवताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.',
+                hi: 'एसएमएस भेजने में त्रुटि। कृपया पुनः प्रयास करें।',
+              ),
+            ),
+            backgroundColor: const Color(0xFFDC2626),
           ),
         );
       }
@@ -331,12 +432,19 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
   }
 
   Future<void> _generatePdfReport() async {
+    final lang = ref.read(appLanguageProvider);
     if (_campaignHistory.isEmpty) await _loadHistory();
-    await SmsHistoryReportGenerator.generateAndPrintReport(campaigns: _campaignHistory);
+    await SmsHistoryReportGenerator.generateAndPrintReport(
+      context: mounted ? context : null,
+      campaigns: _campaignHistory,
+      lang: lang,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: const NagarsevakAppDrawer(),
@@ -347,7 +455,12 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
         leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -358,12 +471,12 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'Send SMS',
+              AppTranslations.pick(lang, en: 'Send SMS', mr: 'SMS पाठवा', hi: 'एसएमएस भेजें'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -371,10 +484,15 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
               ),
             ),
             Text(
-              'SMS broadcasts & campaign delivery',
+              AppTranslations.pick(
+                lang,
+                en: 'SMS broadcasts & campaign delivery',
+                mr: 'SMS प्रसारण आणि मोहीम वितरण',
+                hi: 'एसएमएस प्रसारण और अभियान वितरण',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -382,8 +500,13 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
             ),
           ],
         ),
-        actions: const [],
-        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: AppLanguageSegmentedSelector(isCompact: true),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Container(
@@ -408,16 +531,16 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       unselectedLabelColor: const Color(0xFF64748B),
                       labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
                       dividerColor: Colors.transparent,
-                      tabs: const [
+                      tabs: [
                         Tab(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.send_rounded, size: 15),
-                              SizedBox(width: 6),
+                              const Icon(Icons.send_rounded, size: 15),
+                              const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  'Send SMS',
+                                  AppTranslations.pick(lang, en: 'Send SMS', mr: 'SMS पाठवा', hi: 'एसएमएस भेजें'),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -429,11 +552,16 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.history_rounded, size: 15),
-                              SizedBox(width: 6),
+                              const Icon(Icons.history_rounded, size: 15),
+                              const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  'History & Reports',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'History & Reports',
+                                    mr: 'इतिहास व अहवाल',
+                                    hi: 'इतिहास और रिपोर्ट',
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -447,7 +575,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                 ),
                 const SizedBox(width: 8),
                 AppPdfButton.outlined(
-                  label: 'Report',
+                  label: AppTranslations.pick(lang, en: 'Report', mr: 'अहवाल', hi: 'रिपोर्ट'),
                   onPressed: _generatePdfReport,
                 ),
               ],
@@ -457,15 +585,15 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildSendSmsTab(),
-                _buildHistoryTab(),
+                _buildSendSmsTab(lang),
+                _buildHistoryTab(lang),
               ],
             ),
           ),
         ],
       ),
       bottomNavigationBar: _tabController.index == 0 && _selectedVoterIds.isNotEmpty
-          ? _buildStickySendBar()
+          ? _buildStickySendBar(lang)
           : null,
     );
   }
@@ -473,8 +601,15 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
   // ─────────────────────────────────────────────────────────────
   // UI Builder: Send SMS Tab
   // ─────────────────────────────────────────────────────────────
-  Widget _buildSendSmsTab() {
+  Widget _buildSendSmsTab(String lang) {
     final templates = ref.read(smsRepoProvider).getSmsTemplates();
+    final charCount = AppTranslations.formatDigits(_messageController.text.length, lang);
+    final smsCount = AppTranslations.formatDigits(
+      (_messageController.text.length / 160).ceil().clamp(1, 10),
+      lang,
+    );
+    final visibleVotersCount = AppTranslations.formatDigits(_voters.length, lang);
+    final selectedVotersCount = AppTranslations.formatDigits(_selectedVoterIds.length, lang);
 
     return RefreshIndicator(
       onRefresh: _loadVoters,
@@ -485,12 +620,20 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
           children: [
             // 1. DLT Registered Templates Strip
             Row(
-              children: const [
-                Icon(Icons.star_outline_rounded, size: 16, color: Colors.white),
-                SizedBox(width: 4),
-                Text(
-                  'Registered DLT Templates (Quick Templates)',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+              children: [
+                const Icon(Icons.star_outline_rounded, size: 16, color: Colors.white),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Registered DLT Templates (Quick Templates)',
+                      mr: 'नोंदणीकृत DLT टेम्पलेट्स (जलद टेम्पलेट्स)',
+                      hi: 'पंजीकृत DLT टेम्प्लेट्स (त्वरित टेम्प्लेट्स)',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -516,8 +659,9 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                           color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1),
                         ),
                       ),
-                      child: Text(
+                      child: AppTranslatedText(
                         t.title,
+                        targetLanguage: lang,
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -547,13 +691,23 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Compose Message *',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Compose Message *',
+                          mr: 'संदेश लिहा *',
+                          hi: 'संदेश लिखें *',
+                        ),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       if (_selectedTemplate != null)
                         Text(
-                          'DLT ID: ${_selectedTemplate!.dltTeId}',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'DLT ID: ${_selectedTemplate!.dltTeId}',
+                            mr: 'DLT आयडी: ${_selectedTemplate!.dltTeId}',
+                            hi: 'DLT आईडी: ${_selectedTemplate!.dltTeId}',
+                          ),
                           style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
                         ),
                     ],
@@ -564,13 +718,18 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                     maxLines: 4,
                     style: const TextStyle(fontSize: 13),
                     onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      hintText: 'Type your message here... (English)',
-                      hintStyle: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Type your message here...',
+                        mr: 'येथे तुमचा संदेश टाइप करा...',
+                        hi: 'यहाँ अपना संदेश लिखें...',
+                      ),
+                      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                       filled: true,
-                      fillColor: Color(0xFFF8FAFC),
-                      contentPadding: EdgeInsets.all(10),
-                      border: OutlineInputBorder(
+                      fillColor: const Color(0xFFF8FAFC),
+                      contentPadding: const EdgeInsets.all(10),
+                      border: const OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(8)),
                         borderSide: BorderSide(color: Color(0xFFCBD5E1)),
                       ),
@@ -580,18 +739,33 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.info_outline, size: 12, color: Color(0xFF64748B)),
-                          SizedBox(width: 4),
-                          Text(
-                            'Note: SMS will be delivered only to voters with registered mobile numbers.',
-                            style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, size: 12, color: Color(0xFF64748B)),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Note: SMS will be delivered only to voters with registered mobile numbers.',
+                                  mr: 'टीप: फक्त नोंदणीकृत मोबाइल क्रमांक असलेल्या मतदारांनाच SMS पाठवला जाईल.',
+                                  hi: 'नोट: केवल पंजीकृत मोबाइल नंबर वाले मतदाताओं को ही एसएमएस भेजा जाएगा।',
+                                ),
+                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
-                        '${_messageController.text.length} chars · ${(_messageController.text.length / 160).ceil().clamp(1, 10)} SMS',
+                        AppTranslations.pick(
+                          lang,
+                          en: '$charCount chars · $smsCount SMS',
+                          mr: '$charCount अक्षरे · $smsCount SMS',
+                          hi: '$charCount अक्षर · $smsCount SMS',
+                        ),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ],
@@ -616,9 +790,14 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Voter Filters & Search',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Voter Filters & Search',
+                          mr: 'मतदार फिल्टर आणि शोध',
+                          hi: 'मतदाता फ़िल्टर और खोज',
+                        ),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       TextButton(
                         style: TextButton.styleFrom(
@@ -638,7 +817,10 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                           });
                           _loadVoters();
                         },
-                        child: const Text('Reset', style: TextStyle(fontSize: 11, color: Colors.white)),
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Reset', mr: 'रीसेट', hi: 'रीसेट'),
+                          style: const TextStyle(fontSize: 11, color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
@@ -654,7 +836,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                             controller: _nameController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'Search name...',
+                              hintText: AppTranslations.pick(lang, en: 'Search name...', mr: 'नाव शोधा...', hi: 'नाम खोजें...'),
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -672,7 +854,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                             controller: _addressController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'Address / Area...',
+                              hintText: AppTranslations.pick(lang, en: 'Address / Area...', mr: 'पत्ता / परिसर...', hi: 'पता / क्षेत्र...'),
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -693,16 +875,31 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       // Age Filter
                       Expanded(
                         child: AppDropdown<String>(
-                          title: 'Filter by Age',
+                          title: AppTranslations.pick(lang, en: 'Filter by Age', mr: 'वयानुसार फिल्टर करा', hi: 'आयु के अनुसार फ़िल्टर करें'),
                           value: _ageFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All Ages', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: '18-25', child: Text('Age 18-25', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: '26-40', child: Text('Age 26-40', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: '41-60', child: Text('Age 41-60', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: '60+', child: Text('Age 60+', style: TextStyle(fontSize: 12))),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'All',
+                              child: Text(AppTranslations.pick(lang, en: 'All Ages', mr: 'सर्व वयोगट', hi: 'सभी आयु वर्ग'), style: const TextStyle(fontSize: 12)),
+                            ),
+                            DropdownMenuItem(
+                              value: '18-25',
+                              child: Text(AppTranslations.pick(lang, en: 'Age 18-25', mr: 'वय १८-२५', hi: 'आयु १८-२५'), style: const TextStyle(fontSize: 12)),
+                            ),
+                            DropdownMenuItem(
+                              value: '26-40',
+                              child: Text(AppTranslations.pick(lang, en: 'Age 26-40', mr: 'वय २६-४०', hi: 'आयु २६-४०'), style: const TextStyle(fontSize: 12)),
+                            ),
+                            DropdownMenuItem(
+                              value: '41-60',
+                              child: Text(AppTranslations.pick(lang, en: 'Age 41-60', mr: 'वय ४१-६०', hi: 'आयु ४१-६०'), style: const TextStyle(fontSize: 12)),
+                            ),
+                            DropdownMenuItem(
+                              value: '60+',
+                              child: Text(AppTranslations.pick(lang, en: 'Age 60+', mr: 'वय ६०+', hi: 'आयु ६०+'), style: const TextStyle(fontSize: 12)),
+                            ),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -717,14 +914,23 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       // Gender Filter
                       Expanded(
                         child: AppDropdown<String>(
-                          title: 'Filter by Gender',
+                          title: AppTranslations.pick(lang, en: 'Filter by Gender', mr: 'लिंगानुसार फिल्टर करा', hi: 'लिंग के अनुसार फ़िल्टर करें'),
                           value: _genderFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All Genders', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: 'M', child: Text('Male', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: 'F', child: Text('Female', style: TextStyle(fontSize: 12))),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'All',
+                              child: Text(AppTranslations.pick(lang, en: 'All Genders', mr: 'सर्व लिंग', hi: 'सभी लिंग'), style: const TextStyle(fontSize: 12)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'M',
+                              child: Text(AppTranslations.getGender('M', lang), style: const TextStyle(fontSize: 12)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'F',
+                              child: Text(AppTranslations.getGender('F', lang), style: const TextStyle(fontSize: 12)),
+                            ),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -739,16 +945,29 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       // Booth Filter
                       Expanded(
                         child: AppDropdown<String>(
-                          title: 'Filter by Booth',
+                          title: AppTranslations.pick(lang, en: 'Filter by Booth', mr: 'बूथनुसार फिल्टर करा', hi: 'बूथ के अनुसार फ़िल्टर करें'),
                           value: _boothFilter,
                           height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All Booths', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: '28', child: Text('Booth 28', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: '29', child: Text('Booth 29', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: '30', child: Text('Booth 30', style: TextStyle(fontSize: 12))),
-                            DropdownMenuItem(value: '31', child: Text('Booth 31', style: TextStyle(fontSize: 12))),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'All',
+                              child: Text(AppTranslations.pick(lang, en: 'All Booths', mr: 'सर्व बूथ', hi: 'सभी बूथ'), style: const TextStyle(fontSize: 12)),
+                            ),
+                            ...['28', '29', '30', '31'].map(
+                              (b) => DropdownMenuItem(
+                                value: b,
+                                child: Text(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Booth $b',
+                                    mr: 'बूथ ${AppTranslations.formatDigits(b, lang)}',
+                                    hi: 'बूथ ${AppTranslations.formatDigits(b, lang)}',
+                                  ),
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -781,7 +1000,12 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Select All (${_voters.length} voters)',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Select All ($visibleVotersCount voters)',
+                          mr: 'सर्व निवडा ($visibleVotersCount मतदार)',
+                          hi: 'सभी चुनें ($visibleVotersCount मतदाता)',
+                        ),
                         style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
                       ),
                     ],
@@ -796,7 +1020,12 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${_selectedVoterIds.length} Selected',
+                        AppTranslations.pick(
+                          lang,
+                          en: '$selectedVotersCount Selected',
+                          mr: '$selectedVotersCount निवडले',
+                          hi: '$selectedVotersCount चयनित',
+                        ),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
@@ -804,9 +1033,9 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                       const SizedBox(width: 6),
                       InkWell(
                         onTap: _clearSelection,
-                        child: const Text(
-                          'Clear',
-                          style: TextStyle(fontSize: 11.5, color: Color(0xFFEF4444), fontWeight: FontWeight.bold),
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Clear', mr: 'रद्द करा', hi: 'साफ़ करें'),
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFFEF4444), fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -826,7 +1055,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                 ),
               )
             else if (_voters.isEmpty)
-              _buildEmptyVotersState()
+              _buildEmptyVotersState(lang)
             else
               ListView.separated(
                 shrinkWrap: true,
@@ -836,6 +1065,8 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                 itemBuilder: (ctx, idx) {
                   final voter = _voters[idx];
                   final isSelected = _selectedVoterIds.contains(voter.id);
+                  final genderText = voter.genderLabel(lang);
+                  final ageText = AppTranslations.formatDigits(voter.age, lang);
 
                   return InkWell(
                     onTap: () => _toggleSelectVoter(voter.id),
@@ -865,8 +1096,10 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        voter.displayName,
+                                      child: AppTranslatedText(
+                                        voter.displayNameFor(lang),
+                                        isName: true,
+                                        targetLanguage: lang,
                                         style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
                                       ),
                                     ),
@@ -882,7 +1115,9 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                                           const Icon(Icons.phone, size: 10, color: Colors.white),
                                           const SizedBox(width: 4),
                                           Text(
-                                            voter.mobile ?? '-',
+                                            voter.mobile != null && voter.mobile!.isNotEmpty
+                                                ? AppTranslations.formatDigits(voter.mobile!, lang)
+                                                : '-',
                                             style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
                                           ),
                                         ],
@@ -894,22 +1129,32 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                                 Row(
                                   children: [
                                     Text(
-                                      '${voter.gender} · Age ${voter.age}',
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: '$genderText · Age $ageText',
+                                        mr: '$genderText · वय $ageText',
+                                        hi: '$genderText · आयु $ageText',
+                                      ),
                                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                     ),
                                     if (voter.booth.isNotEmpty) ...[
                                       const Text(' · ', style: TextStyle(color: Color(0xFFCBD5E1))),
-                                      Text(
-                                        voter.booth,
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                                      Flexible(
+                                        child: AppTranslatedText(
+                                          voter.booth,
+                                          targetLanguage: lang,
+                                          style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                     ],
                                   ],
                                 ),
                                 if (voter.address.isNotEmpty) ...[
                                   const SizedBox(height: 2),
-                                  Text(
+                                  AppTranslatedText(
                                     voter.address,
+                                    targetLanguage: lang,
                                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -933,26 +1178,26 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
   // ─────────────────────────────────────────────────────────────
   // UI Builder: History Tab
   // ─────────────────────────────────────────────────────────────
-  Widget _buildHistoryTab() {
+  Widget _buildHistoryTab(String lang) {
     return RefreshIndicator(
       onRefresh: _loadHistory,
       child: _isLoadingHistory
           ? const Center(child: CircularProgressIndicator())
           : _campaignHistory.isEmpty
-              ? _buildEmptyHistoryState()
+              ? _buildEmptyHistoryState(lang)
               : ListView.separated(
                   padding: const EdgeInsets.all(14),
                   itemCount: _campaignHistory.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (ctx, idx) {
                     final campaign = _campaignHistory[idx];
-                    return _buildCampaignHistoryCard(campaign);
+                    return _buildCampaignHistoryCard(campaign, lang);
                   },
                 ),
     );
   }
 
-  Widget _buildCampaignHistoryCard(SmsCampaignModel campaign) {
+  Widget _buildCampaignHistoryCard(SmsCampaignModel campaign, String lang) {
     Color statusBg = const Color(0xFFECFDF5);
     Color statusColor = const Color(0xFF047857);
     if (campaign.isFailed) {
@@ -981,13 +1226,14 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppTranslatedText(
                       campaign.name,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      campaign.formattedDate,
+                      AppTranslations.formatDateTime(campaign.createdAt, lang),
                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     ),
                   ],
@@ -997,7 +1243,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(6)),
                 child: Text(
-                  campaign.status,
+                  AppTranslations.getStatus(campaign.status, lang),
                   style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: statusColor),
                 ),
               ),
@@ -1013,8 +1259,9 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: Text(
+            child: AppTranslatedText(
               campaign.message,
+              targetLanguage: lang,
               style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
             ),
           ),
@@ -1024,11 +1271,23 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
           // Stats row
           Row(
             children: [
-              _buildMiniHistoryStat('Recipients', '${campaign.totalRecipients}', const Color(0xFF0284C7)),
+              _buildMiniHistoryStat(
+                AppTranslations.pick(lang, en: 'Recipients', mr: 'प्राप्तकर्ते', hi: 'प्राप्तकर्ता'),
+                AppTranslations.formatDigits(campaign.totalRecipients, lang),
+                const Color(0xFF0284C7),
+              ),
               const SizedBox(width: 8),
-              _buildMiniHistoryStat('Delivered', '${campaign.stats.delivered}', const Color(0xFF047857)),
+              _buildMiniHistoryStat(
+                AppTranslations.pick(lang, en: 'Delivered', mr: 'वितरित', hi: 'वितरित'),
+                AppTranslations.formatDigits(campaign.stats.delivered, lang),
+                const Color(0xFF047857),
+              ),
               const SizedBox(width: 8),
-              _buildMiniHistoryStat('Failed', '${campaign.stats.failed}', campaign.stats.failed > 0 ? const Color(0xFFDC2626) : const Color(0xFF94A3B8)),
+              _buildMiniHistoryStat(
+                AppTranslations.pick(lang, en: 'Failed', mr: 'अयशस्वी', hi: 'विफल'),
+                AppTranslations.formatDigits(campaign.stats.failed, lang),
+                campaign.stats.failed > 0 ? const Color(0xFFDC2626) : const Color(0xFF94A3B8),
+              ),
               const Spacer(),
               if (campaign.dltTemplateId != null)
                 Text(
@@ -1059,7 +1318,8 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
     );
   }
 
-  Widget _buildStickySendBar() {
+  Widget _buildStickySendBar(String lang) {
+    final selectedCountStr = AppTranslations.formatDigits(_selectedVoterIds.length, lang);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
@@ -1070,18 +1330,33 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
       child: SafeArea(
         child: Row(
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_selectedVoterIds.length} voters selected',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                const Text('Dispatched via official DLT registered SMS gateway', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
-              ],
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: '$selectedCountStr voters selected',
+                      mr: '$selectedCountStr मतदार निवडले आहेत',
+                      hi: '$selectedCountStr मतदाता चयनित',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Dispatched via official DLT registered SMS gateway',
+                      mr: 'अधिकृत DLT नोंदणीकृत SMS गेटवेद्वारे पाठवले जाईल',
+                      hi: 'आधिकारिक DLT पंजीकृत एसएमएस गेटवे के माध्यम से भेजा जाएगा',
+                    ),
+                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0284C7),
@@ -1095,7 +1370,9 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Icon(Icons.send_rounded, size: 16),
               label: Text(
-                _isSending ? 'Sending...' : 'Send SMS',
+                _isSending
+                    ? AppTranslations.pick(lang, en: 'Sending...', mr: 'पाठवत आहे...', hi: 'भेजा जा रहा है...')
+                    : AppTranslations.pick(lang, en: 'Send SMS', mr: 'SMS पाठवा', hi: 'एसएमएस भेजें'),
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
               ),
             ),
@@ -1105,7 +1382,7 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
     );
   }
 
-  Widget _buildEmptyVotersState() {
+  Widget _buildEmptyVotersState(String lang) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       alignment: Alignment.center,
@@ -1115,33 +1392,50 @@ class _SmsCommunicationScreenState extends ConsumerState<SmsCommunicationScreen>
         border: Border.all(color: const Color(0xFFCBD5E1)),
       ),
       child: Column(
-        children: const [
-          Icon(Icons.search_off_rounded, size: 44, color: Color(0xFF94A3B8)),
-          SizedBox(height: 8),
+        children: [
+          const Icon(Icons.search_off_rounded, size: 44, color: Color(0xFF94A3B8)),
+          const SizedBox(height: 8),
           Text(
-            'No voters found matching current filters.',
-            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+            AppTranslations.pick(
+              lang,
+              en: 'No voters found matching current filters.',
+              mr: 'सध्याच्या फिल्टरनुसार कोणतेही मतदार सापडले नाहीत.',
+              hi: 'वर्तमान फ़िल्टर से मेल खाने वाला कोई मतदाता नहीं मिला।',
+            ),
+            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+            textAlign: TextAlign.center,
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'Modify search query or click Reset.',
-            style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+            AppTranslations.pick(
+              lang,
+              en: 'Modify search query or click Reset.',
+              mr: 'शोध मजकूर बदला किंवा रीसेट वर क्लिक करा.',
+              hi: 'खोज बदलें या रीसेट पर क्लिक करें।',
+            ),
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyHistoryState() {
+  Widget _buildEmptyHistoryState(String lang) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.sms_failed_outlined, size: 48, color: Color(0xFFCBD5E1)),
-          SizedBox(height: 8),
+        children: [
+          const Icon(Icons.sms_failed_outlined, size: 48, color: Color(0xFFCBD5E1)),
+          const SizedBox(height: 8),
           Text(
-            'No SMS campaigns sent yet.',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+            AppTranslations.pick(
+              lang,
+              en: 'No SMS campaigns sent yet.',
+              mr: 'अद्याप कोणतीही SMS मोहीम पाठवलेली नाही.',
+              hi: 'अभी तक कोई एसएमएस अभियान नहीं भेजा गया है।',
+            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
           ),
         ],
       ),

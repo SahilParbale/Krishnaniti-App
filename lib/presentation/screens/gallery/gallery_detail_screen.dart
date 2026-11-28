@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/gallery_model.dart';
 import '../../../data/repositories/gallery_repository.dart';
+import '../../providers/language_provider.dart';
 import 'gallery_report_generator.dart';
 import '../../widgets/app_pdf_button.dart';
 
@@ -37,15 +40,46 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
     }
   }
 
+  String _localizedRawTitle(String lang) =>
+      lang == 'mr' && _item.titleMr.isNotEmpty ? _item.titleMr : _item.title;
+
+  String _localizedRawDesc(String lang) =>
+      lang == 'mr' && _item.descriptionMr.isNotEmpty
+          ? _item.descriptionMr
+          : _item.description;
+
   Future<void> _handleShare() async {
+    final lang = ref.read(appLanguageProvider);
+    final rawTitle = _localizedRawTitle(lang);
+    final rawDesc = _localizedRawDesc(lang);
+    final titleText =
+        DynamicTranslationService.getCachedTranslation(rawTitle, lang) ??
+            rawTitle;
+    final descText =
+        DynamicTranslationService.getCachedTranslation(rawDesc, lang) ?? rawDesc;
+    final locText = AppTranslations.getAreaName(_item.location, lang);
+    final catLabel =
+        AppTranslations.pick(lang, en: 'Category', mr: 'श्रेणी', hi: 'श्रेणी');
+    final locLabel =
+        AppTranslations.pick(lang, en: 'Location', mr: 'ठिकाण', hi: 'स्थान');
+    final dateLabel =
+        AppTranslations.pick(lang, en: 'Date', mr: 'तारीख', hi: 'दिनांक');
+    final imgLabel =
+        AppTranslations.pick(lang, en: 'Image', mr: 'फोटो', hi: 'फ़ोटो');
+    final footer = AppTranslations.pick(
+      lang,
+      en: '— Nagarsevak Amit Chougale (Ward 12, PMC)',
+      mr: '— नगरसेवक अमित चौगुले (प्रभाग १२, मनपा)',
+      hi: '— नगरसेवक अमित चौगुले (वार्ड १२, मनपा)',
+    );
     final text =
-        '📸 *${_item.titleMr}*\n\n'
-        '📂 Category: ${_item.category.titleEn}\n'
-        '📍 Location: ${_item.location}\n'
-        '📅 Date: ${_item.formattedDateFull}\n\n'
-        '${_item.descriptionMr}\n\n'
-        '🔗 Image: ${_item.imageUrl}\n\n'
-        '— Nagarsevak Amit Chougale (Ward 12, PMC)';
+        '📸 *$titleText*\n\n'
+        '📂 $catLabel: ${_item.category.title(lang)}\n'
+        '📍 $locLabel: $locText\n'
+        '📅 $dateLabel: ${_item.formattedDateFullFor(lang)}\n\n'
+        '$descText\n\n'
+        '🔗 $imgLabel: ${_item.imageUrl}\n\n'
+        '$footer';
 
     final encoded = Uri.encodeComponent(text);
     final uri = Uri.parse('https://wa.me/?text=$encoded');
@@ -56,7 +90,16 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
         Clipboard.setData(ClipboardData(text: text));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Details copied to clipboard!')),
+            SnackBar(
+              content: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Details copied to clipboard!',
+                  mr: 'तपशील क्लिपबोर्डवर कॉपी केला!',
+                  hi: 'विवरण क्लिपबोर्ड पर कॉपी किया गया!',
+                ),
+              ),
+            ),
           );
         }
       }
@@ -66,13 +109,28 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
   }
 
   void _handleCopy() {
-    Clipboard.setData(ClipboardData(text: '${_item.titleMr}\n\n${_item.descriptionMr}'));
+    final lang = ref.read(appLanguageProvider);
+    final rawTitle = _localizedRawTitle(lang);
+    final rawDesc = _localizedRawDesc(lang);
+    final titleText =
+        DynamicTranslationService.getCachedTranslation(rawTitle, lang) ??
+            rawTitle;
+    final descText =
+        DynamicTranslationService.getCachedTranslation(rawDesc, lang) ?? rawDesc;
+    Clipboard.setData(ClipboardData(text: '$titleText\n\n$descText'));
     setState(() => _copied = true);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Description copied to clipboard!'),
-        backgroundColor: Color(0xFF059669),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Description copied to clipboard!',
+            mr: 'वर्णन क्लिपबोर्डवर कॉपी केले!',
+            hi: 'विवरण क्लिपबोर्ड पर कॉपी किया गया!',
+          ),
+        ),
+        backgroundColor: const Color(0xFF059669),
+        duration: const Duration(seconds: 2),
       ),
     );
     Future.delayed(const Duration(seconds: 2), () {
@@ -82,6 +140,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Color(0xFF0284C7),
@@ -94,10 +153,11 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'वापस'),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            _item.category.titleMr,
+            _item.category.title(lang),
             style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
@@ -110,21 +170,34 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                 _item.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                 color: _item.isFavorite ? const Color(0xFFEF4444) : Colors.white,
               ),
-              tooltip: 'Favorite',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Favorite',
+                mr: 'आवडते',
+                hi: 'पसंदीदा',
+              ),
               onPressed: _handleToggleFavorite,
             ),
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: 'Download Report',
-                  onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: [_item]),
+                  tooltip: AppTranslations.getDownloadReport(lang),
+                  onPressed: () => GalleryReportGenerator.generateAndPrintReport(
+                    items: [_item],
+                    lang: lang,
+                  ),
                 ),
               ),
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded, color: Colors.white),
-              tooltip: 'Share',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Share',
+                mr: 'शेअर करा',
+                hi: 'साझा करें',
+              ),
               onPressed: _handleShare,
             ),
           ],
@@ -160,7 +233,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                           fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
-                          errorBuilder: (ctx, error, stackTrace) => _buildDetailImageError(),
+                          errorBuilder: (ctx, error, stackTrace) => _buildDetailImageError(lang),
                           loadingBuilder: (ctx, child, progress) {
                             if (progress == null) return child;
                             return Container(
@@ -177,9 +250,9 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                               fit: BoxFit.cover,
                               width: double.infinity,
                               height: double.infinity,
-                              errorBuilder: (ctx, error, stackTrace) => _buildDetailImageError(),
+                              errorBuilder: (ctx, error, stackTrace) => _buildDetailImageError(lang),
                             )
-                          : _buildDetailImageError()),
+                          : _buildDetailImageError(lang)),
                 ),
               ),
 
@@ -213,7 +286,7 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                               Icon(_item.category.icon, size: 12, color: _item.category.color),
                               const SizedBox(width: 4),
                               Text(
-                                _item.category.titleMr,
+                                _item.category.title(lang),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -225,14 +298,19 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '• ${_item.relativeTime}',
+                          '• ${_item.relativeTimeFor(lang)}',
                           style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                         ),
                         const Spacer(),
                         const Icon(Icons.visibility_outlined, size: 14, color: Color(0xFF64748B)),
                         const SizedBox(width: 4),
                         Text(
-                          '${_item.viewsCount} views',
+                          AppTranslations.pick(
+                            lang,
+                            en: '${AppTranslations.formatDigits(_item.viewsCount, lang)} views',
+                            mr: '${AppTranslations.formatDigits(_item.viewsCount, lang)} पाहिले',
+                            hi: '${AppTranslations.formatDigits(_item.viewsCount, lang)} बार देखा गया',
+                          ),
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                         ),
                       ],
@@ -241,8 +319,9 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                     const SizedBox(height: 12),
 
                     // Title
-                    Text(
-                      _item.titleMr,
+                    AppTranslatedText(
+                      _localizedRawTitle(lang),
+                      targetLanguage: lang,
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
@@ -261,15 +340,16 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                         const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF0284C7)),
                         const SizedBox(width: 6),
                         Text(
-                          _item.formattedDateFull,
+                          _item.formattedDateFullFor(lang),
                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                         ),
                         const SizedBox(width: 16),
                         const Icon(Icons.location_on_outlined, size: 15, color: Color(0xFF0284C7)),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(
-                            _item.location,
+                          child: AppTranslatedText(
+                            AppTranslations.getAreaName(_item.location, lang),
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -298,9 +378,14 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Image Description',
-                          style: TextStyle(
+                        Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Image Description',
+                            mr: 'फोटोचे वर्णन',
+                            hi: 'फ़ोटो का विवरण',
+                          ),
+                          style: const TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF0F172A),
@@ -320,7 +405,19 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _copied ? 'Copied!' : 'Copy',
+                                  _copied
+                                      ? AppTranslations.pick(
+                                          lang,
+                                          en: 'Copied!',
+                                          mr: 'कॉपी झाले!',
+                                          hi: 'कॉपी हो गया!',
+                                        )
+                                      : AppTranslations.pick(
+                                          lang,
+                                          en: 'Copy',
+                                          mr: 'कॉपी करा',
+                                          hi: 'कॉपी करें',
+                                        ),
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -334,8 +431,9 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      _item.descriptionMr,
+                    AppTranslatedText(
+                      _localizedRawDesc(lang),
+                      targetLanguage: lang,
                       style: const TextStyle(
                         fontSize: 13.5,
                         height: 1.55,
@@ -354,13 +452,27 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                               color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: Text(
-                              '#$tag',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF475569),
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  '#',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF475569),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                AppTranslatedText(
+                                  tag,
+                                  targetLanguage: lang,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF475569),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),
@@ -379,7 +491,15 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _handleShare,
                       icon: const Icon(Icons.share_rounded, size: 18),
-                      label: const Text('Share Photo (WhatsApp)', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Share Photo (WhatsApp)',
+                          mr: 'फोटो शेअर करा (WhatsApp)',
+                          hi: 'फ़ोटो साझा करें (WhatsApp)',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF16A34A),
                         foregroundColor: Colors.white,
@@ -399,18 +519,23 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
     );
   }
 
-  Widget _buildDetailImageError() {
+  Widget _buildDetailImageError(String lang) {
     return Container(
       color: const Color(0xFF1E293B),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.broken_image_rounded, size: 48, color: Colors.white54),
-            SizedBox(height: 8),
+          children: [
+            const Icon(Icons.broken_image_rounded, size: 48, color: Colors.white54),
+            const SizedBox(height: 8),
             Text(
-              'No image available',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              AppTranslations.pick(
+                lang,
+                en: 'No image available',
+                mr: 'फोटो उपलब्ध नाही',
+                hi: 'कोई फ़ोटो उपलब्ध नहीं',
+              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ],
         ),

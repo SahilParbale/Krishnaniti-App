@@ -58,6 +58,52 @@ class SadasyaModel {
     return address;
   }
 
+  /// Display name preferring language when available
+  String displayNameFor(String lang) {
+    if (lang == 'mr' && nameMarathi != null && nameMarathi!.trim().isNotEmpty) {
+      return nameMarathi!;
+    }
+    if (lang == 'en' && nameEnglish != null && nameEnglish!.trim().isNotEmpty) {
+      return nameEnglish!;
+    }
+    return name.trim().isNotEmpty ? name : displayName;
+  }
+
+  /// Display address preferring language when available
+  String displayAddressFor(String lang) {
+    if (lang == 'mr' &&
+        addressMarathi != null &&
+        addressMarathi!.trim().isNotEmpty) {
+      return addressMarathi!;
+    }
+    if (lang == 'en' &&
+        addressEnglish != null &&
+        addressEnglish!.trim().isNotEmpty) {
+      return addressEnglish!;
+    }
+    return address.trim().isNotEmpty ? address : displayAddress;
+  }
+
+  /// Display gender in target language
+  String displayGenderFor(String lang) {
+    switch (gender.toUpperCase()) {
+      case 'M':
+        if (lang == 'mr') return 'पुरुष';
+        if (lang == 'hi') return 'पुरुष';
+        return 'Male';
+      case 'F':
+        if (lang == 'mr') return 'महिला';
+        if (lang == 'hi') return 'महिला';
+        return 'Female';
+      case 'O':
+        if (lang == 'mr') return 'इतर';
+        if (lang == 'hi') return 'अन्य';
+        return 'Other';
+      default:
+        return gender;
+    }
+  }
+
   /// Display gender in Marathi
   String get displayGender {
     switch (gender.toUpperCase()) {

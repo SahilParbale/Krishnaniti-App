@@ -27,32 +27,54 @@ class VoterApplicationModel {
   });
 
   /// Marathi Form Type Label
-  String get formTypeMarathi {
+  String get formTypeMarathi => formTypeLabel('mr');
+
+  /// Localized Form Type Label
+  String formTypeLabel(String lang) {
     switch (formType.toLowerCase().replaceAll(' ', '')) {
       case 'form6':
-        return 'फॉर्म ६ (नवीन नोंदणी)';
+        return lang == 'mr'
+            ? 'फॉर्म ६ (नवीन नोंदणी)'
+            : (lang == 'hi' ? 'फॉर्म ६ (नया पंजीकरण)' : 'Form 6 (New Reg)');
       case 'form7':
-        return 'फॉर्म ७ (नाव वगळणे)';
+        return lang == 'mr'
+            ? 'फॉर्म ७ (नाव वगळणे)'
+            : (lang == 'hi' ? 'फॉर्म ७ (नाम विलोपन)' : 'Form 7 (Deletion)');
       case 'form8':
-        return 'फॉर्म ८ (तपशील दुरुस्ती)';
+        return lang == 'mr'
+            ? 'फॉर्म ८ (तपशील दुरुस्ती)'
+            : (lang == 'hi' ? 'फॉर्म ८ (विवरण सुधार)' : 'Form 8 (Correction)');
       case 'search':
-        return 'मतदार यादीत शोध';
+        return lang == 'mr'
+            ? 'मतदार यादीत शोध'
+            : (lang == 'hi' ? 'मतदाता सूची खोज' : 'Roll Search');
       default:
         return formType;
     }
   }
 
   /// Marathi Status Label
-  String get statusMarathi {
+  String get statusMarathi => statusLabel('mr');
+
+  /// Localized Status Label
+  String statusLabel(String lang) {
     switch (status.toLowerCase()) {
       case 'submitted':
-        return 'दाखल केला';
+        return lang == 'mr'
+            ? 'दाखल केला'
+            : (lang == 'hi' ? 'जमा किया गया' : 'Submitted');
       case 'pending':
-        return 'प्रलंबित';
+        return lang == 'mr'
+            ? 'प्रलंबित'
+            : (lang == 'hi' ? 'लंबित' : 'Pending');
       case 'approved':
-        return 'मंजूर';
+        return lang == 'mr'
+            ? 'मंजूर'
+            : (lang == 'hi' ? 'स्वीकृत' : 'Approved');
       case 'rejected':
-        return 'नाकारला';
+        return lang == 'mr'
+            ? 'नाकारला'
+            : (lang == 'hi' ? 'अस्वीकृत' : 'Rejected');
       default:
         return status;
     }

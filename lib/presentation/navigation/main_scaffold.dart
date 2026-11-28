@@ -8,7 +8,6 @@ import 'radial_quick_access_menu.dart';
 import 'app_drawer.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/custom_navigation_provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../../core/localization/app_translations.dart';
 
@@ -338,7 +337,6 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     if (index == -1) index = 0;
 
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final customBottomKeys = ref.watch(customBottomBarProvider);
     final customRadialKeys = ref.watch(customQuickActionsProvider);
 

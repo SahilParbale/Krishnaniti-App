@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../data/models/improvement_model.dart';
 import '../../../data/repositories/improvements_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_load_more_footer.dart';
@@ -84,19 +85,24 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
   // Date suggestions with count matching PossibleImprovements.tsx lines 73-82
   List<Map<String, dynamic>> get _dateSuggestions {
     final Map<String, int> stats = {};
+    final Map<String, DateTime?> dtMap = {};
     for (final item in _improvements) {
       if (item.createdAt.isNotEmpty) {
         String dateStr;
+        DateTime? parsed;
         try {
-          final dt = DateTime.parse(item.createdAt);
-          dateStr = DateFormat('MMM d, yyyy').format(dt);
+          parsed = DateTime.parse(item.createdAt);
+          dateStr = AppTranslations.formatDate(parsed, 'en', pattern: 'MMM d, yyyy');
         } catch (_) {
           dateStr = item.createdAt;
         }
         stats[dateStr] = (stats[dateStr] ?? 0) + 1;
+        dtMap[dateStr] = parsed;
       }
     }
-    final list = stats.entries.map((e) => {'date': e.key, 'count': e.value}).toList();
+    final list = stats.entries
+        .map((e) => {'date': e.key, 'dt': dtMap[e.key], 'count': e.value})
+        .toList();
     list.sort((a, b) => b['date'].toString().compareTo(a['date'].toString()));
     return list;
   }
@@ -105,7 +111,9 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
   List<ImprovementModel> get _filteredImprovements {
     final search = _searchCtrl.text.trim().toLowerCase();
     final areaSearch = _areaSearchCtrl.text.trim().toLowerCase();
+    final normArea = AppTranslations.normalizeAsciiDigits(areaSearch);
     final dateSearch = _dateSearchCtrl.text.trim().toLowerCase();
+    final normDate = AppTranslations.normalizeAsciiDigits(dateSearch);
 
     return _improvements.where((item) {
       final matchesSearch = search.isEmpty ||
@@ -113,16 +121,29 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
           item.description.toLowerCase().contains(search) ||
           item.location.toLowerCase().contains(search);
 
+      final areaLower = item.area.toLowerCase();
       final matchesArea = areaSearch.isEmpty ||
-          item.area.toLowerCase().contains(areaSearch);
+          areaLower.contains(areaSearch) ||
+          AppTranslations.normalizeAsciiDigits(areaLower).contains(normArea);
 
-      String formattedDate = item.createdAt;
+      String formattedDateEn = item.createdAt;
+      String formattedDateMr = item.createdAt;
+      String formattedDateHi = item.createdAt;
       try {
-        formattedDate = DateFormat('MMM d, yyyy').format(DateTime.parse(item.createdAt));
+        final dt = DateTime.parse(item.createdAt);
+        formattedDateEn = AppTranslations.formatDate(dt, 'en', pattern: 'MMM d, yyyy');
+        formattedDateMr = AppTranslations.normalizeAsciiDigits(
+          AppTranslations.formatDate(dt, 'mr', pattern: 'MMM d, yyyy'),
+        );
+        formattedDateHi = AppTranslations.normalizeAsciiDigits(
+          AppTranslations.formatDate(dt, 'hi', pattern: 'MMM d, yyyy'),
+        );
       } catch (_) {}
 
       final matchesDate = dateSearch.isEmpty ||
-          formattedDate.toLowerCase().contains(dateSearch) ||
+          formattedDateEn.toLowerCase().contains(normDate) ||
+          formattedDateMr.toLowerCase().contains(normDate) ||
+          formattedDateHi.toLowerCase().contains(normDate) ||
           item.createdAt.toLowerCase().contains(dateSearch);
 
       final matchesStatus = _statusFilter == 'All' ||
@@ -138,6 +159,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
   }
 
   Future<void> _handleVote(ImprovementModel imp) async {
+    final lang = ref.read(appLanguageProvider);
     final repo = ref.read(improvementsRepoProvider);
     final newVotes = await repo.voteImprovement(imp.id);
     if (mounted) {
@@ -148,16 +170,23 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
         }
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vote registered successfully!'),
-          backgroundColor: Color(0xFF16A34A),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Vote registered successfully!',
+              mr: 'तुमचे मत यशस्वीरित्या नोंदवले गेले!',
+              hi: 'आपका मत सफलतापूर्वक दर्ज किया गया!',
+            ),
+          ),
+          backgroundColor: const Color(0xFF16A34A),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
   }
 
-  Widget _buildStatusBadge(String status, bool isMr) {
+  Widget _buildStatusBadge(String status, String lang) {
     Color bg;
     Color text;
     Color border;
@@ -168,25 +197,25 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
         bg = const Color(0xFFF0FDF4);
         text = const Color(0xFF15803D);
         border = const Color(0xFFBBF7D0);
-        label = isMr ? 'पूर्ण' : 'Complete';
+        label = AppTranslations.pick(lang, en: 'Complete', mr: 'पूर्ण', hi: 'पूर्ण');
         break;
       case 'In Progress':
         bg = const Color(0xFFEFF6FF);
         text = const Color(0xFF1D4ED8);
         border = const Color(0xFFBFDBFE);
-        label = isMr ? 'सुरू' : 'In Progress';
+        label = AppTranslations.pick(lang, en: 'In Progress', mr: 'सुरू', hi: 'प्रगति पर');
         break;
       case 'Planned':
         bg = const Color(0xFFFAF5FF);
         text = const Color(0xFF7E22CE);
         border = const Color(0xFFE9D5FF);
-        label = isMr ? 'नियोजित' : 'Planned';
+        label = AppTranslations.pick(lang, en: 'Planned', mr: 'नियोजित', hi: 'नियोजित');
         break;
       default:
         bg = const Color(0xFFFFF7ED);
         text = const Color(0xFFC2410C);
         border = const Color(0xFFFFEDD5);
-        label = isMr ? 'प्रलंबित' : 'Pending';
+        label = AppTranslations.pick(lang, en: 'Pending', mr: 'प्रलंबित', hi: 'लंबित');
     }
 
     return Container(
@@ -209,12 +238,15 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
 
   // Add Improvement Modal matching lines 524-642
   void _openAddModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController();
     final areaCtrl = TextEditingController();
-    final dateCtrl = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now().add(const Duration(days: 90))));
+    final targetDt = DateTime.now().add(const Duration(days: 90));
+    final dateCtrl = TextEditingController(
+      text: '${targetDt.year}-${targetDt.month.toString().padLeft(2, '0')}-${targetDt.day.toString().padLeft(2, '0')}',
+    );
     final benCtrl = TextEditingController();
     String status = 'Pending';
 
@@ -265,10 +297,18 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                   // 1. FIXED HEADER
                   AppModalHeader(
                     icon: Icons.lightbulb_rounded,
-                    title: isMr ? 'संभाव्य प्रभाग सुधारणा प्रस्ताव' : 'Propose Ward Improvement',
-                    subtitle: isMr
-                        ? 'प्रभागातील नवीन कामे व सुधारणांचे प्रस्ताव नोंदवा'
-                        : 'Submit infrastructure or civic improvement proposals',
+                    title: AppTranslations.pick(
+                      lang,
+                      en: 'Propose Ward Improvement',
+                      mr: 'संभाव्य प्रभाग सुधारणा प्रस्ताव',
+                      hi: 'संभावित वार्ड सुधार प्रस्ताव',
+                    ),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Submit infrastructure or civic improvement proposals',
+                      mr: 'प्रभागातील नवीन कामे व सुधारणांचे प्रस्ताव नोंदवा',
+                      hi: 'वार्ड में नए कार्य व सुधार प्रस्ताव दर्ज करें',
+                    ),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
 
@@ -284,24 +324,48 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                       children: [
                         // 1. Title (Full Width - matching PossibleImprovements.tsx lines 535-545)
                         AppFieldLabel(
-                          label: isMr ? 'सुधारणा कामाचे नाव' : 'Title / Proposed Work',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Title / Proposed Work',
+                            mr: 'सुधारणा कामाचे नाव',
+                            hi: 'सुधार कार्य का नाम',
+                          ),
                           isRequired: true,
                         ),
                         TextField(
                           controller: titleCtrl,
-                          decoration: inputDec(hint: isMr ? 'उदा. पादचारी पूल, ओपन जिम...' : 'e.g. Pedestrian skywalk, Open gym...'),
+                          decoration: inputDec(
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'e.g. Pedestrian skywalk, Open gym...',
+                              mr: 'उदा. पादचारी पूल, ओपन जिम...',
+                              hi: 'उदा. पैदल पुल, ओपन जिम...',
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 14),
 
                         // 2. Description (Full Width - matching PossibleImprovements.tsx lines 547-568)
                         AppFieldLabel(
-                          label: isMr ? 'तपशीलवार माहिती व आवश्यकता' : 'Detailed Description',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Detailed Description',
+                            mr: 'तपशीलवार माहिती व आवश्यकता',
+                            hi: 'विस्तृत विवरण व आवश्यकता',
+                          ),
                           isRequired: true,
                         ),
                         TextField(
                           controller: descCtrl,
                           maxLines: 3,
-                          decoration: inputDec(hint: isMr ? 'ही सुधारणा का आवश्यक आहे? नागरिकांना काय फायदा होईल?' : 'Why is this improvement needed? How will it help?'),
+                          decoration: inputDec(
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Why is this improvement needed? How will it help?',
+                              mr: 'ही सुधारणा का आवश्यक आहे? नागरिकांना काय फायदा होईल?',
+                              hi: 'यह सुधार क्यों आवश्यक है? नागरिकों को क्या लाभ होगा?',
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 14),
 
@@ -314,12 +378,24 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'निश्चित ठिकाण / चौक' : 'Specific Spot / Location',
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Specific Spot / Location',
+                                      mr: 'निश्चित ठिकाण / चौक',
+                                      hi: 'निश्चित स्थान / चौक',
+                                    ),
                                     isRequired: true,
                                   ),
                                   TextField(
                                     controller: locCtrl,
-                                    decoration: inputDec(hint: isMr ? 'उदा. चौक, रस्ता क्रॉसिंग...' : 'e.g. Chowk, Crossing...'),
+                                    decoration: inputDec(
+                                      hint: AppTranslations.pick(
+                                        lang,
+                                        en: 'e.g. Chowk, Crossing...',
+                                        mr: 'उदा. चौक, रस्ता क्रॉसिंग...',
+                                        hi: 'उदा. चौक, सड़क क्रॉसिंग...',
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -330,11 +406,23 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'प्रभाग परिसर' : 'Prabhag Area',
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Prabhag Area',
+                                      mr: 'प्रभाग परिसर',
+                                      hi: 'वार्ड क्षेत्र',
+                                    ),
                                   ),
                                   TextField(
                                     controller: areaCtrl,
-                                    decoration: inputDec(hint: isMr ? 'उदा. सेक्टर ५, शिवाजी नगर...' : 'e.g. Sector 5, Shivaji Nagar...'),
+                                    decoration: inputDec(
+                                      hint: AppTranslations.pick(
+                                        lang,
+                                        en: 'e.g. Sector 5, Shivaji Nagar...',
+                                        mr: 'उदा. सेक्टर ५, शिवाजी नगर...',
+                                        hi: 'उदा. सेक्टर ५, शिवाजी नगर...',
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -352,7 +440,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'अपेक्षित पूर्णता दिनांक' : 'Expected Target Date',
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Expected Target Date',
+                                      mr: 'अपेक्षित पूर्णता दिनांक',
+                                      hi: 'अपेक्षित लक्ष्य तिथि',
+                                    ),
                                   ),
                                   TextField(
                                     controller: dateCtrl,
@@ -367,12 +460,24 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'अंदाजे लाभार्थी नागरिक' : 'Estimated Beneficiaries',
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Estimated Beneficiaries',
+                                      mr: 'अंदाजे लाभार्थी नागरिक',
+                                      hi: 'अनुमानित लाभार्थी नागरिक',
+                                    ),
                                   ),
                                   TextField(
                                     controller: benCtrl,
                                     keyboardType: TextInputType.number,
-                                    decoration: inputDec(hint: 'e.g. 15000'),
+                                    decoration: inputDec(
+                                      hint: AppTranslations.pick(
+                                        lang,
+                                        en: 'e.g. 15000',
+                                        mr: 'उदा. १५०००',
+                                        hi: 'उदा. १५०००',
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -383,13 +488,18 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
 
                         // 5. Status (Full Width Dropdown - matching PossibleImprovements.tsx lines 613-623)
                         AppDropdownFormField<String>(
-                                label: isMr ? 'सद्यस्थिती' : 'Status',
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Status',
+                                  mr: 'सद्यस्थिती',
+                                  hi: 'वर्तमान स्थिति',
+                                ),
                                 value: status,
                           items: [
-                            DropdownMenuItem(value: 'Pending', child: Text(isMr ? 'प्रलंबित (Pending)' : 'Pending')),
-                            DropdownMenuItem(value: 'Planned', child: Text(isMr ? 'नियोजित (Planned)' : 'Planned')),
-                            DropdownMenuItem(value: 'In Progress', child: Text(isMr ? 'सुरू (In Progress)' : 'In Progress')),
-                            DropdownMenuItem(value: 'Complete', child: Text(isMr ? 'पूर्ण (Complete)' : 'Complete')),
+                            DropdownMenuItem(value: 'Pending', child: Text(AppTranslations.pick(lang, en: 'Pending', mr: 'प्रलंबित', hi: 'लंबित'))),
+                            DropdownMenuItem(value: 'Planned', child: Text(AppTranslations.pick(lang, en: 'Planned', mr: 'नियोजित', hi: 'नियोजित'))),
+                            DropdownMenuItem(value: 'In Progress', child: Text(AppTranslations.pick(lang, en: 'In Progress', mr: 'सुरू', hi: 'प्रगति पर'))),
+                            DropdownMenuItem(value: 'Complete', child: Text(AppTranslations.pick(lang, en: 'Complete', mr: 'पूर्ण', hi: 'पूर्ण'))),
                           ],
                           onChanged: (val) {
                             if (val != null) setModalState(() => status = val);
@@ -411,7 +521,16 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                             onPressed: () async {
                               if (titleCtrl.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                                  SnackBar(content: Text(isMr ? 'कृपया सुधारणा कामाचे नाव प्रविष्ट करा' : 'Please enter improvement title')),
+                                  SnackBar(
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Please enter improvement title',
+                                        mr: 'कृपया सुधारणा कामाचे नाव प्रविष्ट करा',
+                                        hi: 'कृपया सुधार कार्य का नाम दर्ज करें',
+                                      ),
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
@@ -439,14 +558,26 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(isMr ? 'सुधारणा प्रस्ताव यशस्वीरित्या सादर केला!' : 'Improvement proposed successfully!'),
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Improvement proposed successfully!',
+                                        mr: 'सुधारणा प्रस्ताव यशस्वीरित्या सादर केला!',
+                                        hi: 'सुधार प्रस्ताव सफलतापूर्वक प्रस्तुत किया गया!',
+                                      ),
+                                    ),
                                     backgroundColor: const Color(0xFF16A34A),
                                   ),
                                 );
                               }
                             },
                             child: Text(
-                              isMr ? 'प्रस्ताव सादर करा' : 'Submit Proposal',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Submit Proposal',
+                                mr: 'प्रस्ताव सादर करा',
+                                hi: 'प्रस्ताव प्रस्तुत करें',
+                              ),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                           ),
@@ -466,7 +597,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredImprovements;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -487,7 +618,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -500,7 +636,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'संभाव्य सुधारणा' : 'Possible Improvements',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Possible Improvements',
+                  mr: 'संभाव्य सुधारणा',
+                  hi: 'संभावित सुधार',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -511,7 +652,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                 ),
               ),
               Text(
-                isMr ? 'नागरिकांच्या सूचना व पायाभूत सुविधांचे प्रस्ताव' : 'Citizen proposals, ideas & future project plans',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Citizen proposals, ideas & future project plans',
+                  mr: 'नागरिकांच्या सूचना व पायाभूत सुविधांचे प्रस्ताव',
+                  hi: 'नागरिकों के सुझाव व बुनियादी ढांचे के प्रस्ताव',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -563,7 +709,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               onChanged: (_) => setState(() => _displayedLimit = 20),
                               style: const TextStyle(fontSize: 13),
                               decoration: InputDecoration(
-                                hintText: isMr ? 'सुधारणा, वर्णन किंवा ठिकाण शोधा...' : 'Search improvements, description or location...',
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'Search improvements, description or location...',
+                                  mr: 'सुधारणा, वर्णन किंवा ठिकाण शोधा...',
+                                  hi: 'सुधार, विवरण या स्थान खोजें...',
+                                ),
                                 hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                 prefixIcon: const Icon(Icons.search, size: 19, color: Color(0xFF94A3B8)),
                                 suffixIcon: _searchCtrl.text.isNotEmpty
@@ -600,7 +751,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                     onChanged: (_) => setState(() => _showAreaDropdown = true),
                                     style: const TextStyle(fontSize: 12.5),
                                     decoration: InputDecoration(
-                                      hintText: isMr ? 'परिसर शोधा...' : 'Search area...',
+                                      hintText: AppTranslations.pick(
+                                        lang,
+                                        en: 'Search area...',
+                                        mr: 'परिसर शोधा...',
+                                        hi: 'क्षेत्र खोजें...',
+                                      ),
                                       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                       prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
                                       suffixIcon: _areaSearchCtrl.text.isNotEmpty
@@ -638,7 +794,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                     onChanged: (_) => setState(() => _showDateDropdown = true),
                                     style: const TextStyle(fontSize: 12.5),
                                     decoration: InputDecoration(
-                                      hintText: isMr ? 'तारीख फिल्टर...' : 'Filter date...',
+                                      hintText: AppTranslations.pick(
+                                        lang,
+                                        en: 'Filter date...',
+                                        mr: 'तारीख फिल्टर...',
+                                        hi: 'तारीख फ़िल्टर...',
+                                      ),
                                       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                       prefixIcon: const Icon(Icons.calendar_today_outlined, size: 17, color: Color(0xFF94A3B8)),
                                       suffixIcon: _dateSearchCtrl.text.isNotEmpty
@@ -682,14 +843,24 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               child: ListView(
                                 shrinkWrap: true,
                                 children: _areaSuggestions
-                                    .where((a) =>
-                                        _areaSearchCtrl.text.isEmpty ||
-                                        a['area'].toString().toLowerCase().contains(_areaSearchCtrl.text.toLowerCase()))
+                                    .where((a) {
+                                      if (_areaSearchCtrl.text.isEmpty) return true;
+                                      final q = _areaSearchCtrl.text.toLowerCase();
+                                      final normQ = AppTranslations.normalizeAsciiDigits(q);
+                                      final area = a['area'].toString().toLowerCase();
+                                      return area.contains(q) ||
+                                          AppTranslations.normalizeAsciiDigits(area)
+                                              .contains(normQ);
+                                    })
                                     .map((item) {
                                   return ListTile(
                                     dense: true,
                                     visualDensity: VisualDensity.compact,
-                                    title: Text(item['area'] as String, style: const TextStyle(fontSize: 12.5)),
+                                    title: AppTranslatedText(
+                                      item['area'] as String,
+                                      targetLanguage: lang,
+                                      style: const TextStyle(fontSize: 12.5),
+                                    ),
                                     trailing: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                       decoration: BoxDecoration(
@@ -697,7 +868,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        '${item['count']}',
+                                        AppTranslations.formatDigits('${item['count']}', lang),
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -734,14 +905,29 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               child: ListView(
                                 shrinkWrap: true,
                                 children: _dateSuggestions
-                                    .where((d) =>
-                                        _dateSearchCtrl.text.isEmpty ||
-                                        d['date'].toString().toLowerCase().contains(_dateSearchCtrl.text.toLowerCase()))
+                                    .where((d) {
+                                      if (_dateSearchCtrl.text.isEmpty) return true;
+                                      final normQ = AppTranslations.normalizeAsciiDigits(
+                                        _dateSearchCtrl.text,
+                                      ).toLowerCase();
+                                      final rawDate = d['date'].toString().toLowerCase();
+                                      final dt = d['dt'] as DateTime?;
+                                      final locDate = dt != null
+                                          ? AppTranslations.normalizeAsciiDigits(
+                                              AppTranslations.formatDate(dt, lang, pattern: 'MMM d, yyyy'),
+                                            ).toLowerCase()
+                                          : rawDate;
+                                      return rawDate.contains(normQ) || locDate.contains(normQ);
+                                    })
                                     .map((item) {
+                                  final dt = item['dt'] as DateTime?;
+                                  final displayDate = dt != null
+                                      ? AppTranslations.formatDate(dt, lang, pattern: 'MMM d, yyyy')
+                                      : AppTranslations.formatDigits(item['date'] as String, lang);
                                   return ListTile(
                                     dense: true,
                                     visualDensity: VisualDensity.compact,
-                                    title: Text(item['date'] as String, style: const TextStyle(fontSize: 12.5)),
+                                    title: Text(displayDate, style: const TextStyle(fontSize: 12.5)),
                                     trailing: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                       decoration: BoxDecoration(
@@ -749,13 +935,13 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        '${item['count']}',
+                                        AppTranslations.formatDigits('${item['count']}', lang),
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                     onTap: () {
                                       setState(() {
-                                        _dateSearchCtrl.text = item['date'] as String;
+                                        _dateSearchCtrl.text = displayDate;
                                         _showDateDropdown = false;
                                         _displayedLimit = 20;
                                       });
@@ -773,11 +959,11 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                _buildStatusPill('All', isMr ? 'सर्व' : 'All'),
-                                _buildStatusPill('Pending', isMr ? 'प्रलंबित' : 'Pending'),
-                                _buildStatusPill('Planned', isMr ? 'नियोजित' : 'Planned'),
-                                _buildStatusPill('In Progress', isMr ? 'सुरू' : 'In Progress'),
-                                _buildStatusPill('Complete', isMr ? 'पूर्ण' : 'Complete'),
+                                _buildStatusPill('All', AppTranslations.pick(lang, en: 'All', mr: 'सर्व', hi: 'सभी'), lang),
+                                _buildStatusPill('Pending', AppTranslations.pick(lang, en: 'Pending', mr: 'प्रलंबित', hi: 'लंबित'), lang),
+                                _buildStatusPill('Planned', AppTranslations.pick(lang, en: 'Planned', mr: 'नियोजित', hi: 'नियोजित'), lang),
+                                _buildStatusPill('In Progress', AppTranslations.pick(lang, en: 'In Progress', mr: 'सुरू', hi: 'प्रगति पर'), lang),
+                                _buildStatusPill('Complete', AppTranslations.pick(lang, en: 'Complete', mr: 'पूर्ण', hi: 'पूर्ण'), lang),
                               ],
                             ),
                           ),
@@ -799,7 +985,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               border: Border.all(color: const Color(0xFFBAE6FD)),
                             ),
                             child: Text(
-                              '${isMr ? "उपलब्ध सुधारणा" : "Total Items"}: ${filtered.length}',
+                              '${AppTranslations.pick(lang, en: "Total Items", mr: "उपलब्ध सुधारणा", hi: "कुल प्रस्ताव")}: ${AppTranslations.formatDigits('${filtered.length}', lang)}',
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -857,13 +1043,14 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               const SizedBox(width: 8),
                               // PDF Export Button
                               AppPdfButton.outlined(
-                                label: 'Reports',
-                                tooltip: 'Reports',
+                                label: AppTranslations.getDownloadReport(lang),
+                                tooltip: AppTranslations.getDownloadReport(lang),
                                 onPressed: () {
                                   ImprovementReportGenerator.generateAndPrintImprovementReport(
                                     improvements: filtered,
                                     areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
                                     statusFilter: _statusFilter,
+                                    lang: lang,
                                   );
                                 },
                               ),
@@ -875,17 +1062,17 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
 
                     // Main Content: Report Table or Cards Grid
                     if (_viewMode == 'report') ...[
-                      _buildReportTableView(isMr, _visibleImprovements),
+                      _buildReportTableView(lang, _visibleImprovements),
                     ] else ...[
-                      _buildCardsGridView(isMr, _visibleImprovements),
+                      _buildCardsGridView(lang, _visibleImprovements),
                     ],
                     AppLoadMoreFooter(
                       currentCount: _visibleImprovements.length,
                       totalCount: filtered.length,
                       pageSize: 20,
                       onLoadMore: () => setState(() => _displayedLimit += 20),
-                      label: isMr ? 'सुधारणा' : 'improvements',
-                      isMarathi: isMr,
+                      label: AppTranslations.pick(lang, en: 'improvements', mr: 'सुधारणा', hi: 'सुधार'),
+                      isMarathi: lang == 'mr',
                     ),
 
                     const SizedBox(height: 80),
@@ -899,7 +1086,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
           onPressed: _openAddModal,
           icon: const Icon(Icons.add_rounded, size: 22),
           label: Text(
-            isMr ? 'नवीन प्रस्ताव' : 'Propose Improvement',
+            AppTranslations.pick(
+              lang,
+              en: 'Propose Improvement',
+              mr: 'नवीन प्रस्ताव',
+              hi: 'सुधार प्रस्तावित करें',
+            ),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -907,7 +1099,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
     );
   }
 
-  Widget _buildStatusPill(String status, String label) {
+  Widget _buildStatusPill(String status, String label, String lang) {
     final isSelected = _statusFilter.toLowerCase() == status.toLowerCase();
     final count = _countForStatus(status);
 
@@ -947,7 +1139,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '$count',
+                  AppTranslations.formatDigits('$count', lang),
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.bold,
@@ -963,7 +1155,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
   }
 
   // Cards Grid View matching PossibleImprovements.tsx lines 445-521
-  Widget _buildCardsGridView(bool isMr, List<ImprovementModel> items) {
+  Widget _buildCardsGridView(String lang, List<ImprovementModel> items) {
     if (items.isEmpty) {
       return Container(
         margin: const EdgeInsets.all(16),
@@ -979,7 +1171,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
             const Icon(Icons.lightbulb_outline_rounded, size: 48, color: Color(0xFF94A3B8)),
             const SizedBox(height: 12),
             Text(
-              isMr ? 'कोणताही प्रस्ताव आढळला नाही' : 'No proposals found for this filter',
+              AppTranslations.pick(
+                lang,
+                en: 'No proposals found for this filter',
+                mr: 'कोणताही प्रस्ताव आढळला नाही',
+                hi: 'इस फ़िल्टर के लिए कोई प्रस्ताव नहीं मिला',
+              ),
               style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
             ),
           ],
@@ -996,6 +1193,10 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (ctx, idx) {
           final item = items[idx];
+          final parsedDate = item.createdAt.isNotEmpty ? DateTime.tryParse(item.createdAt) : null;
+          final dateDisplay = parsedDate != null
+              ? AppTranslations.formatDate(parsedDate, lang, pattern: 'dd MMM yyyy')
+              : AppTranslations.formatDigits(item.createdAt.split('T').first, lang);
 
           return InkWell(
             onTap: () {
@@ -1044,13 +1245,13 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildStatusBadge(item.status, isMr),
+                          _buildStatusBadge(item.status, lang),
                           Row(
                             children: [
                               const Icon(Icons.calendar_today_outlined, size: 12, color: Color(0xFF64748B)),
                               const SizedBox(width: 4),
                               Text(
-                                item.createdAt.isNotEmpty ? item.createdAt.split('T').first : '',
+                                dateDisplay,
                                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                               ),
                             ],
@@ -1060,8 +1261,9 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                       const SizedBox(height: 10),
 
                       // Title matching line 485
-                      Text(
+                      AppTranslatedText(
                         item.title,
+                        targetLanguage: lang,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1073,8 +1275,9 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                       const SizedBox(height: 4),
 
                       // Description matching line 486
-                      Text(
+                      AppTranslatedText(
                         item.description,
+                        targetLanguage: lang,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
@@ -1088,8 +1291,9 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                             const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                             const SizedBox(width: 4),
                             Expanded(
-                              child: Text(
+                              child: AppTranslatedText(
                                 '${item.location}${item.area.isNotEmpty ? " (${item.area})" : ""}',
+                                targetLanguage: lang,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
@@ -1105,7 +1309,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                             const Icon(Icons.people_outline, size: 13, color: Color(0xFF0284C7)),
                             const SizedBox(width: 4),
                             Text(
-                              '${item.peopleBenefited} ${isMr ? "नागरिकांना लाभ" : "People Benefited"}',
+                              '${AppTranslations.formatDigits('${item.peopleBenefited}', lang)} ${AppTranslations.pick(lang, en: "People Benefited", mr: "नागरिकांना लाभ", hi: "लाभार्थी नागरिक")}',
                               style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                             ),
                           ],
@@ -1123,7 +1327,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                           Row(
                             children: [
                               Text(
-                                '${item.votes}',
+                                AppTranslations.formatDigits('${item.votes}', lang),
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -1132,7 +1336,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                isMr ? 'नागरिक मते' : 'VOTES',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'VOTES',
+                                  mr: 'नागरिक मते',
+                                  hi: 'नागरिक मत',
+                                ),
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -1160,7 +1369,12 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                                   const Icon(Icons.thumb_up_alt_outlined, size: 14, color: Color(0xFF0284C7)),
                                   const SizedBox(width: 5),
                                   Text(
-                                    isMr ? 'मत द्या' : 'Vote',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Vote',
+                                      mr: 'मत द्या',
+                                      hi: 'मत दें',
+                                    ),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -1185,7 +1399,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
   }
 
   // Report Table View matching PossibleImprovements.tsx lines 385-443
-  Widget _buildReportTableView(bool isMr, List<ImprovementModel> items) {
+  Widget _buildReportTableView(String lang, List<ImprovementModel> items) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -1209,17 +1423,18 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${isMr ? "अहवाल तक्ता" : "Report View"} (${items.length})',
+                  '${AppTranslations.pick(lang, en: "Report View", mr: "अहवाल तक्ता", hi: "रिपोर्ट तालिका")} (${AppTranslations.formatDigits('${items.length}', lang)})',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                 ),
                 AppPdfButton.outlined(
-                  label: 'Reports',
-                  tooltip: 'Reports',
+                  label: AppTranslations.getDownloadReport(lang),
+                  tooltip: AppTranslations.getDownloadReport(lang),
                   onPressed: () {
                     ImprovementReportGenerator.generateAndPrintImprovementReport(
                       improvements: items,
                       areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
                       statusFilter: _statusFilter,
+                      lang: lang,
                     );
                   },
                 ),
@@ -1235,16 +1450,20 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
               headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
               columnSpacing: 20,
               columns: [
-                DataColumn(label: Text(isMr ? 'क्र.' : 'Sr No', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'प्रस्ताव शीर्षक' : 'Improvement Title', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'ठिकाण व परिसर' : 'Location / Area', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'स्थिती' : 'Status', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'मते' : 'Votes', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'तारीख' : 'Date', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Sr No', mr: 'क्र.', hi: 'क्र.'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Improvement Title', mr: 'प्रस्ताव शीर्षक', hi: 'प्रस्ताव शीर्षक'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Location / Area', mr: 'ठिकाण व परिसर', hi: 'स्थान व क्षेत्र'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Votes', mr: 'मते', hi: 'मत'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Date', mr: 'तारीख', hi: 'तारीख'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
               ],
               rows: items.asMap().entries.map((entry) {
                 final idx = entry.key;
                 final item = entry.value;
+                final parsedDate = item.createdAt.isNotEmpty ? DateTime.tryParse(item.createdAt) : null;
+                final dateDisplay = parsedDate != null
+                    ? AppTranslations.formatDate(parsedDate, lang, pattern: 'dd MMM yyyy')
+                    : AppTranslations.formatDigits(item.createdAt.split('T').first, lang);
                 return DataRow(
                   onSelectChanged: (_) {
                     Navigator.push(
@@ -1255,7 +1474,7 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                     ).then((res) { if (res == true) _fetchData(showLoading: false); });
                   },
                   cells: [
-                    DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 12))),
+                    DataCell(Text(AppTranslations.formatDigits('${idx + 1}', lang), style: const TextStyle(fontSize: 12))),
                     DataCell(
                       SizedBox(
                         width: 170,
@@ -1263,14 +1482,16 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppTranslatedText(
                               item.title,
+                              targetLanguage: lang,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
-                            Text(
+                            AppTranslatedText(
                               item.description,
+                              targetLanguage: lang,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
@@ -1282,24 +1503,25 @@ class _PossibleImprovementsScreenState extends ConsumerState<PossibleImprovement
                     DataCell(
                       SizedBox(
                         width: 130,
-                        child: Text(
+                        child: AppTranslatedText(
                           '${item.location}${item.area.isNotEmpty ? " (${item.area})" : ""}',
+                          targetLanguage: lang,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
-                    DataCell(_buildStatusBadge(item.status, isMr)),
+                    DataCell(_buildStatusBadge(item.status, lang)),
                     DataCell(
                       Text(
-                        '${item.votes}',
+                        AppTranslations.formatDigits('${item.votes}', lang),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                       ),
                     ),
                     DataCell(
                       Text(
-                        item.createdAt.isNotEmpty ? item.createdAt.split('T').first : '',
+                        dateDisplay,
                         style: const TextStyle(fontSize: 12),
                       ),
                     ),

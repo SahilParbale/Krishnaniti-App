@@ -50,7 +50,7 @@ class HousingSocietyModel {
     return voterCount - favourableVoterCount;
   }
 
-  /// Display name preferring Marathi if present or fallback
+  /// Display name preferring localized script if present or fallback
   String displayName([bool isMr = true]) {
     if (isMr) {
       if (nameMarathi != null && nameMarathi!.trim().isNotEmpty) {
@@ -64,9 +64,25 @@ class HousingSocietyModel {
     return name.trim();
   }
 
+  /// Trilingual display name source ('en' / 'mr' / 'hi')
+  String displayNameFor(String lang) {
+    if (lang == 'en') {
+      if (nameEnglish != null && nameEnglish!.trim().isNotEmpty) {
+        return nameEnglish!.trim();
+      }
+      return name.trim();
+    }
+    if (nameMarathi != null && nameMarathi!.trim().isNotEmpty) {
+      return nameMarathi!.trim();
+    }
+    return name.trim();
+  }
+
   /// Subtitle or secondary name
-  String? secondaryName([bool isMr = true]) {
-    if (isMr) {
+  String? secondaryName([bool isMr = true]) => secondaryNameFor(isMr ? 'mr' : 'en');
+
+  String? secondaryNameFor(String lang) {
+    if (lang != 'en') {
       if (nameEnglish != null && nameEnglish!.trim().isNotEmpty && nameEnglish != nameMarathi) {
         return nameEnglish!.trim();
       }

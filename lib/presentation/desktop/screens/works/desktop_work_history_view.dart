@@ -65,30 +65,40 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
   }
 
   List<WorkHistoryModel> get _filteredItems {
+    final q = AppTranslations.normalizeAsciiDigits(_searchTerm).toLowerCase().trim();
     return _items.where((item) {
-      final matchesSearch = _searchTerm.isEmpty ||
-          item.title.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          item.description.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          item.location.toLowerCase().contains(_searchTerm.toLowerCase());
+      final matchesSearch = q.isEmpty ||
+          AppTranslations.normalizeAsciiDigits(item.title).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.description).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.location).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.area).toLowerCase().contains(q);
 
       final matchesArea = _areaSearch.isEmpty ||
           item.area.toLowerCase().contains(_areaSearch.toLowerCase());
 
       final matchesDate = _dateSearch.isEmpty ||
-          _formatDate(item.date).toLowerCase().contains(_dateSearch.toLowerCase());
+          _canonicalDateKey(item.date) == _dateSearch;
 
       return matchesSearch && matchesArea && matchesDate;
     }).toList();
   }
 
-  String _formatDate(String raw) {
+  String _canonicalDateKey(String raw) {
     if (raw.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(raw);
-      return DateFormat('MMM d, yyyy').format(dt);
-    } catch (_) {
-      return raw;
+    final dt = DateTime.tryParse(raw);
+    if (dt != null) {
+      return AppTranslations.formatDate(dt, 'en', pattern: 'yyyy-MM-dd');
     }
+    return raw;
+  }
+
+  String _formatDate(String raw, String lang) {
+    if (raw.isEmpty) return '';
+    final dt = DateTime.tryParse(raw);
+    if (dt != null) {
+      return AppTranslations.formatDate(dt, lang, pattern: 'MMM d, yyyy');
+    }
+    return AppTranslations.formatDigits(raw, lang);
   }
 
   Map<String, int> get _areaSuggestions {
@@ -104,9 +114,9 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
   Map<String, int> get _dateSuggestions {
     final map = <String, int>{};
     for (final item in _items) {
-      final formatted = _formatDate(item.date);
-      if (formatted.isNotEmpty) {
-        map[formatted] = (map[formatted] ?? 0) + 1;
+      final key = _canonicalDateKey(item.date);
+      if (key.isNotEmpty) {
+        map[key] = (map[key] ?? 0) + 1;
       }
     }
     return map;
@@ -154,237 +164,374 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          return DesktopModalDialog(
-            title: 'Add New Work',
-            subtitle: 'Record completed, in-progress, and planned ward development works',
-            icon: Icons.construction_rounded,
-            width: 600,
-            onClose: () => Navigator.pop(ctx),
-            actions: [
-              DesktopModalDialog.cancelButton(ctx),
-              const SizedBox(width: 12),
-              DesktopModalDialog.primaryButton(
-                text: 'Add Work',
-                onPressed: () async {
-                            if (titleController.text.trim().isEmpty) return;
-                            final newWork = WorkHistoryModel(
-                              id: 'work-${DateTime.now().millisecondsSinceEpoch}',
-                              source: 'Manual',
-                              title: titleController.text.trim(),
-                              description: descController.text.trim(),
-                              location: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
-                              area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
-                              status: selectedStatus,
-                              date: completionDate,
-                              amount: double.tryParse(amountController.text.trim()),
-                              peopleBenefited: int.tryParse(peopleController.text.trim()),
-                            );
-
-                            final repo = ref.read(workHistoryRepoProvider);
-                            await repo.addWork(newWork);
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchData();
-                          },
+      builder: (ctx) => ValueListenableBuilder<String>(
+        valueListenable: appLanguageValueNotifier,
+        builder: (ctx, lang, _) => StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return DesktopModalDialog(
+              title: AppTranslations.pick(
+                lang,
+                en: 'Add New Work',
+                mr: 'नवीन काम जोडा',
+                hi: 'नया कार्य जोड़ें',
               ),
-            ],
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                    const Text('Project Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: titleController,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Main road asphalting...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              subtitle: AppTranslations.pick(
+                lang,
+                en: 'Record completed, in-progress, and planned ward development works',
+                mr: 'पूर्ण, चालू आणि नियोजित प्रभाग विकास कामांची नोंद करा',
+                hi: 'पूर्ण, प्रगतिशील और नियोजित वार्ड विकास कार्यों को दर्ज करें',
+              ),
+              icon: Icons.construction_rounded,
+              width: 600,
+              onClose: () => Navigator.pop(ctx),
+              actions: [
+                DesktopModalDialog.cancelButton(ctx),
+                const SizedBox(width: 12),
+                DesktopModalDialog.primaryButton(
+                  text: AppTranslations.pick(
+                    lang,
+                    en: 'Add Work',
+                    mr: 'काम जोडा',
+                    hi: 'कार्य जोड़ें',
+                  ),
+                  onPressed: () async {
+                    if (titleController.text.trim().isEmpty) return;
+                    final parsedAmount = double.tryParse(
+                      AppTranslations.normalizeAsciiDigits(amountController.text.trim()),
+                    );
+                    final parsedPeople = int.tryParse(
+                      AppTranslations.normalizeAsciiDigits(peopleController.text.trim()),
+                    );
+                    final newWork = WorkHistoryModel(
+                      id: 'work-${DateTime.now().millisecondsSinceEpoch}',
+                      source: 'Manual',
+                      title: titleController.text.trim(),
+                      description: descController.text.trim(),
+                      location: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
+                      area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
+                      status: selectedStatus,
+                      date: completionDate,
+                      amount: parsedAmount,
+                      peopleBenefited: parsedPeople,
+                    );
+
+                    final repo = ref.read(workHistoryRepoProvider);
+                    await repo.addWork(newWork);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    _fetchData();
+                  },
+                ),
+              ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Project Title *',
+                      mr: 'प्रकल्पाचे शीर्षक *',
+                      hi: 'परियोजना शीर्षक *',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'e.g. Main road asphalting...',
+                        mr: 'उदा. मुख्य रस्ता डांबरीकरण...',
+                        hi: 'उदा. मुख्य सड़क डामरीकरण...',
                       ),
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
-                    const SizedBox(height: 16),
+                  ),
+                  const SizedBox(height: 16),
 
-                    // Description + AI Button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Description *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                        TextButton.icon(
-                          onPressed: isGeneratingAI || titleController.text.trim().isEmpty
-                              ? null
-                              : () async {
-                                  setModalState(() => isGeneratingAI = true);
-                                  await Future.delayed(const Duration(milliseconds: 600));
-                                  descController.text =
-                                      'Under ${titleController.text.trim()}, development work will be completed on schedule using high-quality materials for citizens.';
-                                  setModalState(() => isGeneratingAI = false);
-                                },
-                          icon: isGeneratingAI
-                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF0284C7)),
-                          label: Text(
-                            isGeneratingAI ? 'Generating...' : 'Auto-Generate (AI)',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
-                          ),
+                  // Description + AI Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Description *',
+                          mr: 'वर्णन *',
+                          hi: 'विवरण *',
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: descController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Describe the work details...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Location & Area
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Location *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: locationController,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Shivaji Chowk',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
+                      TextButton.icon(
+                        onPressed: isGeneratingAI || titleController.text.trim().isEmpty
+                            ? null
+                            : () async {
+                                setModalState(() => isGeneratingAI = true);
+                                await Future.delayed(const Duration(milliseconds: 600));
+                                final titleText = titleController.text.trim();
+                                descController.text = AppTranslations.pick(
+                                  lang,
+                                  en: 'Under $titleText, development work will be completed on schedule using high-quality materials for citizens.',
+                                  mr: '$titleText अंतर्गत नागरिकांसाठी दर्जेदार साहित्याचा वापर करून विकास काम वेळेत पूर्ण केले जाईल.',
+                                  hi: '$titleText के अंतर्गत नागरिकों के लिए उच्च गुणवत्ता वाली सामग्री का उपयोग करके विकास कार्य समय पर पूरा किया जाएगा।',
+                                );
+                                setModalState(() => isGeneratingAI = false);
+                              },
+                        icon: isGeneratingAI
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF0284C7)),
+                        label: Text(
+                          isGeneratingAI
+                              ? AppTranslations.pick(lang, en: 'Generating...', mr: 'तयार होत आहे...', hi: 'तैयार हो रहा है...')
+                              : AppTranslations.pick(lang, en: 'Auto-Generate (AI)', mr: 'AI द्वारे तयार करा', hi: 'AI से स्वचालित बनाएं'),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Ward / Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: areaController,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Status & Amount
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              AppDropdown<String>(
-                                value: selectedStatus,
-                                height: 44,
-                                backgroundColor: const Color(0xFFF8FAFC),
-                                borderColor: const Color(0xFFE2E8F0),
-                                items: const [
-                                  DropdownMenuItem(value: 'Planned', child: Text('Planned')),
-                                  DropdownMenuItem(value: 'InProgress', child: Text('In Progress')),
-                                  DropdownMenuItem(value: 'Completed', child: Text('Completed')),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => selectedStatus = val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Amount (₹)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                              const SizedBox(height: 6),
-                              TextField(
-                                controller: amountController,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  prefixText: '₹ ',
-                                  hintText: '50000',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // People Benefited
-                    const Text('People Benefited', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: peopleController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. 1200',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: descController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Describe the work details...',
+                        mr: 'कामाचा सविस्तर तपशील लिहा...',
+                        hi: 'कार्य का विस्तृत विवरण लिखें...',
+                      ),
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
-                                      ],
-            ),
-          );
-        },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Location & Area
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Location *',
+                                mr: 'ठिकाण *',
+                                hi: 'स्थान *',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: locationController,
+                              decoration: InputDecoration(
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. Shivaji Chowk',
+                                  mr: 'उदा. शिवाजी चौक',
+                                  hi: 'उदा. शिवाजी चौक',
+                                ),
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Ward / Area',
+                                mr: 'प्रभाग / परिसर',
+                                hi: 'वार्ड / क्षेत्र',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: areaController,
+                              decoration: InputDecoration(
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. Ward 12',
+                                  mr: 'उदा. प्रभाग १२',
+                                  hi: 'उदा. वार्ड १२',
+                                ),
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Status & Amount
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Status',
+                                mr: 'स्थिती',
+                                hi: 'स्थिति',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            AppDropdown<String>(
+                              value: selectedStatus,
+                              height: 44,
+                              backgroundColor: const Color(0xFFF8FAFC),
+                              borderColor: const Color(0xFFE2E8F0),
+                              items: [
+                                DropdownMenuItem(
+                                  value: 'Planned',
+                                  child: Text(AppTranslations.getStatus('planned', lang)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'InProgress',
+                                  child: Text(AppTranslations.getStatus('in_progress', lang)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Completed',
+                                  child: Text(AppTranslations.getStatus('completed', lang)),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) setModalState(() => selectedStatus = val);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Amount (₹)',
+                                mr: 'रक्कम (₹)',
+                                hi: 'राशि (₹)',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: amountController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                prefixText: '₹ ',
+                                hintText: AppTranslations.formatDigits('50000', lang),
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // People Benefited
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'People Benefited',
+                      mr: 'लाभार्थी नागरिक',
+                      hi: 'लाभान्वित नागरिक',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: peopleController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'e.g. 1200',
+                        mr: 'उदा. १२००',
+                        hi: 'उदा. १२००',
+                      ),
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
-    );  }
+    );
+  }
+
+  String _localizeSource(String source, String lang) {
+    switch (source.trim().toLowerCase()) {
+      case 'manual':
+        return AppTranslations.pick(lang, en: 'Manual', mr: 'मॅन्युअल', hi: 'मैनुअल');
+      case 'complaint':
+        return AppTranslations.pick(lang, en: 'Complaint', mr: 'तक्रार', hi: 'शिकायत');
+      case 'help':
+        return AppTranslations.pick(lang, en: 'Help', mr: 'मदत', hi: 'सहायता');
+      default:
+        return source;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(appLanguageProvider);
+    final lang = ref.watch(desktopLanguageProvider);
     final filtered = _filteredItems;
     final visible = _visibleItems;
 
@@ -423,7 +570,12 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               onLoadMore: () {
                 setState(() => _displayedLimit += 20);
               },
-              label: lang == 'mr' ? 'कामे' : (lang == 'hi' ? 'कार्य' : 'works'),
+              label: AppTranslations.pick(
+                lang,
+                en: 'works',
+                mr: 'कामे',
+                hi: 'कार्य',
+              ),
               isMarathi: lang == 'mr',
             ),
         ],
@@ -432,6 +584,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
   }
 
   Widget _buildHeader(int count, String lang) {
+    final locCount = AppTranslations.formatDigits(count, lang);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -460,7 +613,12 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
                   child: Text(
-                    lang == 'mr' ? 'एकूण: $count' : (lang == 'hi' ? 'कुल: $count' : 'Total: $count'),
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Total: $locCount',
+                      mr: 'एकूण: $locCount',
+                      hi: 'कुल: $locCount',
+                    ),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -472,11 +630,12 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             ),
             const SizedBox(height: 4),
             Text(
-              lang == 'mr'
-                  ? 'प्रभागातील विकास कामे व अहवाल व्यवस्थापन'
-                  : (lang == 'hi'
-                      ? 'वार्ड में विकास कार्य और अहवाल प्रबंधन'
-                      : 'Recorded development and maintenance civil works'),
+              AppTranslations.pick(
+                lang,
+                en: 'Recorded development and maintenance civil works',
+                mr: 'प्रभागातील विकास कामे व अहवाल व्यवस्थापन',
+                hi: 'वार्ड में विकास कार्य और अहवाल प्रबंधन',
+              ),
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
@@ -492,12 +651,13 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                   WorkReportGenerator.generateAndPrintWorkReport(
                     context: context,
                     works: _filteredItems,
+                    areaFilter: _areaSearch.isEmpty ? null : _areaSearch,
                     lang: lang,
                   );
                 },
                 icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                 label: Text(
-                  lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                  AppTranslations.getDownloadReport(lang),
                   style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -514,7 +674,12 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                 onPressed: _toggleSelectionMode,
                 icon: const Icon(Icons.description_outlined, size: 16, color: Color(0xFF334155)),
                 label: Text(
-                  lang == 'mr' ? 'अहवाल तयार करा' : (lang == 'hi' ? 'अहवाल बनाएं' : 'Generate Ahwal'),
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Generate Ahwal',
+                    mr: 'अहवाल तयार करा',
+                    hi: 'अहवाल बनाएं',
+                  ),
                   style: const TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -543,7 +708,12 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                   const Icon(Icons.add, size: 16, color: Colors.white),
                   const SizedBox(width: 8),
                   Text(
-                    lang == 'mr' ? 'नवीन काम जोडा' : (lang == 'hi' ? 'नया कार्य जोड़ें' : 'Add Work'),
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Add Work',
+                      mr: 'नवीन काम जोडा',
+                      hi: 'नया कार्य जोड़ें',
+                    ),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -607,7 +777,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                 decoration: const BoxDecoration(color: Color(0xFFE0F2FE), shape: BoxShape.circle),
                 alignment: Alignment.center,
                 child: Text(
-                  '${_selectedWorkIds.length}',
+                  AppTranslations.formatDigits(_selectedWorkIds.length, lang),
                   style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                 ),
               ),
@@ -616,15 +786,21 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    lang == 'mr' ? 'कामे निवडली' : (lang == 'hi' ? 'कार्य चयनित' : 'Works Selected'),
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Works Selected',
+                      mr: 'कामे निवडली',
+                      hi: 'कार्य चयनित',
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   Text(
-                    lang == 'mr'
-                        ? 'अहवालात समाविष्ट करण्यासाठी कामे निवडा.'
-                        : (lang == 'hi'
-                            ? 'अहवाल में शामिल करने के लिए कार्य चुनें।'
-                            : 'Select works to include in the Ahwal report.'),
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Select works to include in the Ahwal report.',
+                      mr: 'अहवालात समाविष्ट करण्यासाठी कामे निवडा.',
+                      hi: 'अहवाल में शामिल करने के लिए कार्य चुनें।',
+                    ),
                     style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   ),
                 ],
@@ -641,7 +817,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: Text(
-                  lang == 'mr' ? 'रद्द करा' : (lang == 'hi' ? 'रद्द करें' : 'Cancel'),
+                  AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
                   style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600),
                 ),
               ),
@@ -659,7 +835,12 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                       },
                 icon: const Icon(Icons.description, size: 16, color: Colors.white),
                 label: Text(
-                  lang == 'mr' ? 'अहवाल पूर्वावलोकन' : (lang == 'hi' ? 'अहवाल पूर्वावलोकन' : 'Preview Ahwal Report'),
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Preview Ahwal Report',
+                    mr: 'अहवाल पूर्वावलोकन',
+                    hi: 'अहवाल पूर्वावलोकन',
+                  ),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -694,11 +875,12 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                 _displayedLimit = 20;
               }),
               decoration: InputDecoration(
-                hintText: lang == 'mr'
-                    ? 'शीर्षक किंवा पत्त्याने शोधा...'
-                    : (lang == 'hi'
-                        ? 'शीर्षक या स्थान से खोजें...'
-                        : 'Search work by title, location...'),
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search work by title, location...',
+                  mr: 'शीर्षक किंवा पत्त्याने शोधा...',
+                  hi: 'शीर्षक या स्थान से खोजें...',
+                ),
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                 prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                 border: InputBorder.none,
@@ -720,16 +902,27 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             borderColor: const Color(0xFFE2E8F0),
             items: ['All', ..._areaSuggestions.keys].map((area) {
               final count = area == 'All' ? _items.length : (_areaSuggestions[area] ?? 0);
+              final locCount = AppTranslations.formatDigits(count, lang);
               final areaLabel = area == 'All'
-                  ? (lang == 'mr' ? 'सर्व परिसर' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                  : area;
+                  ? AppTranslations.pick(lang, en: 'All Areas', mr: 'सर्व परिसर', hi: 'सभी क्षेत्र')
+                  : AppTranslations.getAreaName(area, lang);
               return DropdownMenuItem(
                 value: area,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(areaLabel),
-                    Text('($count)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                    Expanded(
+                      child: area == 'All'
+                          ? Text(areaLabel, overflow: TextOverflow.ellipsis)
+                          : AppTranslatedText(
+                              areaLabel,
+                              targetLanguage: lang,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('($locCount)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                   ],
                 ),
               );
@@ -755,16 +948,20 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             borderColor: const Color(0xFFE2E8F0),
             items: ['All', ..._dateSuggestions.keys].map((date) {
               final count = date == 'All' ? _items.length : (_dateSuggestions[date] ?? 0);
+              final locCount = AppTranslations.formatDigits(count, lang);
               final dateLabel = date == 'All'
-                  ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                  : date;
+                  ? AppTranslations.pick(lang, en: 'All Dates', mr: 'सर्व तारखा', hi: 'सभी तिथियां')
+                  : _formatDate(date, lang);
               return DropdownMenuItem(
                 value: date,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(dateLabel),
-                    Text('($count)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                    Expanded(
+                      child: Text(dateLabel, overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('($locCount)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                   ],
                 ),
               );
@@ -788,14 +985,14 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             children: [
               _buildViewToggleButton(
                 icon: Icons.grid_view_rounded,
-                label: lang == 'mr' ? 'ग्रिड' : (lang == 'hi' ? 'ग्रिड' : 'Grid'),
+                label: AppTranslations.pick(lang, en: 'Grid', mr: 'ग्रिड', hi: 'ग्रिड'),
                 isActive: _viewMode == 'grid',
                 onTap: () => setState(() => _viewMode = 'grid'),
               ),
               const SizedBox(width: 4),
               _buildViewToggleButton(
                 icon: Icons.table_rows_rounded,
-                label: lang == 'mr' ? 'तक्ता' : (lang == 'hi' ? 'तालिका' : 'Table'),
+                label: AppTranslations.pick(lang, en: 'Table', mr: 'तक्ता', hi: 'तालिका'),
                 isActive: _viewMode == 'table',
                 onTap: () => setState(() => _viewMode = 'table'),
               ),
@@ -821,7 +1018,12 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             const Icon(Icons.assignment_outlined, size: 48, color: Color(0xFFCBD5E1)),
             const SizedBox(height: 12),
             Text(
-              lang == 'mr' ? 'कोणत्याही नोंदी आढळल्या नाहीत' : (lang == 'hi' ? 'कोई रिकॉर्ड नहीं मिला' : 'No records found'),
+              AppTranslations.pick(
+                lang,
+                en: 'No records found',
+                mr: 'कोणत्याही नोंदी आढळल्या नाहीत',
+                hi: 'कोई रिकॉर्ड नहीं मिला',
+              ),
               style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
             ),
           ],
@@ -860,6 +1062,9 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
               bgColor = Colors.white;
             }
 
+            final fbCount = AppTranslations.formatDigits(item.feedbackCount, lang);
+            final fbRating = AppTranslations.formatDigits(item.feedbackRating, lang);
+
             return InkWell(
               onTap: () => _handleCardClick(item),
               borderRadius: BorderRadius.circular(20),
@@ -897,8 +1102,9 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                                 children: [
                                   const Icon(Icons.build_outlined, size: 12, color: Color(0xFF0EA5E9)),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    item.source,
+                                  AppTranslatedText(
+                                    _localizeSource(item.source, lang),
+                                    targetLanguage: lang,
                                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                                   ),
                                 ],
@@ -982,11 +1188,16 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '${item.feedbackCount} Feedback',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: '$fbCount Feedback',
+                                      mr: '$fbCount अभिप्राय',
+                                      hi: '$fbCount प्रतिक्रिया',
+                                    ),
                                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                                   ),
                                   Text(
-                                    '${item.feedbackRating} ★',
+                                    '$fbRating ★',
                                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                                   ),
                                 ],
@@ -997,11 +1208,11 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                             children: [
                               const Icon(Icons.access_time, size: 12, color: Color(0xFF94A3B8)),
                               const SizedBox(width: 4),
-                              Text(_formatDate(item.date), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              Text(_formatDate(item.date, lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                               const Spacer(),
                               if (item.amount != null && item.amount! > 0)
                                 Text(
-                                  '₹ ${NumberFormat('#,##,###').format(item.amount)}',
+                                  AppTranslations.formatCurrency(NumberFormat('#,##,###').format(item.amount), lang),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                                 ),
                             ],
@@ -1012,8 +1223,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                               const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
                               const SizedBox(width: 4),
                               Expanded(
-                                child: Text(
+                                child: AppTranslatedText(
                                   '${item.location}${item.area.isNotEmpty ? ' (${item.area})' : ''}',
+                                  targetLanguage: lang,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                 ),
@@ -1117,7 +1330,10 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                           value: _selectedWorkIds.contains(item.id),
                           onChanged: (_) => _handleCardClick(item),
                         )
-                      : Text('${index + 1}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      : Text(
+                          AppTranslations.formatDigits(index + 1, lang),
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
                 ),
                 DataCell(
                   Column(
@@ -1138,12 +1354,20 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
                   ),
                   onTap: () => _handleCardClick(item),
                 ),
-                DataCell(Text('${item.location} (${item.area})', style: const TextStyle(fontSize: 12, color: Color(0xFF334155)))),
+                DataCell(
+                  AppTranslatedText(
+                    '${item.location}${item.area.isNotEmpty ? ' (${item.area})' : ''}',
+                    targetLanguage: lang,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
+                  ),
+                ),
                 DataCell(_buildStatusBadge(item.status, lang)),
-                DataCell(Text(_formatDate(item.date), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                DataCell(Text(_formatDate(item.date, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
                 DataCell(
                   Text(
-                    item.amount != null ? '₹ ${NumberFormat('#,##,###').format(item.amount)}' : '--',
+                    item.amount != null
+                        ? AppTranslations.formatCurrency(NumberFormat('#,##,###').format(item.amount), lang)
+                        : '--',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                   ),
                 ),
@@ -1169,7 +1393,7 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
             mainAxisSpacing: 20,
             mainAxisExtent: 260,
           ),
-          itemBuilder: (_, __) => Container(
+          itemBuilder: (_, _) => Container(
             decoration: BoxDecoration(
               color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(20),

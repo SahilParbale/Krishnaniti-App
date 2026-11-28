@@ -40,6 +40,11 @@ class SocialPostModel {
     this.author = 'नगरसेवक कार्यालय • प्रभाग १२',
   });
 
+  String contentFor(String lang) {
+    if (lang == 'mr' && contentMarathi.trim().isNotEmpty) return contentMarathi;
+    return content.trim().isNotEmpty ? content : contentMarathi;
+  }
+
   double get engagementRate {
     if (reach <= 0) return 0.0;
     return ((likes + comments + shares) / reach) * 100;

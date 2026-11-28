@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/housing_society_model.dart';
 import '../../../data/repositories/housing_society_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -48,21 +50,31 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData({bool showLoading = true}) async {
     if (showLoading) setState(() => _isLoading = true);
     final repo = ref.read(housingSocietyRepoProvider);
 
+    final normalizedSearch = AppTranslations.normalizeAsciiDigits(_searchController.text);
     final list = await repo.getSocieties(
-      searchQuery: _searchController.text,
-      area: _selectedArea,
+      searchQuery: normalizedSearch,
+      area: (_selectedArea == 'all' || _selectedArea == 'All') ? 'All' : _selectedArea,
       status: _selectedStatus,
     );
+    final filteredList = _selectedStatus == 'all'
+        ? list
+        : list.where((s) => s.status.toLowerCase() == _selectedStatus.toLowerCase()).toList();
     final stats = await repo.getStatistics();
     final areas = await repo.getUniqueAreas();
 
     if (mounted) {
       setState(() {
-        _societies = list;
+        _societies = filteredList;
         _stats = stats;
         _areas = areas;
         _isLoading = false;
@@ -72,7 +84,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
 
   Future<void> _makePhoneCall(String phone) async {
     if (phone.isEmpty) return;
-    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final clean = AppTranslations.normalizeAsciiDigits(phone).replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -81,10 +93,20 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
 
   void _copyToClipboard(String text, String label) {
     if (text.isEmpty) return;
-    Clipboard.setData(ClipboardData(text: text));
+    final lang = ref.read(appLanguageProvider);
+    final clean = AppTranslations.normalizeAsciiDigits(text);
+    Clipboard.setData(ClipboardData(text: clean));
+    final formatted = AppTranslations.formatDigits(clean, lang);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Copied $label: $text'),
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Copied $label: $formatted',
+            mr: '$label कॉपी केले: $formatted',
+            hi: '$label कॉपी किया गया: $formatted',
+          ),
+        ),
         backgroundColor: const Color(0xFF0284C7),
         duration: const Duration(seconds: 2),
       ),
@@ -92,7 +114,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
   }
 
   void _openAddEditModal([HousingSocietyModel? societyToEdit]) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameEnCtrl = TextEditingController(text: societyToEdit?.nameEnglish ?? societyToEdit?.name ?? '');
     final nameMrCtrl = TextEditingController(text: societyToEdit?.nameMarathi ?? societyToEdit?.name ?? '');
     final areaCtrl = TextEditingController(text: societyToEdit?.area ?? '');
@@ -138,8 +160,8 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
         builder: (context, setModalState) {
           return Container(
             constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.90,
-        ),
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -157,11 +179,24 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                 AppModalHeader(
                   icon: Icons.home_work_rounded,
                   title: societyToEdit == null
-                      ? (isMr ? 'नवीन सोसायटी नोंदवा' : 'Log New Housing Society')
-                      : (isMr ? 'सोसायटी माहिती सुधारा' : 'Edit Society Info'),
-                  subtitle: isMr
-                      ? 'प्रभागातील सोसायटी चेअरमन, सेक्रेटरी व मतदारांची नोंद'
-                      : 'Register society committee details, chairman and voter base.',
+                      ? AppTranslations.pick(
+                          lang,
+                          en: 'Log New Housing Society',
+                          mr: 'नवीन सोसायटी नोंदवा',
+                          hi: 'नई हाउसिंग सोसायटी दर्ज करें',
+                        )
+                      : AppTranslations.pick(
+                          lang,
+                          en: 'Edit Society Info',
+                          mr: 'सोसायटी माहिती सुधारा',
+                          hi: 'सोसायटी जानकारी संपादित करें',
+                        ),
+                  subtitle: AppTranslations.pick(
+                    lang,
+                    en: 'Register society committee details, chairman and voter base.',
+                    mr: 'प्रभागातील सोसायटी चेअरमन, सेक्रेटरी व मतदारांची नोंद',
+                    hi: 'वार्ड में सोसायटी समिति, चेयरमैन और मतदाता विवरण दर्ज करें।',
+                  ),
                   onClose: () => Navigator.pop(ctx),
                 ),
 
@@ -183,10 +218,24 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'सोसायटीचे नाव (इंग्रजी)' : 'Society Name (English)'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Society Name (English)',
+                                    mr: 'सोसायटीचे नाव (इंग्रजी)',
+                                    hi: 'सोसायटी का नाम (अंग्रेजी)',
+                                  ),
+                                ),
                                 TextField(
                                   controller: nameEnCtrl,
-                                  decoration: inputDec(hint: 'e.g. Gokuldham CHS'),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Gokuldham CHS',
+                                      mr: 'उदा. Gokuldham CHS',
+                                      hi: 'उदा. Gokuldham CHS',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -196,10 +245,25 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'सोसायटीचे नाव (मराठी)' : 'Society Name (Marathi)', isRequired: true),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Society Name (Marathi)',
+                                    mr: 'सोसायटीचे नाव (मराठी)',
+                                    hi: 'सोसायटी का नाम (मराठी)',
+                                  ),
+                                  isRequired: true,
+                                ),
                                 TextField(
                                   controller: nameMrCtrl,
-                                  decoration: inputDec(hint: 'उदा. गोकुळधाम सोसायटी'),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Gokuldham Society',
+                                      mr: 'उदा. गोकुळधाम सोसायटी',
+                                      hi: 'उदा. गोकुलधाम सोसायटी',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -216,10 +280,24 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'परिसर / गल्ली भाग' : 'Area / Neighborhood'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Area / Neighborhood',
+                                    mr: 'परिसर / गल्ली भाग',
+                                    hi: 'क्षेत्र / मोहल्ला',
+                                  ),
+                                ),
                                 TextField(
                                   controller: areaCtrl,
-                                  decoration: inputDec(hint: isMr ? 'उदा. शांती नगर' : 'e.g. Shanti Nagar'),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Shanti Nagar',
+                                      mr: 'उदा. शांती नगर',
+                                      hi: 'उदा. शांति नगर',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -229,10 +307,24 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'सोसायटी पत्ता' : 'Detailed Address'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Detailed Address',
+                                    mr: 'सोसायटी पत्ता',
+                                    hi: 'विस्तृत पता',
+                                  ),
+                                ),
                                 TextField(
                                   controller: addressCtrl,
-                                  decoration: inputDec(hint: isMr ? 'उदा. प्लॉट १२, रोड ५' : 'e.g. Plot 12, Road 5'),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Plot 12, Road 5',
+                                      mr: 'उदा. प्लॉट १२, रोड ५',
+                                      hi: 'उदा. प्लॉट १२, रोड ५',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -249,10 +341,24 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'चेअरमन नाव' : 'Chairman Name'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Chairman Name',
+                                    mr: 'चेअरमन नाव',
+                                    hi: 'चेयरमैन का नाम',
+                                  ),
+                                ),
                                 TextField(
                                   controller: chairmanNameCtrl,
-                                  decoration: inputDec(hint: 'e.g. Ashok Bhide'),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Ashok Bhide',
+                                      mr: 'उदा. अशोक भिडे',
+                                      hi: 'उदा. अशोक भिड़े',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -262,13 +368,23 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'चेअरमन मोबाईल' : 'Chairman Mobile'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Chairman Mobile',
+                                    mr: 'चेअरमन मोबाईल',
+                                    hi: 'चेयरमैन मोबाइल',
+                                  ),
+                                ),
                                 TextField(
                                   controller: chairmanPhoneCtrl,
                                   keyboardType: TextInputType.phone,
                                   maxLength: 10,
                                   buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                                  decoration: inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                                  decoration: inputDec(
+                                    prefixText: AppTranslations.formatDigits('+91 ', lang),
+                                    hint: AppTranslations.formatDigits('98xxxxxxxx', lang),
+                                  ),
                                 ),
                               ],
                             ),
@@ -285,10 +401,24 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'सेक्रेटरी नाव' : 'Secretary Name'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Secretary Name',
+                                    mr: 'सेक्रेटरी नाव',
+                                    hi: 'सचिव का नाम',
+                                  ),
+                                ),
                                 TextField(
                                   controller: secretaryNameCtrl,
-                                  decoration: inputDec(hint: 'e.g. Aatmaram Bhide'),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Aatmaram Bhide',
+                                      mr: 'उदा. आत्माराम भिडे',
+                                      hi: 'उदा. आत्माराम भिड़े',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -298,13 +428,23 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'सेक्रेटरी मोबाईल' : 'Secretary Mobile'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Secretary Mobile',
+                                    mr: 'सेक्रेटरी मोबाईल',
+                                    hi: 'सचिव मोबाइल',
+                                  ),
+                                ),
                                 TextField(
                                   controller: secretaryPhoneCtrl,
                                   keyboardType: TextInputType.phone,
                                   maxLength: 10,
                                   buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                                  decoration: inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                                  decoration: inputDec(
+                                    prefixText: AppTranslations.formatDigits('+91 ', lang),
+                                    hint: AppTranslations.formatDigits('98xxxxxxxx', lang),
+                                  ),
                                 ),
                               ],
                             ),
@@ -321,11 +461,25 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'एकूण मतदार संख्या' : 'Total Voters Count'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Total Voters Count',
+                                    mr: 'एकूण मतदार संख्या',
+                                    hi: 'कुल मतदाता संख्या',
+                                  ),
+                                ),
                                 TextField(
                                   controller: votersCtrl,
                                   keyboardType: TextInputType.number,
-                                  decoration: inputDec(hint: 'e.g. 150'),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. 150',
+                                      mr: 'उदा. १५०',
+                                      hi: 'उदा. १५०',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -335,11 +489,25 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'फेवर मतदार संख्या (आपले समर्थक)' : 'Favourable Voters Count'),
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Favourable Voters Count',
+                                    mr: 'फेवर मतदार संख्या (आपले समर्थक)',
+                                    hi: 'अनुकूल मतदाता संख्या (समर्थक)',
+                                  ),
+                                ),
                                 TextField(
                                   controller: favVotersCtrl,
                                   keyboardType: TextInputType.number,
-                                  decoration: inputDec(hint: 'e.g. 100'),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. 100',
+                                      mr: 'उदा. १००',
+                                      hi: 'उदा. १००',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -349,20 +517,37 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                       const SizedBox(height: 14),
 
                       // Notes / Grievances textarea
-                      fieldLabel(isMr ? 'सोसायटीमधील प्रमुख समस्या / विशेष नोंदी' : 'Society Grievances / Special Notes'),
+                      fieldLabel(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Society Grievances / Special Notes',
+                          mr: 'सोसायटीमधील प्रमुख समस्या / विशेष नोंदी',
+                          hi: 'सोसायटी की प्रमुख समस्याएं / विशेष नोट्स',
+                        ),
+                      ),
                       TextField(
                         controller: notesCtrl,
                         maxLines: 3,
                         decoration: inputDec(
-                          hint: isMr
-                              ? 'उदा. कचरा समस्या, पाणी वेळेवर न मिळणे, रस्ते खराब असणे...'
-                              : 'e.g. Potholes on entryway, streetlights non-functional, water line needs work...',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. Potholes on entryway, streetlights non-functional, water line needs work...',
+                            mr: 'उदा. कचरा समस्या, पाणी वेळेवर न मिळणे, रस्ते खराब असणे...',
+                            hi: 'उदा. कचरा समस्या, समय पर पानी न मिलना, सड़क मरम्मत...',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
 
                       // Status Radio Selection
-                      fieldLabel(isMr ? 'सोसायटी स्थिती' : 'Status'),
+                      fieldLabel(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Status',
+                          mr: 'सोसायटी स्थिती',
+                          hi: 'सोसायटी की स्थिति',
+                        ),
+                      ),
                       Row(
                         children: [
                           InkWell(
@@ -378,7 +563,12 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                                   },
                                 ),
                                 Text(
-                                  isMr ? 'सक्रिय (Active)' : 'Active',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Active',
+                                    mr: 'सक्रिय',
+                                    hi: 'सक्रिय',
+                                  ),
                                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                                 ),
                               ],
@@ -398,7 +588,12 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                                   },
                                 ),
                                 Text(
-                                  isMr ? 'निष्क्रिय (Inactive)' : 'Inactive',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Inactive',
+                                    mr: 'निष्क्रिय',
+                                    hi: 'निष्क्रिय',
+                                  ),
                                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                                 ),
                               ],
@@ -419,7 +614,12 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                               ),
                               onPressed: () => Navigator.pop(ctx),
                               child: Text(
-                                isMr ? 'रद्द करा' : 'Cancel',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Cancel',
+                                  mr: 'रद्द करा',
+                                  hi: 'रद्द करें',
+                                ),
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -432,17 +632,35 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                                 final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
                                 if (name.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isMr ? 'कृपया सोसायटीचे नाव प्रविष्ट करा.' : 'Please enter society name.')),
+                                    SnackBar(
+                                      content: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Please enter society name.',
+                                          mr: 'कृपया सोसायटीचे नाव प्रविष्ट करा.',
+                                          hi: 'कृपया सोसायटी का नाम दर्ज करें।',
+                                        ),
+                                      ),
+                                    ),
                                   );
                                   return;
                                 }
 
-                                final vCount = int.tryParse(votersCtrl.text.trim()) ?? 0;
-                                final favCount = int.tryParse(favVotersCtrl.text.trim()) ?? 0;
+                                final vCount = int.tryParse(AppTranslations.normalizeAsciiDigits(votersCtrl.text.trim())) ?? 0;
+                                final favCount = int.tryParse(AppTranslations.normalizeAsciiDigits(favVotersCtrl.text.trim())) ?? 0;
 
                                 if (favCount > vCount && vCount > 0) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isMr ? 'अनुकूल मतदार एकूण मतदारांपेक्षा जास्त असू शकत नाहीत!' : 'Favourable voters cannot exceed total voters!')),
+                                    SnackBar(
+                                      content: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Favourable voters cannot exceed total voters!',
+                                          mr: 'अनुकूल मतदार एकूण मतदारांपेक्षा जास्त असू शकत नाहीत!',
+                                          hi: 'अनुकूल मतदाता कुल मतदाताओं से अधिक नहीं हो सकते!',
+                                        ),
+                                      ),
+                                    ),
                                   );
                                   return;
                                 }
@@ -453,9 +671,9 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                                   nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : name,
                                   nameEnglish: nameEnCtrl.text.trim().isNotEmpty ? nameEnCtrl.text.trim() : name,
                                   chairmanName: chairmanNameCtrl.text.trim(),
-                                  chairmanMobile: chairmanPhoneCtrl.text.trim(),
+                                  chairmanMobile: AppTranslations.normalizeAsciiDigits(chairmanPhoneCtrl.text.trim()),
                                   secretaryName: secretaryNameCtrl.text.trim(),
-                                  secretaryMobile: secretaryPhoneCtrl.text.trim(),
+                                  secretaryMobile: AppTranslations.normalizeAsciiDigits(secretaryPhoneCtrl.text.trim()),
                                   voterCount: vCount,
                                   favourableVoterCount: favCount,
                                   area: areaCtrl.text.trim(),
@@ -481,9 +699,21 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
 
                                 messenger.showSnackBar(
                                   SnackBar(
-                                    content: Text(societyToEdit == null
-                                        ? (isMr ? 'नवीन सोसायटी नोंदणी यशस्वी झाली!' : 'Society registered successfully!')
-                                        : (isMr ? 'माहिती जतन केली!' : 'Details updated successfully!')),
+                                    content: Text(
+                                      societyToEdit == null
+                                          ? AppTranslations.pick(
+                                              lang,
+                                              en: 'Society registered successfully!',
+                                              mr: 'नवीन सोसायटी नोंदणी यशस्वी झाली!',
+                                              hi: 'सोसायटी सफलतापूर्वक पंजीकृत हो गई!',
+                                            )
+                                          : AppTranslations.pick(
+                                              lang,
+                                              en: 'Details updated successfully!',
+                                              mr: 'माहिती जतन केली!',
+                                              hi: 'विवरण सफलतापूर्वक अपडेट किया गया!',
+                                            ),
+                                    ),
                                     backgroundColor: const Color(0xFF16A34A),
                                   ),
                                 );
@@ -497,8 +727,18 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                               ),
                               child: Text(
                                 societyToEdit == null
-                                    ? (isMr ? 'माहिती जतन करा' : 'Save Details')
-                                    : (isMr ? 'बदल जतन करा' : 'Save Changes'),
+                                    ? AppTranslations.pick(
+                                        lang,
+                                        en: 'Save Details',
+                                        mr: 'माहिती जतन करा',
+                                        hi: 'विवरण सहेजें',
+                                      )
+                                    : AppTranslations.pick(
+                                        lang,
+                                        en: 'Save Changes',
+                                        mr: 'बदल जतन करा',
+                                        hi: 'बदलाव सहेजें',
+                                      ),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ),
@@ -518,15 +758,37 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
   }
 
   void _confirmDelete(HousingSocietyModel soc) {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Society'),
-        content: Text('Are you sure you want to delete ${soc.displayName(true)}?'),
+        title: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Delete Society',
+            mr: 'सोसायटी हटवा',
+            hi: 'सोसायटी हटाएं',
+          ),
+        ),
+        content: AppTranslatedText(
+          soc.displayNameFor(lang),
+          isName: true,
+          targetLanguage: lang,
+          builder: (context, translatedName) => Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Are you sure you want to delete $translatedName?',
+              mr: 'तुम्ही $translatedName ही सोसायटी हटवू इच्छिता का?',
+              hi: 'क्या आप वाकई $translatedName को हटाना चाहते हैं?',
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -536,11 +798,22 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               if (!mounted) return;
               _loadData();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Society deleted successfully.')),
+                SnackBar(
+                  content: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Society deleted successfully.',
+                      mr: 'सोसायटी यशस्वीरित्या हटवली.',
+                      hi: 'सोसायटी सफलतापूर्वक हटा दी गई।',
+                    ),
+                  ),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Delete'),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+            ),
           ),
         ],
       ),
@@ -549,7 +822,9 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isMarathi = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final totalFormatted = AppTranslations.formatDigits(_societies.length, lang);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: const NagarsevakAppDrawer(),
@@ -559,25 +834,35 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Open Menu Drawer',
+              mr: 'मेनू उघडा',
+              hi: 'मेनू खोलें',
             ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'Housing Societies',
+              AppTranslations.pick(
+                lang,
+                en: 'Housing Societies',
+                mr: 'सोसायटी चेअरमन व मतदार',
+                hi: 'हाउसिंग सोसायटियां',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -585,10 +870,15 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               ),
             ),
             Text(
-              'Housing societies & RWA directory',
+              AppTranslations.pick(
+                lang,
+                en: 'Housing societies & RWA directory',
+                mr: 'सहकारी गृहनिर्माण संस्था व आरडब्ल्यूए निर्देशिका',
+                hi: 'आवासीय सोसायटियां और आरडब्ल्यूए निर्देशिका',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -596,14 +886,27 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
             ),
           ],
         ),
-        actions: const [],
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: AppLanguageSegmentedSelector(isCompact: true),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddEditModal(),
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('New Society', style: TextStyle(fontWeight: FontWeight.bold)),
+        label: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'New Society',
+            mr: 'नवीन सोसायटी',
+            hi: 'नई सोसायटी',
+          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -614,12 +917,12 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 4 KPI Summary Widgets
-              _buildStatsGrid(),
+              _buildStatsGrid(lang),
 
               const SizedBox(height: 16),
 
               // Search & Filter Box
-              _buildSearchAndFilters(),
+              _buildSearchAndFilters(lang),
 
               const SizedBox(height: 16),
 
@@ -627,10 +930,19 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Total Societies: ${_societies.length}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF475569)),
+                  Flexible(
+                    child: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Total Societies: $totalFormatted',
+                        mr: 'एकूण सोसायट्या: $totalFormatted',
+                        hi: 'कुल सोसायटियां: $totalFormatted',
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF475569)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -646,7 +958,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             size: 20,
                             color: _viewMode == 0 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8),
                           ),
-                          tooltip: 'Card View',
+                          tooltip: AppTranslations.pick(lang, en: 'Card View', mr: 'कार्ड दृश्य', hi: 'कार्ड दृश्य'),
                           onPressed: () => setState(() => _viewMode = 0),
                         ),
                         Container(width: 1, height: 24, color: const Color(0xFFE2E8F0)),
@@ -656,14 +968,18 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                             size: 20,
                             color: _viewMode == 1 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8),
                           ),
-                          tooltip: 'Table View',
+                          tooltip: AppTranslations.pick(lang, en: 'Table View', mr: 'तक्ता दृश्य', hi: 'तालिका दृश्य'),
                           onPressed: () => setState(() => _viewMode = 1),
                         ),
                         Container(width: 1, height: 24, color: const Color(0xFFE2E8F0)),
                         const SizedBox(width: 4),
                         AppPdfButton.icon(
-                          tooltip: 'Download Report',
-                          onPressed: () => HousingSocietyReportGenerator.generateAndPrintReport(societies: _societies),
+                          tooltip: AppTranslations.getDownloadReport(lang),
+                          onPressed: () => HousingSocietyReportGenerator.generateAndPrintReport(
+                            context: context,
+                            societies: _societies,
+                            lang: lang,
+                          ),
                         ),
                       ],
                     ),
@@ -689,20 +1005,38 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                     children: [
                       const Icon(Icons.apartment_outlined, size: 54, color: Color(0xFF94A3B8)),
                       const SizedBox(height: 12),
-                      const Text(
-                        'No societies found.',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'No societies found.',
+                          mr: 'कोणतीही सोसायटी आढळली नाही.',
+                          hi: 'कोई सोसायटी नहीं मिली।',
+                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Change search filters or register a new society.',
-                        style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Change search filters or register a new society.',
+                          mr: 'शोध फिल्टर बदला किंवा नवीन सोसायटी नोंदवा.',
+                          hi: 'खोज फ़िल्टर बदलें या नई सोसायटी पंजीकृत करें।',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: () => _openAddEditModal(),
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Register Society'),
+                        label: Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Register Society',
+                            mr: 'सोसायटी नोंदवा',
+                            hi: 'सोसायटी पंजीकृत करें',
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
@@ -713,16 +1047,21 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                 )
               else ...[
                 if (_viewMode == 0)
-                  _buildCardsView()
+                  _buildCardsView(lang)
                 else
-                  _buildTableView(),
+                  _buildTableView(lang),
                 AppLoadMoreFooter(
                   currentCount: _visibleSocieties.length,
                   totalCount: _societies.length,
                   pageSize: 20,
                   onLoadMore: () => setState(() => _displayedLimit += 20),
-                  label: isMarathi ? 'सोसायट्या' : 'societies',
-                  isMarathi: isMarathi,
+                  label: AppTranslations.pick(
+                    lang,
+                    en: 'societies',
+                    mr: 'सोसायट्या',
+                    hi: 'सोसायटियां',
+                  ),
+                  isMarathi: lang == 'mr',
                 ),
               ],
 
@@ -734,7 +1073,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
     );
   }
 
-  Widget _buildStatsGrid() {
+  Widget _buildStatsGrid(String lang) {
     final total = _stats['total'] ?? 0;
     final voters = _stats['voters'] ?? 0;
     final fav = _stats['favourable'] ?? 0;
@@ -752,29 +1091,29 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
           childAspectRatio: isWide ? 1.7 : 1.45,
           children: [
             _buildStatCard(
-              title: 'Total Societies',
-              count: total.toString(),
+              title: AppTranslations.pick(lang, en: 'Total Societies', mr: 'एकूण सोसायट्या', hi: 'कुल सोसायटियां'),
+              count: AppTranslations.formatDigits(total, lang),
               icon: Icons.apartment_rounded,
               color: const Color(0xFF4F46E5),
               bgColor: const Color(0xFFEEF2FF),
             ),
             _buildStatCard(
-              title: 'Total Voters',
-              count: voters.toString(),
+              title: AppTranslations.pick(lang, en: 'Total Voters', mr: 'एकूण मतदार', hi: 'कुल मतदाता'),
+              count: AppTranslations.formatDigits(voters, lang),
               icon: Icons.groups_rounded,
               color: const Color(0xFF0284C7),
               bgColor: const Color(0xFFF0F9FF),
             ),
             _buildStatCard(
-              title: 'Favourable Voters',
-              count: fav.toString(),
+              title: AppTranslations.pick(lang, en: 'Favourable Voters', mr: 'अनुकूल मतदार', hi: 'अनुकूल मतदाता'),
+              count: AppTranslations.formatDigits(fav, lang),
               icon: Icons.check_circle_rounded,
               color: const Color(0xFF10B981),
               bgColor: const Color(0xFFECFDF5),
             ),
             _buildStatCard(
-              title: 'Estimated Support',
-              count: '$pct%',
+              title: AppTranslations.pick(lang, en: 'Estimated Support', mr: 'अंदाजे समर्थन', hi: 'अनुमानित समर्थन'),
+              count: '${AppTranslations.formatDigits(pct, lang)}%',
               icon: Icons.trending_up_rounded,
               color: const Color(0xFFD97706),
               bgColor: const Color(0xFFFFFBEB),
@@ -841,7 +1180,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
     );
   }
 
-  Widget _buildSearchAndFilters() {
+  Widget _buildSearchAndFilters(String lang) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -858,7 +1197,12 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               _loadData();
             },
             decoration: InputDecoration(
-              hintText: 'Search society name, chairman, secretary or area...',
+              hintText: AppTranslations.pick(
+                lang,
+                en: 'Search society name, chairman, secretary or area...',
+                mr: 'सोसायटीचे नाव, चेअरमन, सेक्रेटरी किंवा परिसर शोधा...',
+                hi: 'सोसायटी का नाम, चेयरमैन, सचिव या क्षेत्र खोजें...',
+              ),
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
               suffixIcon: _searchController.text.isNotEmpty
@@ -890,11 +1234,21 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               // Area Filter Dropdown
               Expanded(
                 child: AppDropdown<String>(
-                  title: 'Filter by Area',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Filter by Area',
+                    mr: 'परिसरानुसार फिल्टर',
+                    hi: 'क्षेत्र के अनुसार फ़िल्टर',
+                  ),
                   value: _selectedArea,
                   items: [
-                    const DropdownMenuItem(value: 'all', child: Text('All Areas')),
-                    ..._areas.map((a) => DropdownMenuItem(value: a, child: Text(a, overflow: TextOverflow.ellipsis))),
+                    DropdownMenuItem(value: 'all', child: Text(AppTranslations.getAllAreas(lang))),
+                    ..._areas.where((a) => a.toLowerCase() != 'all').map(
+                          (a) => DropdownMenuItem(
+                            value: a,
+                            child: Text(AppTranslations.getAreaName(a, lang), overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
                   ],
                   onChanged: (val) {
                     if (val != null) {
@@ -912,12 +1266,26 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               // Status Filter Dropdown
               Expanded(
                 child: AppDropdown<String>(
-                  title: 'Filter by Status',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Filter by Status',
+                    mr: 'स्थितीनुसार फिल्टर',
+                    hi: 'स्थिति के अनुसार फ़िल्टर',
+                  ),
                   value: _selectedStatus,
-                  items: const [
-                    DropdownMenuItem(value: 'all', child: Text('All Status')),
-                    DropdownMenuItem(value: 'Active', child: Text('Active')),
-                    DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'all',
+                      child: Text(AppTranslations.pick(lang, en: 'All Status', mr: 'सर्व स्थिती', hi: 'सभी स्थिति')),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Active',
+                      child: Text(AppTranslations.pick(lang, en: 'Active', mr: 'सक्रिय', hi: 'सक्रिय')),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Inactive',
+                      child: Text(AppTranslations.pick(lang, en: 'Inactive', mr: 'निष्क्रिय', hi: 'निष्क्रिय')),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val != null) {
@@ -937,7 +1305,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
     );
   }
 
-  Widget _buildCardsView() {
+  Widget _buildCardsView(String lang) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isTwoCol = constraints.maxWidth > 700;
@@ -952,7 +1320,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
               childAspectRatio: 0.95,
             ),
             itemCount: _visibleSocieties.length,
-            itemBuilder: (context, index) => _buildSocietyCard(_visibleSocieties[index]),
+            itemBuilder: (context, index) => _buildSocietyCard(_visibleSocieties[index], lang),
           );
         }
 
@@ -961,14 +1329,20 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _visibleSocieties.length,
           separatorBuilder: (context, index) => const SizedBox(height: 14),
-          itemBuilder: (context, index) => _buildSocietyCard(_visibleSocieties[index]),
+          itemBuilder: (context, index) => _buildSocietyCard(_visibleSocieties[index], lang),
         );
       },
     );
   }
 
-  Widget _buildSocietyCard(HousingSocietyModel soc) {
+  Widget _buildSocietyCard(HousingSocietyModel soc, String lang) {
     final supportPct = soc.supportPercentage;
+    final chairmanCopyLabel = AppTranslations.pick(lang, en: 'Chairman Mobile', mr: 'चेअरमन मोबाईल', hi: 'चेयरमैन मोबाइल');
+    final secretaryCopyLabel = AppTranslations.pick(lang, en: 'Secretary Mobile', mr: 'सेक्रेटरी मोबाईल', hi: 'सचिव मोबाइल');
+    final isActive = soc.status == 'Active';
+    final statusLabel = isActive
+        ? AppTranslations.pick(lang, en: 'Active', mr: 'सक्रिय', hi: 'सक्रिय')
+        : AppTranslations.pick(lang, en: 'Inactive', mr: 'निष्क्रिय', hi: 'निष्क्रिय');
 
     return Container(
       decoration: BoxDecoration(
@@ -1011,16 +1385,23 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          soc.displayName(true),
+                        AppTranslatedText(
+                          soc.displayNameFor(lang),
+                          isName: true,
+                          targetLanguage: lang,
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          'Cooperative Housing Society',
-                          style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
+                        Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Cooperative Housing Society',
+                            mr: 'सहकारी गृहनिर्माण संस्था',
+                            hi: 'सहकारी आवास समिति',
+                          ),
+                          style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -1030,7 +1411,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
-                        tooltip: 'Edit',
+                        tooltip: AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें'),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: () => _openAddEditModal(soc),
@@ -1038,7 +1419,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
-                        tooltip: 'Delete',
+                        tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: () => _confirmDelete(soc),
@@ -1064,22 +1445,38 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Text('Chairman: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                            Text(
-                              soc.chairmanName.isNotEmpty ? soc.chairmanName : '-',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                            ),
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Text(
+                                AppTranslations.pick(lang, en: 'Chairman: ', mr: 'चेअरमन: ', hi: 'चेयरमैन: '),
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                              ),
+                              Flexible(
+                                child: soc.chairmanName.isNotEmpty
+                                    ? AppTranslatedText(
+                                        soc.chairmanName,
+                                        isName: true,
+                                        targetLanguage: lang,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                      )
+                                    : const Text(
+                                        '-',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                      ),
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         if (soc.chairmanMobile.isNotEmpty)
                           Row(
                             children: [
                               InkWell(
                                 onTap: () => _makePhoneCall(soc.chairmanMobile),
                                 child: Text(
-                                  soc.chairmanMobile,
+                                  AppTranslations.formatDigits(soc.chairmanMobile, lang),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -1090,7 +1487,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                               ),
                               const SizedBox(width: 4),
                               InkWell(
-                                onTap: () => _copyToClipboard(soc.chairmanMobile, 'Chairman Mobile'),
+                                onTap: () => _copyToClipboard(soc.chairmanMobile, chairmanCopyLabel),
                                 child: const Icon(Icons.copy, size: 12, color: Color(0xFF94A3B8)),
                               ),
                             ],
@@ -1104,22 +1501,38 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Text('Secretary: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                            Text(
-                              soc.secretaryName.isNotEmpty ? soc.secretaryName : '-',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                            ),
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Text(
+                                AppTranslations.pick(lang, en: 'Secretary: ', mr: 'सेक्रेटरी: ', hi: 'सचिव: '),
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                              ),
+                              Flexible(
+                                child: soc.secretaryName.isNotEmpty
+                                    ? AppTranslatedText(
+                                        soc.secretaryName,
+                                        isName: true,
+                                        targetLanguage: lang,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                      )
+                                    : const Text(
+                                        '-',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                      ),
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         if (soc.secretaryMobile.isNotEmpty)
                           Row(
                             children: [
                               InkWell(
                                 onTap: () => _makePhoneCall(soc.secretaryMobile),
                                 child: Text(
-                                  soc.secretaryMobile,
+                                  AppTranslations.formatDigits(soc.secretaryMobile, lang),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -1130,7 +1543,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                               ),
                               const SizedBox(width: 4),
                               InkWell(
-                                onTap: () => _copyToClipboard(soc.secretaryMobile, 'Secretary Mobile'),
+                                onTap: () => _copyToClipboard(soc.secretaryMobile, secretaryCopyLabel),
                                 child: const Icon(Icons.copy, size: 12, color: Color(0xFF94A3B8)),
                               ),
                             ],
@@ -1158,9 +1571,41 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Total Voters: ${soc.voterCount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                        Text('Favourable: ${soc.favourableVoterCount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                        Text('$supportPct% Support', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                        Flexible(
+                          child: Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Total Voters: ${AppTranslations.formatDigits(soc.voterCount, lang)}',
+                              mr: 'एकूण मतदार: ${AppTranslations.formatDigits(soc.voterCount, lang)}',
+                              hi: 'कुल मतदाता: ${AppTranslations.formatDigits(soc.voterCount, lang)}',
+                            ),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Favourable: ${AppTranslations.formatDigits(soc.favourableVoterCount, lang)}',
+                              mr: 'अनुकूल: ${AppTranslations.formatDigits(soc.favourableVoterCount, lang)}',
+                              hi: 'अनुकूल: ${AppTranslations.formatDigits(soc.favourableVoterCount, lang)}',
+                            ),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: '${AppTranslations.formatDigits(supportPct, lang)}% Support',
+                            mr: '${AppTranslations.formatDigits(supportPct, lang)}% समर्थन',
+                            hi: '${AppTranslations.formatDigits(supportPct, lang)}% समर्थन',
+                          ),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -1189,8 +1634,11 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                         const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF64748B)),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(
-                            soc.area.isNotEmpty ? soc.area : 'Ward 12',
+                          child: AppTranslatedText(
+                            soc.area.isNotEmpty
+                                ? AppTranslations.getAreaName(soc.area, lang)
+                                : AppTranslations.getAreaName('Ward 12', lang),
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1201,18 +1649,18 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: soc.status == 'Active' ? const Color(0xFFECFDF5) : const Color(0xFFF1F5F9),
+                      color: isActive ? const Color(0xFFECFDF5) : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: soc.status == 'Active' ? const Color(0xFFA7F3D0) : const Color(0xFFCBD5E1),
+                        color: isActive ? const Color(0xFFA7F3D0) : const Color(0xFFCBD5E1),
                       ),
                     ),
                     child: Text(
-                      soc.status == 'Active' ? 'Active' : 'Inactive',
+                      statusLabel,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: soc.status == 'Active' ? const Color(0xFF047857) : const Color(0xFF64748B),
+                        color: isActive ? const Color(0xFF047857) : const Color(0xFF64748B),
                       ),
                     ),
                   ),
@@ -1236,8 +1684,9 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                       const Icon(Icons.info_outline, size: 13, color: Color(0xFFB45309)),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
+                        child: AppTranslatedText(
                           soc.notes,
+                          targetLanguage: lang,
                           style: const TextStyle(fontSize: 11, color: Color(0xFF78350F), fontWeight: FontWeight.w500),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -1254,7 +1703,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
     );
   }
 
-  Widget _buildTableView() {
+  Widget _buildTableView(String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1273,26 +1722,31 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
             headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
             dataRowMinHeight: 48,
             dataRowMaxHeight: 64,
-            columns: const [
-              DataColumn(label: Text('#')),
-              DataColumn(label: Text('Society Name')),
-              DataColumn(label: Text('Area')),
-              DataColumn(label: Text('Chairman & Mobile')),
-              DataColumn(label: Text('Secretary & Mobile')),
-              DataColumn(label: Text('Total Voters')),
-              DataColumn(label: Text('Favourable Voters')),
-              DataColumn(label: Text('Support %')),
-              DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Action')),
+            columns: [
+              DataColumn(label: Text(AppTranslations.pick(lang, en: '#', mr: 'क्र.', hi: 'क्र.'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Society Name', mr: 'सोसायटीचे नाव', hi: 'सोसायटी का नाम'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Area', mr: 'परिसर', hi: 'क्षेत्र'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Chairman & Mobile', mr: 'चेअरमन व मोबाईल', hi: 'चेयरमैन और मोबाइल'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Secretary & Mobile', mr: 'सेक्रेटरी व मोबाईल', hi: 'सचिव और मोबाइल'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Total Voters', mr: 'एकूण मतदार', hi: 'कुल मतदाता'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Favourable Voters', mr: 'अनुकूल मतदार', hi: 'अनुकूल मतदाता'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Support %', mr: 'समर्थन %', hi: 'समर्थन %'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Action', mr: 'कृती', hi: 'कार्रवाई'))),
             ],
             rows: List.generate(_visibleSocieties.length, (index) {
               final soc = _visibleSocieties[index];
+              final isActive = soc.status == 'Active';
+              final statusLabel = isActive
+                  ? AppTranslations.pick(lang, en: 'Active', mr: 'सक्रिय', hi: 'सक्रिय')
+                  : AppTranslations.pick(lang, en: 'Inactive', mr: 'निष्क्रिय', hi: 'निष्क्रिय');
+
               return DataRow(
                 color: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
                   return index.isEven ? const Color(0xFFF8FAFC) : Colors.white;
                 }),
                 cells: [
-                  DataCell(Text((index + 1).toString(), style: const TextStyle(fontWeight: FontWeight.bold))),
+                  DataCell(Text(AppTranslations.formatDigits(index + 1, lang), style: const TextStyle(fontWeight: FontWeight.bold))),
                   DataCell(
                     InkWell(
                       onTap: () {
@@ -1303,37 +1757,78 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                           ),
                         ).then((res) { if (res == true) _loadData(showLoading: false); });
                       },
-                      child: Text(
-                        soc.displayName(true),
+                      child: AppTranslatedText(
+                        soc.displayNameFor(lang),
+                        isName: true,
+                        targetLanguage: lang,
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                       ),
                     ),
                   ),
-                  DataCell(Text(soc.area.isNotEmpty ? soc.area : '-')),
+                  DataCell(
+                    soc.area.isNotEmpty
+                        ? AppTranslatedText(
+                            AppTranslations.getAreaName(soc.area, lang),
+                            targetLanguage: lang,
+                          )
+                        : const Text('-'),
+                  ),
                   DataCell(
                     soc.chairmanMobile.isNotEmpty
                         ? InkWell(
                             onTap: () => _makePhoneCall(soc.chairmanMobile),
-                            child: Text(
-                              '${soc.chairmanName} (${soc.chairmanMobile})',
-                              style: const TextStyle(color: Color(0xFF0284C7), decoration: TextDecoration.underline),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (soc.chairmanName.isNotEmpty) ...[
+                                  AppTranslatedText(
+                                    soc.chairmanName,
+                                    isName: true,
+                                    targetLanguage: lang,
+                                    style: const TextStyle(color: Color(0xFF0284C7), decoration: TextDecoration.underline),
+                                  ),
+                                  const Text(' ', style: TextStyle(color: Color(0xFF0284C7))),
+                                ],
+                                Text(
+                                  '(${AppTranslations.formatDigits(soc.chairmanMobile, lang)})',
+                                  style: const TextStyle(color: Color(0xFF0284C7), decoration: TextDecoration.underline),
+                                ),
+                              ],
                             ),
                           )
-                        : Text(soc.chairmanName.isNotEmpty ? soc.chairmanName : '-'),
+                        : (soc.chairmanName.isNotEmpty
+                            ? AppTranslatedText(soc.chairmanName, isName: true, targetLanguage: lang)
+                            : const Text('-')),
                   ),
                   DataCell(
                     soc.secretaryMobile.isNotEmpty
                         ? InkWell(
                             onTap: () => _makePhoneCall(soc.secretaryMobile),
-                            child: Text(
-                              '${soc.secretaryName} (${soc.secretaryMobile})',
-                              style: const TextStyle(color: Color(0xFF0284C7), decoration: TextDecoration.underline),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (soc.secretaryName.isNotEmpty) ...[
+                                  AppTranslatedText(
+                                    soc.secretaryName,
+                                    isName: true,
+                                    targetLanguage: lang,
+                                    style: const TextStyle(color: Color(0xFF0284C7), decoration: TextDecoration.underline),
+                                  ),
+                                  const Text(' ', style: TextStyle(color: Color(0xFF0284C7))),
+                                ],
+                                Text(
+                                  '(${AppTranslations.formatDigits(soc.secretaryMobile, lang)})',
+                                  style: const TextStyle(color: Color(0xFF0284C7), decoration: TextDecoration.underline),
+                                ),
+                              ],
                             ),
                           )
-                        : Text(soc.secretaryName.isNotEmpty ? soc.secretaryName : '-'),
+                        : (soc.secretaryName.isNotEmpty
+                            ? AppTranslatedText(soc.secretaryName, isName: true, targetLanguage: lang)
+                            : const Text('-')),
                   ),
-                  DataCell(Text(soc.voterCount.toString(), style: const TextStyle(fontWeight: FontWeight.bold))),
-                  DataCell(Text(soc.favourableVoterCount.toString(), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF16A34A)))),
+                  DataCell(Text(AppTranslations.formatDigits(soc.voterCount, lang), style: const TextStyle(fontWeight: FontWeight.bold))),
+                  DataCell(Text(AppTranslations.formatDigits(soc.favourableVoterCount, lang), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF16A34A)))),
                   DataCell(
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1342,7 +1837,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        '${soc.supportPercentage}%',
+                        '${AppTranslations.formatDigits(soc.supportPercentage, lang)}%',
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF059669)),
                       ),
                     ),
@@ -1351,15 +1846,15 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: soc.status == 'Active' ? const Color(0xFFECFDF5) : const Color(0xFFF1F5F9),
+                        color: isActive ? const Color(0xFFECFDF5) : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        soc.status == 'Active' ? 'Active' : 'Inactive',
+                        statusLabel,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: soc.status == 'Active' ? const Color(0xFF047857) : const Color(0xFF64748B),
+                          color: isActive ? const Color(0xFF047857) : const Color(0xFF64748B),
                         ),
                       ),
                     ),
@@ -1370,7 +1865,7 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                       children: [
                         IconButton(
                           icon: const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF0284C7)),
-                          tooltip: 'View Details',
+                          tooltip: AppTranslations.pick(lang, en: 'View Details', mr: 'तपशील पहा', hi: 'विवरण देखें'),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -1382,12 +1877,12 @@ class _HousingSocietiesScreenState extends ConsumerState<HousingSocietiesScreen>
                         ),
                         IconButton(
                           icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
-                          tooltip: 'Edit',
+                          tooltip: AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें'),
                           onPressed: () => _openAddEditModal(soc),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
-                          tooltip: 'Delete',
+                          tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
                           onPressed: () => _confirmDelete(soc),
                         ),
                       ],

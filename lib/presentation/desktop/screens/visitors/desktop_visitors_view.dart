@@ -393,7 +393,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                 const Icon(Icons.people_alt_rounded, size: 26, color: Color(0xFF0369A1)),
                 const SizedBox(width: 10),
                 Text(
-                  AppTranslations.t('visitors.title', lang: lang),
+                  AppTranslations.t('office.visitor_log', lang: lang),
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -405,7 +405,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
             ),
             const SizedBox(height: 4),
             Text(
-              AppTranslations.t('visitors.subtitle', lang: lang),
+              AppTranslations.t('office.visitor_subtitle', lang: lang),
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
@@ -608,12 +608,19 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                   backgroundColor: const Color(0xFFF8FAFC),
                   borderColor: const Color(0xFFE2E8F0),
                   items: _uniqueDates.map((d) {
+                    String label;
+                    if (d == 'All') {
+                      label = AppTranslations.pick(lang, en: 'All Dates', mr: 'सर्व तारखा', hi: 'सभी तिथियां');
+                    } else {
+                      final parsed = DateTime.tryParse(d);
+                      label = parsed != null
+                          ? AppTranslations.formatDate(parsed, lang, pattern: 'dd MMM yyyy')
+                          : AppTranslations.formatDigits(d, lang);
+                    }
                     return DropdownMenuItem(
                       value: d,
                       child: Text(
-                        d == 'All'
-                            ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                            : AppTranslations.formatDigits(d, lang),
+                        label,
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -691,7 +698,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           if (_loading)
             const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 40), child: CircularProgressIndicator(strokeWidth: 2)))
           else if (items.isEmpty)
-            _buildEmptyState(lang == 'mr')
+            _buildEmptyState(lang)
           else if (_viewMode == 'grid')
             _buildVisitorGrid(_visibleVisitors, lang)
           else
@@ -738,7 +745,83 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
     );
   }
 
+  Widget _buildLocalizedAreaText(
+    String raw,
+    String lang, {
+    TextStyle? style,
+    TextOverflow? overflow,
+  }) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || trimmed == '-') {
+      return Text(raw, style: style, overflow: overflow);
+    }
+    final mapped = AppTranslations.getAreaName(trimmed, lang);
+    final changed = mapped.trim().toLowerCase() != trimmed.toLowerCase() &&
+        mapped != AppTranslations.formatDigits(trimmed, lang);
+    if (changed || (lang == 'en' && !DynamicTranslationService.containsDevanagari(trimmed))) {
+      return Text(mapped, style: style, overflow: overflow);
+    }
+    return AppTranslatedText(
+      trimmed,
+      targetLanguage: lang,
+      style: style,
+      overflow: overflow,
+    );
+  }
+
+  Future<void> _confirmDeleteVisitor(VisitorModel visitor) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => ValueListenableBuilder<String>(
+        valueListenable: appLanguageValueNotifier,
+        builder: (ctx, dlgLang, _) => AlertDialog(
+          title: Text(AppTranslations.pick(dlgLang, en: 'Delete Visitor', mr: 'अभ्यागत हटवा', hi: 'आगंतुक हटाएं')),
+          content: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                AppTranslations.pick(
+                  dlgLang,
+                  en: 'Are you sure you want to delete ',
+                  mr: 'तुम्ही नक्की यांची नोंद हटवू इच्छिता का: ',
+                  hi: 'क्या आप वाकई इनकी प्रविष्टि हटाना चाहते हैं: ',
+                ),
+              ),
+              AppTranslatedText(
+                visitor.name,
+                isName: true,
+                targetLanguage: dlgLang,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const Text('?'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(AppTranslations.pick(dlgLang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(
+                AppTranslations.pick(dlgLang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirm == true) {
+      await ref.read(visitorsRepoProvider).deleteVisitor(visitor.id);
+      _loadVisitors();
+    }
+  }
+
   Widget _buildVisitorCard(VisitorModel visitor, String lang) {
+    final dateTimeLabel =
+        '${AppTranslations.formatDate(visitor.visitDate, lang, pattern: 'dd MMM yyyy')} • ${AppTranslations.formatTime(visitor.visitDate, lang)}';
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -760,12 +843,15 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
+                child: AppTranslatedText(
                   visitor.name,
+                  isName: true,
+                  targetLanguage: lang,
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 6),
               _buildPurposeBadge(visitor.purpose, lang),
             ],
           ),
@@ -775,7 +861,10 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               children: [
                 const Icon(Icons.phone_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
-                Text('+91 ${AppTranslations.formatDigits(visitor.mobile, lang)}', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+                Text(
+                  AppTranslations.formatDigits('+91 ${visitor.mobile}', lang),
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -786,7 +875,12 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                 const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(AppTranslations.getAreaName(visitor.area!, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                  child: _buildLocalizedAreaText(
+                    visitor.area!,
+                    lang,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -796,6 +890,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
             Expanded(
               child: AppTranslatedText(
                 visitor.remarks!,
+                targetLanguage: lang,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
@@ -813,7 +908,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  AppTranslations.formatDigits('${visitor.formattedDate} • ${visitor.formattedTime}', lang),
+                  dateTimeLabel,
                   style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                 ),
                 Row(
@@ -822,7 +917,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      tooltip: 'Edit Visitor',
+                      tooltip: AppTranslations.pick(lang, en: 'Edit Visitor', mr: 'अभ्यागत संपादित करा', hi: 'आगंतुक संपादित करें'),
                       onPressed: () => _startEdit(visitor),
                     ),
                     const SizedBox(width: 8),
@@ -830,31 +925,8 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      tooltip: 'Delete Visitor',
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Delete Visitor'),
-                            content: Text('Are you sure you want to delete ${visitor.name}?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Cancel'),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Delete', style: TextStyle(color: Colors.white)),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          await ref.read(visitorsRepoProvider).deleteVisitor(visitor.id);
-                          _loadVisitors();
-                        }
-                      },
+                      tooltip: AppTranslations.pick(lang, en: 'Delete Visitor', mr: 'अभ्यागत हटवा', hi: 'आगंतुक हटाएं'),
+                      onPressed: () => _confirmDeleteVisitor(visitor),
                     ),
                   ],
                 ),
@@ -910,13 +982,22 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
           DataColumn(label: Text(lang == 'mr' ? 'कृती' : (lang == 'hi' ? 'कार्रवाई' : 'Actions'), style: const TextStyle(fontWeight: FontWeight.w700))),
         ],
         rows: items.map((v) {
+          final dateTimeLabel =
+              '${AppTranslations.formatDate(v.visitDate, lang, pattern: 'dd MMM yyyy')} • ${AppTranslations.formatTime(v.visitDate, lang)}';
           return DataRow(
             cells: [
-              DataCell(Text(v.name, style: const TextStyle(fontWeight: FontWeight.w600))),
-              DataCell(Text('+91 ${AppTranslations.formatDigits(v.mobile, lang)}')),
+              DataCell(
+                AppTranslatedText(
+                  v.name,
+                  isName: true,
+                  targetLanguage: lang,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              DataCell(Text(AppTranslations.formatDigits('+91 ${v.mobile}', lang))),
               DataCell(_buildPurposeBadge(v.purpose, lang)),
-              DataCell(Text(AppTranslations.getAreaName(v.area ?? '-', lang))),
-              DataCell(Text(AppTranslations.formatDigits('${v.formattedDate} • ${v.formattedTime}', lang))),
+              DataCell(_buildLocalizedAreaText(v.area ?? '-', lang)),
+              DataCell(Text(dateTimeLabel)),
               DataCell(
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -925,7 +1006,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      tooltip: 'Edit',
+                      tooltip: AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें'),
                       onPressed: () => _startEdit(v),
                     ),
                     const SizedBox(width: 8),
@@ -933,40 +1014,8 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
                       icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      tooltip: 'Delete',
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: Text(lang == 'mr' ? 'अभ्यागत हटवा' : (lang == 'hi' ? 'आगंतुक हटाएं' : 'Delete Visitor')),
-                            content: Text(
-                              lang == 'mr'
-                                  ? 'तुम्ही नक्की ${v.name} यांची नोंद हटवू इच्छिता का?'
-                                  : (lang == 'hi'
-                                      ? 'क्या आप वाकई ${v.name} की प्रविष्टि हटाना चाहते हैं?'
-                                      : 'Are you sure you want to delete ${v.name}?'),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: Text(lang == 'mr' ? 'रद्द करा' : (lang == 'hi' ? 'रद्द करें' : 'Cancel')),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: Text(
-                                  lang == 'mr' ? 'हटवा' : (lang == 'hi' ? 'हटाएं' : 'Delete'),
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          await ref.read(visitorsRepoProvider).deleteVisitor(v.id);
-                          _loadVisitors();
-                        }
-                      },
+                      tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                      onPressed: () => _confirmDeleteVisitor(v),
                     ),
                   ],
                 ),
@@ -1006,7 +1055,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
     );
   }
 
-  Widget _buildEmptyState(bool isMr) {
+  Widget _buildEmptyState(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40),
@@ -1015,7 +1064,15 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
         children: [
           const Icon(Icons.inbox_outlined, size: 40, color: Color(0xFF94A3B8)),
           const SizedBox(height: 10),
-          const Text('No visitors recorded yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+          Text(
+            AppTranslations.pick(
+              lang,
+              en: 'No visitors recorded yet',
+              mr: 'अद्याप कोणतेही अभ्यागत नोंदवलेले नाहीत',
+              hi: 'अभी तक कोई आगंतुक दर्ज नहीं किया गया है',
+            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+          ),
         ],
       ),
     );

@@ -7,7 +7,6 @@ import '../../../data/repositories/diary_tasks_repository.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -64,7 +63,21 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
     }
   }
 
+  String _formatTaskTime(DiaryTaskModel task, String lang) {
+    if (task.dueTime == null || task.dueTime!.isEmpty) return '';
+    try {
+      final parts = task.dueTime!.split(':');
+      if (parts.length >= 2) {
+        final hour = int.parse(parts[0]);
+        final min = int.parse(parts[1]);
+        return AppTranslations.formatTime(DateTime(2026, 1, 1, hour, min), lang);
+      }
+    } catch (_) {}
+    return AppTranslations.formatDigits(task.formattedTime, lang);
+  }
+
   Future<void> _toggleStatus() async {
+    final lang = ref.read(appLanguageProvider);
     setState(() => _isUpdating = true);
     final newStatus = _task.isCompleted ? 'Pending' : 'Completed';
     try {
@@ -77,7 +90,21 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(newStatus == 'Completed' ? 'Task marked as Completed' : 'Task marked as Pending'),
+            content: Text(
+              newStatus == 'Completed'
+                  ? AppTranslations.pick(
+                      lang,
+                      en: 'Task marked as Completed',
+                      mr: 'कार्य पूर्ण म्हणून नोंदवले',
+                      hi: 'कार्य पूर्ण के रूप में चिह्नित',
+                    )
+                  : AppTranslations.pick(
+                      lang,
+                      en: 'Task marked as Pending',
+                      mr: 'कार्य प्रलंबित म्हणून नोंदवले',
+                      hi: 'कार्य लंबित के रूप में चिह्नित',
+                    ),
+            ),
             backgroundColor: newStatus == 'Completed' ? const Color(0xFF16A34A) : const Color(0xFF0284C7),
           ),
         );
@@ -85,7 +112,17 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update status: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Failed to update status: $e',
+                mr: 'स्थिती अद्यतनित करण्यात अयशस्वी: $e',
+                hi: 'स्थिति अपडेट करने में विफल: $e',
+              ),
+            ),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -94,25 +131,48 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
   }
 
   void _showDeleteDialog() {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.delete_outline, color: Colors.red, size: 22),
-            SizedBox(width: 8),
-            Text('Delete Task?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          children: [
+            const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Delete Task?',
+                  mr: 'कार्य हटवायचे का?',
+                  hi: 'कार्य हटाएं?',
+                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
           ],
         ),
-        content: Text(
-          'Are you sure you want to delete "${_task.title}"? This action cannot be undone.',
-          style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+        content: AppTranslatedText(
+          _task.title,
+          targetLanguage: lang,
+          builder: (context, trTitle) => Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Are you sure you want to delete "$trTitle"? This action cannot be undone.',
+              mr: 'तुम्हाला "$trTitle" हे कार्य नक्की हटवायचे आहे का? ही कृती पूर्ववत करता येणार नाही.',
+              hi: 'क्या आप वाकई "$trTitle" को हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।',
+            ),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -124,14 +184,29 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                 widget.onTaskUpdated?.call();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Task deleted'), backgroundColor: Color(0xFF0F766E)),
+                    SnackBar(
+                      content: Text(
+                        AppTranslations.pick(lang, en: 'Task deleted', mr: 'कार्य हटवले गेले', hi: 'कार्य हटाया गया'),
+                      ),
+                      backgroundColor: const Color(0xFF0F766E),
+                    ),
                   );
                   Navigator.pop(context);
                 }
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete: $e'), backgroundColor: Colors.red),
+                    SnackBar(
+                      content: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Failed to delete: $e',
+                          mr: 'हटवण्यात अयशस्वी: $e',
+                          hi: 'हटाने में विफल: $e',
+                        ),
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               } finally {
@@ -143,7 +218,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं')),
           ),
         ],
       ),
@@ -169,7 +244,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
     String selectedPriority = _task.priority;
     String selectedStatus = _task.status;
 
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -197,10 +272,18 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                 // 1. FIXED HEADER
                 AppModalHeader(
                   icon: Icons.edit_note_rounded,
-                  title: isMr ? 'दैनंदिनी नोंद संपादित करा' : 'Edit Diary Task',
-                  subtitle: isMr
-                      ? 'दैनिक नियोजन व माहिती अद्ययावत करा'
-                      : 'Update daily agenda, location, and details',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Edit Diary Task',
+                    mr: 'दैनंदिनी नोंद संपादित करा',
+                    hi: 'डायरी कार्य संपादित करें',
+                  ),
+                  subtitle: AppTranslations.pick(
+                    lang,
+                    en: 'Update daily agenda, location, and details',
+                    mr: 'दैनिक नियोजन व माहिती अद्ययावत करा',
+                    hi: 'दैनिक कार्यसूची, स्थान और विवरण अपडेट करें',
+                  ),
                   onClose: () => Navigator.pop(ctx),
                 ),
 
@@ -208,17 +291,32 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                 Flexible(
                   child: ListView(
                     shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    padding: EdgeInsets.fromLTRB(
+                      20,
+                      16,
+                      20,
+                      MediaQuery.of(ctx).viewInsets.bottom + 12,
+                    ),
                     children: [
                       // Title
                       AppFieldLabel(
-                        label: isMr ? 'कार्याचे शीर्षक' : 'Task Title',
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Task Title',
+                          mr: 'कार्याचे शीर्षक',
+                          hi: 'कार्य का शीर्षक',
+                        ),
                         isRequired: true,
                       ),
                       TextField(
                         controller: titleCtrl,
                         decoration: appInputDecoration(
-                          hint: isMr ? 'उदा. कार्यकारी अभियंत्यांची भेट' : 'e.g. Meeting with Executive Engineer',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. Meeting with Executive Engineer',
+                            mr: 'उदा. कार्यकारी अभियंत्यांची भेट',
+                            hi: 'उदा. कार्यकारी अभियंता के साथ बैठक',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -231,12 +329,17 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<String>(
-                                  label: isMr ? 'प्राधान्यता' : 'Priority',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Priority',
+                                    mr: 'प्राधान्यता',
+                                    hi: 'प्राथमिकता',
+                                  ),
                                   value: ['Low', 'Medium', 'High'].contains(selectedPriority) ? selectedPriority : 'Medium',
-                                  items: const [
-                                    DropdownMenuItem(value: 'Low', child: Text('Low (कमी)')),
-                                    DropdownMenuItem(value: 'Medium', child: Text('Medium (मध्यम)')),
-                                    DropdownMenuItem(value: 'High', child: Text('High (उच्च)')),
+                                  items: [
+                                    DropdownMenuItem(value: 'Low', child: Text(AppTranslations.getPriority('Low', lang))),
+                                    DropdownMenuItem(value: 'Medium', child: Text(AppTranslations.getPriority('Medium', lang))),
+                                    DropdownMenuItem(value: 'High', child: Text(AppTranslations.getPriority('High', lang))),
                                   ],
                                   onChanged: (val) {
                                     if (val != null) setModalState(() => selectedPriority = val);
@@ -251,12 +354,17 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<String>(
-                                  label: isMr ? 'स्थिती' : 'Status',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Status',
+                                    mr: 'स्थिती',
+                                    hi: 'स्थिति',
+                                  ),
                                   value: ['Pending', 'Completed', 'InProgress'].contains(selectedStatus) ? selectedStatus : 'Pending',
-                                  items: const [
-                                    DropdownMenuItem(value: 'Pending', child: Text('Pending (प्रलंबित)')),
-                                    DropdownMenuItem(value: 'InProgress', child: Text('In Progress (प्रगतीत)')),
-                                    DropdownMenuItem(value: 'Completed', child: Text('Completed (पूर्ण)')),
+                                  items: [
+                                    DropdownMenuItem(value: 'Pending', child: Text(AppTranslations.getStatus('Pending', lang))),
+                                    DropdownMenuItem(value: 'InProgress', child: Text(AppTranslations.getStatus('InProgress', lang))),
+                                    DropdownMenuItem(value: 'Completed', child: Text(AppTranslations.getStatus('Completed', lang))),
                                   ],
                                   onChanged: (val) {
                                     if (val != null) setModalState(() => selectedStatus = val);
@@ -277,7 +385,12 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'नियोजित दिनांक' : 'Scheduled Date',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Scheduled Date',
+                                    mr: 'नियोजित दिनांक',
+                                    hi: 'निर्धारित तिथि',
+                                  ),
                                 ),
                                 InkWell(
                                   onTap: () async {
@@ -303,7 +416,14 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            selectedDate != null ? DateFormat('dd MMM yyyy').format(selectedDate!) : (isMr ? 'दिनांक निवडा' : 'Pick Date'),
+                                            selectedDate != null
+                                                ? AppTranslations.formatDate(selectedDate!, lang, pattern: 'dd MMM yyyy')
+                                                : AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Pick Date',
+                                                    mr: 'दिनांक निवडा',
+                                                    hi: 'तिथि चुनें',
+                                                  ),
                                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -321,7 +441,12 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'नियोजित वेळ' : 'Scheduled Time',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Scheduled Time',
+                                    mr: 'नियोजित वेळ',
+                                    hi: 'निर्धारित समय',
+                                  ),
                                 ),
                                 InkWell(
                                   onTap: () async {
@@ -345,7 +470,17 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            selectedTime != null ? selectedTime!.format(context) : (isMr ? 'वेळ निवडा' : 'Pick Time'),
+                                            selectedTime != null
+                                                ? AppTranslations.formatTime(
+                                                    DateTime(2026, 1, 1, selectedTime!.hour, selectedTime!.minute),
+                                                    lang,
+                                                  )
+                                                : AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Pick Time',
+                                                    mr: 'वेळ निवडा',
+                                                    hi: 'समय चुनें',
+                                                  ),
                                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -369,12 +504,22 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'ठिकाण / पत्ता' : 'Location / Address',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Location / Address',
+                                    mr: 'ठिकाण / पत्ता',
+                                    hi: 'स्थान / पता',
+                                  ),
                                 ),
                                 TextField(
                                   controller: addrCtrl,
                                   decoration: appInputDecoration(
-                                    hint: isMr ? 'उदा. सेक्टर २ मार्केट रोड' : 'e.g. Sector 2 Market Road',
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Sector 2 Market Road',
+                                      mr: 'उदा. सेक्टर २ मार्केट रोड',
+                                      hi: 'उदा. सेक्टर २ मार्केट रोड',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -386,12 +531,22 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'कार्यालय / विभाग' : 'Office / Dept',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Office / Dept',
+                                    mr: 'कार्यालय / विभाग',
+                                    hi: 'कार्यालय / विभाग',
+                                  ),
                                 ),
                                 TextField(
                                   controller: officeCtrl,
                                   decoration: appInputDecoration(
-                                    hint: isMr ? 'उदा. पाणी पुरवठा विभाग' : 'e.g. Water Supply Dept',
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Water Supply Dept',
+                                      mr: 'उदा. पाणी पुरवठा विभाग',
+                                      hi: 'उदा. जल आपूर्ति विभाग',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -409,12 +564,22 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'भेट घ्यावयाची व्यक्ती' : 'Person to Meet',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Person to Meet',
+                                    mr: 'भेट घ्यावयाची व्यक्ती',
+                                    hi: 'मिलने वाले व्यक्ति',
+                                  ),
                                 ),
                                 TextField(
                                   controller: personCtrl,
                                   decoration: appInputDecoration(
-                                    hint: isMr ? 'उदा. कार्यकारी अभियंता' : 'e.g. Executive Engineer',
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Executive Engineer',
+                                      mr: 'उदा. कार्यकारी अभियंता',
+                                      hi: 'उदा. कार्यकारी अभियंता',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -426,12 +591,22 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'नियुक्त कार्यकर्ता' : 'Assigned To',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Assigned To',
+                                    mr: 'नियुक्त कार्यकर्ता',
+                                    hi: 'नियुक्त कार्यकर्ता',
+                                  ),
                                 ),
                                 TextField(
                                   controller: staffCtrl,
                                   decoration: appInputDecoration(
-                                    hint: isMr ? 'उदा. सुनील शिंदे (जेई)' : 'e.g. Sunil Shinde (JE)',
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Sunil Shinde (JE)',
+                                      mr: 'उदा. सुनील शिंदे (जेई)',
+                                      hi: 'उदा. सुनील शिंदे (जेई)',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -443,13 +618,23 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
 
                       // Description
                       AppFieldLabel(
-                        label: isMr ? 'तपशीलवार सूचना / मुद्दे' : 'Detailed Instructions & Notes',
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Detailed Instructions & Notes',
+                          mr: 'तपशीलवार सूचना / मुद्दे',
+                          hi: 'विस्तृत निर्देश व नोट्स',
+                        ),
                       ),
                       TextField(
                         controller: descCtrl,
                         maxLines: 3,
                         decoration: appInputDecoration(
-                          hint: isMr ? 'अजेंडा, पार्श्वभूमी किंवा आवश्यक कृती...' : 'Agenda points, background, or action required...',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'Agenda points, background, or action required...',
+                            mr: 'अजेंडा, पार्श्वभूमी किंवा आवश्यक कृती...',
+                            hi: 'कार्यसूची के बिंदु, पृष्ठभूमि या आवश्यक कार्रवाई...',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -457,12 +642,21 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                       // Save Changes Button (Scrolls together with form)
                       SizedBox(
                         width: double.infinity,
-                      child: ElevatedButton(
+                        child: ElevatedButton(
                           onPressed: () async {
                             final t = titleCtrl.text.trim();
                             if (t.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(isMr ? 'कृपया कार्याचे शीर्षक प्रविष्ट करा' : 'Please enter task title')),
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Please enter task title',
+                                      mr: 'कृपया कार्याचे शीर्षक प्रविष्ट करा',
+                                      hi: 'कृपया कार्य का शीर्षक दर्ज करें',
+                                    ),
+                                  ),
+                                ),
                               );
                               return;
                             }
@@ -507,7 +701,14 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(isMr ? 'नोंद यशस्वीरित्या अद्ययावत केली' : 'Task updated successfully'),
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Task updated successfully',
+                                        mr: 'नोंद यशस्वीरित्या अद्ययावत केली',
+                                        hi: 'कार्य सफलतापूर्वक अपडेट किया गया',
+                                      ),
+                                    ),
                                     backgroundColor: const Color(0xFF0F766E),
                                   ),
                                 );
@@ -515,7 +716,17 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                             } catch (e) {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
+                                  SnackBar(
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Failed to update: $e',
+                                        mr: 'अद्ययावत करण्यात अयशस्वी: $e',
+                                        hi: 'अपडेट करने में विफल: $e',
+                                      ),
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                               }
                             } finally {
@@ -529,7 +740,12 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           child: Text(
-                            isMr ? 'बदल जतन करा' : 'Save Changes',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Save Changes',
+                              mr: 'बदल जतन करा',
+                              hi: 'बदलाव सहेजें',
+                            ),
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -549,7 +765,10 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
+    final formattedDate = _task.dueDate != null
+        ? AppTranslations.formatDate(_task.dueDate!, lang, pattern: 'MMM d, yyyy')
+        : '-';
+    final formattedTime = _formatTaskTime(_task, lang);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -575,9 +794,12 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                lang == 'mr'
-                    ? 'दैनंदिनी नोंद तपशील'
-                    : (lang == 'hi' ? 'डायरी कार्य विवरण' : 'Diary Task Details'),
+                AppTranslations.pick(
+                  lang,
+                  en: 'Diary Task Details',
+                  mr: 'दैनंदिनी नोंद तपशील',
+                  hi: 'डायरी कार्य विवरण',
+                ),
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -585,10 +807,10 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                 ),
               ),
               Text(
-                _task.formattedDate,
+                formattedDate,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                 ),
               ),
             ],
@@ -598,7 +820,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                  tooltip: AppTranslations.getDownloadReport(lang),
                   onPressed: () {
                     DiaryReportGenerator.generateAndPrintSingleTask(_task, lang: lang);
                   },
@@ -606,12 +828,12 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
               ),
             ),
             IconButton(
-              tooltip: 'Edit Task',
+              tooltip: AppTranslations.pick(lang, en: 'Edit Task', mr: 'कार्य संपादित करा', hi: 'कार्य संपादित करें'),
               icon: const Icon(Icons.edit_outlined, color: Colors.white),
               onPressed: _showEditSheet,
             ),
             IconButton(
-              tooltip: 'Delete Task',
+              tooltip: AppTranslations.pick(lang, en: 'Delete Task', mr: 'कार्य हटवा', hi: 'कार्य हटाएं'),
               icon: const Icon(Icons.delete_outline, color: Colors.white),
               onPressed: _showDeleteDialog,
             ),
@@ -648,7 +870,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                                 decoration: BoxDecoration(
                                   color: _priorityBgColor,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: _priorityColor.withOpacity(0.3)),
+                                  border: Border.all(color: _priorityColor.withValues(alpha: 0.3)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -656,7 +878,7 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                                     Icon(Icons.flag_rounded, size: 12, color: _priorityColor),
                                     const SizedBox(width: 4),
                                     Text(
-                                      AppTranslations.getStatus(_task.priority, lang),
+                                      AppTranslations.getPriority(_task.priority, lang),
                                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _priorityColor),
                                     ),
                                   ],
@@ -688,7 +910,8 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                           const SizedBox(height: 14),
 
                           // Task Title
-                          AppTranslatedText(_task.title,
+                          AppTranslatedText(
+                            _task.title,
                             targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 18,
@@ -707,20 +930,22 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                             children: [
                               _buildMetaTag(
                                 icon: Icons.calendar_today_outlined,
-                                label: _task.formattedDate,
+                                label: formattedDate,
                                 color: const Color(0xFF0284C7),
                               ),
-                              if (_task.formattedTime.isNotEmpty)
+                              if (formattedTime.isNotEmpty)
                                 _buildMetaTag(
                                   icon: Icons.access_time_rounded,
-                                  label: _task.formattedTime,
+                                  label: formattedTime,
                                   color: const Color(0xFFD97706),
                                 ),
                               if (_task.address != null && _task.address!.isNotEmpty)
                                 _buildMetaTag(
                                   icon: Icons.location_on_outlined,
-                                  label: _task.address!,
+                                  label: AppTranslations.getAreaName(_task.address!, lang),
                                   color: const Color(0xFF475569),
+                                  translate: true,
+                                  lang: lang,
                                 ),
                             ],
                           ),
@@ -744,33 +969,62 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                _task.isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                color: _task.isCompleted ? const Color(0xFF16A34A) : const Color(0xFF0284C7),
-                                size: 24,
-                              ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _task.isCompleted ? 'Task is Completed' : 'Task is Open / Pending',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: _task.isCompleted ? const Color(0xFF166534) : const Color(0xFF1E40AF),
-                                    ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _task.isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                  color: _task.isCompleted ? const Color(0xFF16A34A) : const Color(0xFF0284C7),
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _task.isCompleted
+                                            ? AppTranslations.pick(
+                                                lang,
+                                                en: 'Task is Completed',
+                                                mr: 'कार्य पूर्ण झाले आहे',
+                                                hi: 'कार्य पूर्ण हो चुका है',
+                                              )
+                                            : AppTranslations.pick(
+                                                lang,
+                                                en: 'Task is Open / Pending',
+                                                mr: 'कार्य प्रलंबित आहे',
+                                                hi: 'कार्य लंबित है',
+                                              ),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: _task.isCompleted ? const Color(0xFF166534) : const Color(0xFF1E40AF),
+                                        ),
+                                      ),
+                                      Text(
+                                        _task.isCompleted
+                                            ? AppTranslations.pick(
+                                                lang,
+                                                en: 'Tap to mark as pending again',
+                                                mr: 'पुन्हा प्रलंबित करण्यासाठी टॅप करा',
+                                                hi: 'फिर से लंबित करने के लिए टैप करें',
+                                              )
+                                            : AppTranslations.pick(
+                                                lang,
+                                                en: 'Tap to mark as completed',
+                                                mr: 'पूर्ण म्हणून नोंदवण्यासाठी टॅप करा',
+                                                hi: 'पूर्ण करने के लिए टैप करें',
+                                              ),
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    _task.isCompleted ? 'Tap to mark as pending again' : 'Tap to mark as completed',
-                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           ElevatedButton(
                             onPressed: _toggleStatus,
                             style: ElevatedButton.styleFrom(
@@ -780,7 +1034,9 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             child: Text(
-                              _task.isCompleted ? 'Reopen' : 'Done',
+                              _task.isCompleted
+                                  ? AppTranslations.pick(lang, en: 'Reopen', mr: 'पुन्हा उघडा', hi: 'पुनः खोलें')
+                                  : AppTranslations.pick(lang, en: 'Done', mr: 'पूर्ण करा', hi: 'पूर्ण करें'),
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -805,17 +1061,54 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Appointment & Assignment Details',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Appointment & Assignment Details',
+                                mr: 'भेट व जबाबदारी तपशील',
+                                hi: 'मुलाकात व कार्य आवंटन विवरण',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                             ),
                             const SizedBox(height: 12),
                             if (_task.officeName != null && _task.officeName!.isNotEmpty)
-                              _buildDetailRow(Icons.business_rounded, 'Office / Department', _task.officeName!),
+                              _buildDetailRow(
+                                Icons.business_rounded,
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Office / Department',
+                                  mr: 'कार्यालय / विभाग',
+                                  hi: 'कार्यालय / विभाग',
+                                ),
+                                _task.officeName!,
+                                lang: lang,
+                              ),
                             if (_task.meetPersonName != null && _task.meetPersonName!.isNotEmpty)
-                              _buildDetailRow(Icons.person_outline_rounded, 'Person to Meet', _task.meetPersonName!),
+                              _buildDetailRow(
+                                Icons.person_outline_rounded,
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Person to Meet',
+                                  mr: 'भेटायची व्यक्ती',
+                                  hi: 'मिलने वाले व्यक्ति',
+                                ),
+                                _task.meetPersonName!,
+                                isName: true,
+                                lang: lang,
+                              ),
                             if (_task.assignedStaffName != null && _task.assignedStaffName!.isNotEmpty)
-                              _buildDetailRow(Icons.badge_outlined, 'Assigned Staff', _task.assignedStaffName!),
+                              _buildDetailRow(
+                                Icons.badge_outlined,
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Assigned Staff',
+                                  mr: 'नियुक्त कर्मचारी',
+                                  hi: 'नियुक्त कर्मचारी',
+                                ),
+                                _task.assignedStaffName!,
+                                isName: true,
+                                lang: lang,
+                              ),
                           ],
                         ),
                       ),
@@ -835,26 +1128,29 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            lang == 'mr'
-                                ? 'तपशील आणि अजेंडा नोंदी'
-                                : (lang == 'hi'
-                                    ? 'विवरण और कार्यसूची'
-                                    : 'Description & Agenda Notes'),
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Description & Agenda Notes',
+                              mr: 'तपशील आणि अजेंडा नोंदी',
+                              hi: 'विवरण और कार्यसूची',
+                            ),
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 8),
                           if (_task.description != null && _task.description!.isNotEmpty)
-                            AppTranslatedText(_task.description!,
+                            AppTranslatedText(
+                              _task.description!,
                               targetLanguage: lang,
                               style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B), height: 1.5),
                             )
                           else
                             Text(
-                              lang == 'mr'
-                                  ? 'कोणतीही अतिरिक्त चर्चा किंवा टिपण उपलब्ध नाही.'
-                                  : (lang == 'hi'
-                                      ? 'कोई अतिरिक्त विवरण दर्ज नहीं है।'
-                                      : 'No additional discussion details recorded.'),
+                              AppTranslations.pick(
+                                lang,
+                                en: 'No additional discussion details recorded.',
+                                mr: 'कोणतीही अतिरिक्त चर्चा किंवा टिपण उपलब्ध नाही.',
+                                hi: 'कोई अतिरिक्त विवरण दर्ज नहीं है।',
+                              ),
                               style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
                             ),
                         ],
@@ -873,7 +1169,10 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
     required IconData icon,
     required String label,
     required Color color,
+    bool translate = false,
+    String? lang,
   }) {
+    final style = TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
@@ -886,16 +1185,30 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+          Flexible(
+            child: translate
+                ? AppTranslatedText(
+                    label,
+                    targetLanguage: lang,
+                    style: style,
+                  )
+                : Text(
+                    label,
+                    style: style,
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String title, String value) {
+  Widget _buildDetailRow(
+    IconData icon,
+    String title,
+    String value, {
+    bool isName = false,
+    required String lang,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -909,7 +1222,12 @@ class _DiaryDetailScreenState extends ConsumerState<DiaryDetailScreen> {
               children: [
                 Text(title, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                AppTranslatedText(
+                  value,
+                  isName: isName,
+                  targetLanguage: lang,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                ),
               ],
             ),
           ),

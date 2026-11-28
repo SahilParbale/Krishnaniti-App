@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/voter_model.dart';
@@ -72,10 +72,13 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
     });
     try {
       final repo = ref.read(smsRepoProvider);
+      final normalizedName = AppTranslations.normalizeAsciiDigits(_nameController.text.trim());
+      final normalizedAddress = AppTranslations.normalizeAsciiDigits(_addressController.text.trim());
+      final normalizedHouseNo = AppTranslations.normalizeAsciiDigits(_houseNoController.text.trim());
       final voters = await repo.getVotersWithMobile(
-        name: _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
-        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-        houseNo: _houseNoController.text.trim().isEmpty ? null : _houseNoController.text.trim(),
+        name: normalizedName.isEmpty ? null : normalizedName,
+        address: normalizedAddress.isEmpty ? null : normalizedAddress,
+        houseNo: normalizedHouseNo.isEmpty ? null : normalizedHouseNo,
         gender: _selectedGender.isEmpty ? null : _selectedGender,
         caste: _casteController.text.trim().isEmpty ? null : _casteController.text.trim(),
       );
@@ -121,16 +124,34 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
     });
   }
 
-  void _confirmAndSend(bool isMr) {
+  void _confirmAndSend(String lang) {
     if (_selectedVoterIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one voter')),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please select at least one voter',
+              mr: 'कृपया किमान एक मतदार निवडा',
+              hi: 'कृपया कम से कम एक मतदाता चुनें',
+            ),
+          ),
+        ),
       );
       return;
     }
     if (_messageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter message content')),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please enter message content',
+              mr: 'कृपया संदेशाचा मजकूर लिहा',
+              hi: 'कृपया संदेश लिखें',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -138,77 +159,131 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => DesktopModalDialog(
-        title: 'Confirm SMS Campaign',
-        subtitle: 'Review and confirm campaign details before dispatching',
-        icon: Icons.sms_rounded,
-        width: 520,
-        onClose: () => Navigator.pop(ctx),
-        actions: [
-          DesktopModalDialog.cancelButton(ctx),
-          const SizedBox(width: 12),
-          DesktopModalDialog.primaryButton(
-            text: 'Send Campaign',
-            icon: Icons.send_rounded,
-            onPressed: () async {
-              Navigator.pop(ctx);
-              setState(() => _isSending = true);
-              try {
-                final repo = ref.read(smsRepoProvider);
-                final selectedVoters = _voters.where((v) => _selectedVoterIds.contains(v.id)).toList();
-                await repo.sendSmsCampaign(
-                  campaignName: 'SMS Broadcast ${DateFormat('dd MMM hh:mm a').format(DateTime.now())}',
-                  recipients: selectedVoters,
-                  message: _messageController.text,
-                );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('SMS campaign sent successfully!'), backgroundColor: Colors.green),
-                  );
-                  _messageController.clear();
-                  _selectedVoterIds.clear();
-                  _loadHistory();
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                  );
-                }
-              } finally {
-                if (mounted) setState(() => _isSending = false);
-              }
-            },
-          ),
-        ],
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to dispatch this SMS campaign to ${_selectedVoterIds.length} voters?',
-              style: const TextStyle(fontSize: 14, color: AppColors.slate700),
+      builder: (ctx) => Consumer(
+        builder: (ctx, dialogRef, _) {
+          final dLang = dialogRef.watch(desktopLanguageProvider);
+          final selectedCount = AppTranslations.formatDigits(_selectedVoterIds.length, dLang);
+          return DesktopModalDialog(
+            title: AppTranslations.pick(
+              dLang,
+              en: 'Confirm SMS Campaign',
+              mr: 'SMS मोहीम निश्चित करा',
+              hi: 'एसएमएस अभियान की पुष्टि करें',
             ),
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.slate200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Message Preview:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.slate500)),
-                  const SizedBox(height: 6),
-                  Text(_messageController.text, style: const TextStyle(fontSize: 13, color: AppColors.slate800)),
-                ],
-              ),
+            subtitle: AppTranslations.pick(
+              dLang,
+              en: 'Review and confirm campaign details before dispatching',
+              mr: 'पाठवण्यापूर्वी मोहिमेचा तपशील तपासा आणि निश्चित करा',
+              hi: 'भेजने से पहले अभियान का विवरण जांचें और पुष्टि करें',
             ),
-          ],
-        ),
+            icon: Icons.sms_rounded,
+            width: 520,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(
+                ctx,
+                text: AppTranslations.pick(dLang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              ),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: AppTranslations.pick(dLang, en: 'Send Campaign', mr: 'मोहीम पाठवा', hi: 'अभियान भेजें'),
+                icon: Icons.send_rounded,
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  setState(() => _isSending = true);
+                  try {
+                    final repo = ref.read(smsRepoProvider);
+                    final selectedVoters = _voters.where((v) => _selectedVoterIds.contains(v.id)).toList();
+                    await repo.sendSmsCampaign(
+                      campaignName: 'SMS Broadcast ${AppTranslations.formatDateTime(DateTime.now(), 'en')}',
+                      recipients: selectedVoters,
+                      message: _messageController.text,
+                    );
+                    if (mounted) {
+                      final activeLang = ref.read(desktopLanguageProvider);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppTranslations.pick(
+                              activeLang,
+                              en: 'SMS campaign sent successfully!',
+                              mr: 'SMS मोहीम यशस्वीरित्या पाठवली गेली!',
+                              hi: 'एसएमएस अभियान सफलतापूर्वक भेजा गया!',
+                            ),
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      _messageController.clear();
+                      _selectedVoterIds.clear();
+                      _loadHistory();
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      final activeLang = ref.read(desktopLanguageProvider);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppTranslations.pick(
+                              activeLang,
+                              en: 'Error: $e',
+                              mr: 'त्रुटी: $e',
+                              hi: 'त्रुटि: $e',
+                            ),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isSending = false);
+                  }
+                },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppTranslations.pick(
+                    dLang,
+                    en: 'Are you sure you want to dispatch this SMS campaign to $selectedCount voters?',
+                    mr: 'तुम्हाला ही SMS मोहीम $selectedCount मतदारांना पाठवायची आहे का?',
+                    hi: 'क्या आप वाकई यह एसएमएस अभियान $selectedCount मतदाताओं को भेजना चाहते हैं?',
+                  ),
+                  style: const TextStyle(fontSize: 14, color: AppColors.slate700),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.slate200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppTranslations.pick(
+                          dLang,
+                          en: 'Message Preview:',
+                          mr: 'संदेश पूर्वावलोकन:',
+                          hi: 'संदेश पूर्वावलोकन:',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.slate500),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(_messageController.text, style: const TextStyle(fontSize: 13, color: AppColors.slate800)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -216,7 +291,8 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
+    final charCount = AppTranslations.formatDigits(_messageController.text.length, lang);
+    final smsParts = AppTranslations.formatDigits((_messageController.text.length / 160).floor() + 1, lang);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -229,44 +305,55 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.brandPrimary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandPrimary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.sms_rounded, color: AppColors.brandPrimary, size: 28),
                       ),
-                      child: const Icon(Icons.sms_rounded, color: AppColors.brandPrimary, size: 28),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Send SMS',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(lang, en: 'Send SMS', mr: 'SMS पाठवा', hi: 'एसएमएस भेजें'),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Broadcast official updates directly to voters via SMS',
+                                mr: 'मतदारांना SMS द्वारे थेट अधिकृत सूचना पाठवा',
+                                hi: 'मतदाताओं को एसएमएस के माध्यम से सीधे आधिकारिक सूचनाएं भेजें',
+                              ),
+                              style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Broadcast official updates directly to voters via SMS',
-                          style: const TextStyle(fontSize: 13, color: AppColors.slate500),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
 
                 // Download Report matching SMSCommunication.tsx
                 OutlinedButton.icon(
                   onPressed: () {
                     SmsHistoryReportGenerator.generateAndPrintReport(
+                      context: context,
                       campaigns: _campaignHistory,
+                      lang: lang,
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                   label: Text(
-                    AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                    AppTranslations.getDownloadReport(lang),
                     style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -291,8 +378,16 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTabButton('send', 'Send SMS', Icons.send_rounded),
-                  _buildTabButton('history', 'SMS History', Icons.history_rounded),
+                  _buildTabButton(
+                    'send',
+                    AppTranslations.pick(lang, en: 'Send SMS', mr: 'SMS पाठवा', hi: 'एसएमएस भेजें'),
+                    Icons.send_rounded,
+                  ),
+                  _buildTabButton(
+                    'history',
+                    AppTranslations.pick(lang, en: 'SMS History', mr: 'SMS इतिहास', hi: 'एसएमएस इतिहास'),
+                    Icons.history_rounded,
+                  ),
                 ],
               ),
             ),
@@ -315,7 +410,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           child: TextField(
                             controller: _nameController,
                             decoration: InputDecoration(
-                              hintText: 'Search Name...',
+                              hintText: AppTranslations.pick(lang, en: 'Search Name...', mr: 'नाव शोधा...', hi: 'नाम खोजें...'),
                               prefixIcon: const Icon(Icons.search, size: 18),
                               isDense: true,
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -328,7 +423,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           child: TextField(
                             controller: _addressController,
                             decoration: InputDecoration(
-                              hintText: 'Search Address...',
+                              hintText: AppTranslations.pick(lang, en: 'Search Address...', mr: 'पत्ता शोधा...', hi: 'पता खोजें...'),
                               prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
                               isDense: true,
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -341,7 +436,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           child: TextField(
                             controller: _houseNoController,
                             decoration: InputDecoration(
-                              hintText: 'House No.',
+                              hintText: AppTranslations.pick(lang, en: 'House No.', mr: 'घर क्र.', hi: 'मकान नं.'),
                               prefixIcon: const Icon(Icons.home_outlined, size: 18),
                               isDense: true,
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -358,10 +453,32 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                             prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
                             backgroundColor: Colors.white,
                             borderColor: const Color(0xFFE2E8F0),
-                            items: const [
-                              DropdownMenuItem(value: '', child: Text('All Genders')),
-                              DropdownMenuItem(value: 'M', child: Text('Male')),
-                              DropdownMenuItem(value: 'F', child: Text('Female')),
+                            items: [
+                              DropdownMenuItem(
+                                value: '',
+                                child: Padding(
+                                  padding: EdgeInsets.zero,
+                                  child: Text(
+                                    AppTranslations.pick(lang, en: 'All Genders', mr: 'सर्व लिंग', hi: 'सभी लिंग'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'M',
+                                child: Padding(
+                                  padding: EdgeInsets.zero,
+                                  child: Text(AppTranslations.getGender('M', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'F',
+                                child: Padding(
+                                  padding: EdgeInsets.zero,
+                                  child: Text(AppTranslations.getGender('F', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
+                              ),
                             ],
                             onChanged: (v) {
                               setState(() => _selectedGender = v ?? '');
@@ -374,7 +491,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           child: TextField(
                             controller: _casteController,
                             decoration: InputDecoration(
-                              hintText: 'Caste...',
+                              hintText: AppTranslations.pick(lang, en: 'Caste...', mr: 'जात...', hi: 'जाति...'),
                               prefixIcon: const Icon(Icons.group_outlined, size: 18),
                               isDense: true,
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -409,7 +526,12 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Select All Visible (${_voters.length})',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Select All Visible (${AppTranslations.formatDigits(_voters.length, lang)})',
+                              mr: 'दिसणारे सर्व निवडा (${AppTranslations.formatDigits(_voters.length, lang)})',
+                              hi: 'दिखने वाले सभी चुनें (${AppTranslations.formatDigits(_voters.length, lang)})',
+                            ),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.slate700),
                           ),
                         ],
@@ -424,7 +546,12 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                       border: Border.all(color: AppColors.brandPrimary.withValues(alpha: 0.3)),
                     ),
                     child: Text(
-                      '${_selectedVoterIds.length} Selected',
+                      AppTranslations.pick(
+                        lang,
+                        en: '${AppTranslations.formatDigits(_selectedVoterIds.length, lang)} Selected',
+                        mr: '${AppTranslations.formatDigits(_selectedVoterIds.length, lang)} निवडले',
+                        hi: '${AppTranslations.formatDigits(_selectedVoterIds.length, lang)} चयनित',
+                      ),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.brandPrimary),
                     ),
                   ),
@@ -451,7 +578,12 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                           : _voters.isEmpty
                               ? Center(
                                   child: Text(
-                                    'No voters found with mobile number',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'No voters found with mobile number',
+                                      mr: 'मोबाईल नंबर असलेले मतदार आढळले नाहीत',
+                                      hi: 'मोबाइल नंबर वाले कोई मतदाता नहीं मिले',
+                                    ),
                                     style: const TextStyle(color: AppColors.slate400),
                                   ),
                                 )
@@ -461,7 +593,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                       child: ListView.separated(
                                         padding: const EdgeInsets.all(12),
                                         itemCount: _visibleVoters.length,
-                                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                        separatorBuilder: (_, _) => const SizedBox(height: 8),
                                         itemBuilder: (ctx, i) {
                                           final v = _visibleVoters[i];
                                           final isSelected = _selectedVoterIds.contains(v.id);
@@ -490,22 +622,36 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                                     child: Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: [
-                                                        Text(
-                                                          isMr && v.nameMarathi.isNotEmpty
-                                                              ? v.nameMarathi
-                                                              : v.nameEnglish,
+                                                        AppTranslatedText(
+                                                          v.displayNameFor(lang),
+                                                          isName: true,
+                                                          targetLanguage: lang,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
                                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
                                                         ),
                                                         const SizedBox(height: 2),
-                                                        Text(
-                                                          '${v.mobile ?? '-'}  •  ${v.address}',
-                                                          style: const TextStyle(fontSize: 12, color: AppColors.slate500),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              '${AppTranslations.formatDigits(v.mobile ?? '-', lang)}  •  ',
+                                                              style: const TextStyle(fontSize: 12, color: AppColors.slate500),
+                                                            ),
+                                                            Expanded(
+                                                              child: AppTranslatedText(
+                                                                v.address,
+                                                                targetLanguage: lang,
+                                                                maxLines: 1,
+                                                                overflow: TextOverflow.ellipsis,
+                                                                style: const TextStyle(fontSize: 12, color: AppColors.slate500),
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
                                                       ],
                                                     ),
                                                   ),
+                                                  const SizedBox(width: 8),
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                                     decoration: BoxDecoration(
@@ -513,7 +659,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                                       borderRadius: BorderRadius.circular(6),
                                                     ),
                                                     child: Text(
-                                                      '${v.gender} / ${v.age}',
+                                                      '${v.genderLabel(lang)} / ${AppTranslations.formatDigits(v.age, lang)}',
                                                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate600),
                                                     ),
                                                   ),
@@ -531,8 +677,8 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                       onLoadMore: () {
                                         setState(() => _displayedLimit += 20);
                                       },
-                                      label: 'मतदार',
-                                      isMarathi: isMr,
+                                      label: 'voters',
+                                      isMarathi: lang == 'mr',
                                     ),
                                   ],
                                 ),
@@ -558,7 +704,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                               const Icon(Icons.edit_note_rounded, color: AppColors.brandPrimary, size: 22),
                               const SizedBox(width: 8),
                               Text(
-                                'Compose Message',
+                                AppTranslations.pick(lang, en: 'Compose Message', mr: 'संदेश लिहा', hi: 'संदेश लिखें'),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                               ),
                             ],
@@ -568,7 +714,12 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                             controller: _messageController,
                             maxLines: 10,
                             decoration: InputDecoration(
-                              hintText: 'Type your official SMS announcement here...',
+                              hintText: AppTranslations.pick(
+                                lang,
+                                en: 'Type your official SMS announcement here...',
+                                mr: 'तुमची अधिकृत SMS सूचना येथे टाइप करा...',
+                                hi: 'अपनी आधिकारिक एसएमएस घोषणा यहाँ लिखें...',
+                              ),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
                               fillColor: const Color(0xFFF8FAFC),
                               filled: true,
@@ -580,11 +731,21 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '${_messageController.text.length} characters',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: '$charCount characters',
+                                  mr: '$charCount अक्षरे',
+                                  hi: '$charCount अक्षर',
+                                ),
                                 style: const TextStyle(fontSize: 12, color: AppColors.slate500),
                               ),
                               Text(
-                                '${((_messageController.text.length / 160).floor() + 1)} SMS',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: '$smsParts SMS',
+                                  mr: '$smsParts SMS',
+                                  hi: '$smsParts एसएमएस',
+                                ),
                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.slate700),
                               ),
                             ],
@@ -599,12 +760,14 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              onPressed: _isSending ? null : () => _confirmAndSend(isMr),
+                              onPressed: _isSending ? null : () => _confirmAndSend(lang),
                               icon: _isSending
                                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                   : const Icon(Icons.send_rounded, size: 18),
                               label: Text(
-                                _isSending ? 'Sending...' : 'Send SMS Broadcast',
+                                _isSending
+                                    ? AppTranslations.pick(lang, en: 'Sending...', mr: 'पाठवत आहे...', hi: 'भेजा जा रहा है...')
+                                    : AppTranslations.pick(lang, en: 'Send SMS Broadcast', mr: 'SMS प्रसारण पाठवा', hi: 'एसएमएस प्रसारण भेजें'),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ),
@@ -631,10 +794,9 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'SMS Campaign History',
+                          AppTranslations.pick(lang, en: 'SMS Campaign History', mr: 'SMS मोहीम इतिहास', hi: 'एसएमएस अभियान इतिहास'),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                         ),
-
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -643,7 +805,12 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                         padding: const EdgeInsets.symmetric(vertical: 40),
                         child: Center(
                           child: Text(
-                            'No SMS campaign history found',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'No SMS campaign history found',
+                              mr: 'SMS मोहिमेचा इतिहास आढळला नाही',
+                              hi: 'कोई एसएमएस अभियान इतिहास नहीं मिला',
+                            ),
                             style: const TextStyle(color: AppColors.slate400),
                           ),
                         ),
@@ -653,9 +820,10 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: _visibleHistory.length,
-                        separatorBuilder: (_, __) => const Divider(color: AppColors.slate100),
+                        separatorBuilder: (_, _) => const Divider(color: AppColors.slate100),
                         itemBuilder: (ctx, i) {
                           final item = _visibleHistory[i];
+                          final recipientCount = AppTranslations.formatDigits(item.totalRecipients, lang);
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Row(
@@ -673,10 +841,14 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800)),
+                                      AppTranslatedText(
+                                        item.name,
+                                        targetLanguage: lang,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
+                                      ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        DateFormat('dd MMM yyyy, hh:mm a').format(item.createdAt),
+                                        AppTranslations.formatDateTime(item.createdAt, lang),
                                         style: const TextStyle(fontSize: 12, color: AppColors.slate500),
                                       ),
                                     ],
@@ -691,7 +863,7 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    item.status.toUpperCase(),
+                                    AppTranslations.getStatus(item.status, lang).toUpperCase(),
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -703,7 +875,12 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                                 ),
                                 const SizedBox(width: 16),
                                 Text(
-                                  '${item.totalRecipients} recipients',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: '$recipientCount recipients',
+                                    mr: '$recipientCount प्राप्तकर्ते',
+                                    hi: '$recipientCount प्राप्तकर्ता',
+                                  ),
                                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.slate700),
                                 ),
                               ],
@@ -718,8 +895,8 @@ class _DesktopSmsViewState extends ConsumerState<DesktopSmsView> {
                         onLoadMore: () {
                           setState(() => _historyLimit += 20);
                         },
-                        label: 'मोहिमा',
-                        isMarathi: isMr,
+                        label: AppTranslations.pick(lang, en: 'campaigns', mr: 'मोहिमा', hi: 'अभियान'),
+                        isMarathi: lang == 'mr',
                       ),
                     ],
                   ],

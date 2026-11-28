@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../core/localization/app_translations.dart';
+import '../providers/language_provider.dart';
 
 /// Modal dialog that presents the exact PDF report format preview matching
 /// Nagarsevak-Managment (*ReportGenerator.tsx / *PdfGenerator.tsx)
@@ -101,6 +103,7 @@ class _AppReportPreviewModalState extends State<AppReportPreviewModal> {
       } catch (_) {}
 
       if (!mounted) return;
+      final lang = appLanguageValueNotifier.value;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: const Color(0xFF0F172A),
@@ -113,8 +116,18 @@ class _AppReportPreviewModalState extends State<AppReportPreviewModal> {
               Expanded(
                 child: Text(
                   savedLocally
-                      ? 'Downloaded to Downloads folder: $fullFileName'
-                      : 'PDF ready: $fullFileName',
+                      ? AppTranslations.pick(
+                          lang,
+                          en: 'Downloaded to Downloads folder: $fullFileName',
+                          mr: 'डाउनलोड्स फोल्डरमध्ये जतन केले: $fullFileName',
+                          hi: 'डाउनलोड फ़ोल्डर में सहेजा गया: $fullFileName',
+                        )
+                      : AppTranslations.pick(
+                          lang,
+                          en: 'PDF ready: $fullFileName',
+                          mr: 'पीडीएफ तयार आहे: $fullFileName',
+                          hi: 'पीडीएफ तैयार है: $fullFileName',
+                        ),
                   style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
                 ),
               ),
@@ -125,10 +138,18 @@ class _AppReportPreviewModalState extends State<AppReportPreviewModal> {
       );
     } catch (e) {
       if (!mounted) return;
+      final lang = appLanguageValueNotifier.value;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: const Color(0xFFDC2626),
-          content: Text('Failed to download PDF: $e'),
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Failed to download PDF: $e',
+              mr: 'पीडीएफ डाउनलोड अयशस्वी: $e',
+              hi: 'पीडीएफ डाउनलोड विफल: $e',
+            ),
+          ),
         ),
       );
     } finally {
@@ -146,155 +167,185 @@ class _AppReportPreviewModalState extends State<AppReportPreviewModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-      child: Center(
-        child: Container(
-          width: 960,
-          constraints: const BoxConstraints(maxHeight: 840),
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.16),
-                blurRadius: 36,
-                offset: const Offset(0, 16),
+    return ValueListenableBuilder<String>(
+      valueListenable: appLanguageValueNotifier,
+      builder: (context, lang, _) {
+        final effectiveSubtitle = widget.subtitle == 'Report Preview'
+            ? AppTranslations.pick(lang, en: 'Report Preview', mr: 'अहवाल पूर्वावलोकन', hi: 'रिपोर्ट पूर्वावलोकन')
+            : AppTranslations.formatDigits(
+                AppTranslations.tr(widget.subtitle, lang: lang) ?? widget.subtitle,
+                lang,
+              );
+        final effectiveTitle = AppTranslations.formatDigits(
+          AppTranslations.tr(widget.title, lang: lang) ?? widget.title,
+          lang,
+        );
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Center(
+            child: Container(
+              width: 960,
+              constraints: const BoxConstraints(maxHeight: 840),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.16),
+                    blurRadius: 36,
+                    offset: const Offset(0, 16),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Top Header Bar matching web ComplaintReportGenerator.tsx
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8FAFC),
-                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF8FAFC),
+                      border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0F9FF),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFBAE6FD)),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0F9FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFBAE6FD)),
+                                ),
+                                child: const Icon(Icons.description_rounded, size: 20, color: Color(0xFF0284C7)),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      effectiveTitle,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      effectiveSubtitle,
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          child: const Icon(Icons.description_rounded, size: 20, color: Color(0xFF0284C7)),
                         ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              widget.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A),
+                            OutlinedButton.icon(
+                              onPressed: _handlePrint,
+                              icon: const Icon(Icons.print_rounded, size: 16, color: Color(0xFF334155)),
+                              label: Text(
+                                AppTranslations.pick(lang, en: 'Print', mr: 'प्रिंट करा', hi: 'प्रिंट करें'),
+                                style: const TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w600, fontSize: 13),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.subtitle,
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            const SizedBox(width: 10),
+                            ElevatedButton.icon(
+                              onPressed: _downloading ? null : _handleDownload,
+                              icon: _downloading
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Icon(Icons.download_rounded, size: 16, color: Colors.white),
+                              label: Text(
+                                _downloading
+                                    ? AppTranslations.pick(lang, en: 'Downloading...', mr: 'डाउनलोड होत आहे...', hi: 'डाउनलोड हो रहा है...')
+                                    : AppTranslations.pick(lang, en: 'Download PDF', mr: 'पीडीएफ डाउनलोड करा', hi: 'पीडीएफ डाउनलोड करें'),
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0284C7),
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
+                              icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                              padding: const EdgeInsets.all(6),
+                              constraints: const BoxConstraints(),
+                              splashRadius: 18,
                             ),
                           ],
                         ),
                       ],
                     ),
+                  ),
 
-                    // Actions: Print + Download PDF + Close
-                    Row(
-                      children: [
-                        // Print Action
-                        OutlinedButton.icon(
-                          onPressed: _handlePrint,
-                          icon: const Icon(Icons.print_rounded, size: 16, color: Color(0xFF334155)),
-                          label: const Text('Print', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w600, fontSize: 13)),
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                  Expanded(
+                    child: PdfPreview(
+                      build: (format) => _getPdfBytes(),
+                      useActions: false,
+                      allowPrinting: false,
+                      allowSharing: false,
+                      canChangeOrientation: false,
+                      canChangePageFormat: false,
+                      canDebug: false,
+                      initialPageFormat: PdfPageFormat.a4,
+                      scrollViewDecoration: const BoxDecoration(color: Color(0xFFF1F5F9)),
+                      pdfFileName: '${widget.fileName}.pdf',
+                      loadingWidget: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)),
+                            const SizedBox(height: 12),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Preparing report preview...',
+                                mr: 'अहवाल पूर्वावलोकन तयार होत आहे...',
+                                hi: 'रिपोर्ट पूर्वावलोकन तैयार हो रहा है...',
+                              ),
+                              style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-
-                        // Download PDF Button matching web
-                        ElevatedButton.icon(
-                          onPressed: _downloading ? null : _handleDownload,
-                          icon: _downloading
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Icon(Icons.download_rounded, size: 16, color: Colors.white),
-                          label: Text(
-                            _downloading ? 'Downloading...' : 'Download PDF',
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0284C7),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // Close (X)
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
-                          padding: const EdgeInsets.all(6),
-                          constraints: const BoxConstraints(),
-                          splashRadius: 18,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // PDF Preview Document Area
-              Expanded(
-                child: PdfPreview(
-                  build: (format) => _getPdfBytes(),
-                  useActions: false,
-                  allowPrinting: false,
-                  allowSharing: false,
-                  canChangeOrientation: false,
-                  canChangePageFormat: false,
-                  canDebug: false,
-                  initialPageFormat: PdfPageFormat.a4,
-                  scrollViewDecoration: const BoxDecoration(color: Color(0xFFF1F5F9)),
-                  pdfFileName: '${widget.fileName}.pdf',
-                  loadingWidget: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)),
-                        SizedBox(height: 12),
-                        Text('Preparing report preview...', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

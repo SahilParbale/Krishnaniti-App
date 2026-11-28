@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/visitor_model.dart';
 import '../../../data/repositories/visitors_repository.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'visitor_report_generator.dart';
@@ -50,26 +52,66 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
     }
   }
 
+  String _localizedPurpose(String purpose, String lang) {
+    switch (purpose) {
+      case 'Complaint':
+        return AppTranslations.pick(lang, en: 'Complaint', mr: 'तक्रार (Complaint)', hi: 'शिकायत');
+      case 'Meeting':
+        return AppTranslations.pick(lang, en: 'Meeting', mr: 'भेट / चर्चा (Meeting)', hi: 'बैठक / चर्चा');
+      case 'Greeting':
+      case 'Invitation':
+        return AppTranslations.pick(lang, en: 'Greeting / Invite', mr: 'निमंत्रण / सत्कार', hi: 'निमंत्रण / सम्मान');
+      case 'Help':
+        return AppTranslations.pick(lang, en: 'Help / Relief', mr: 'वैयक्तिक मदत (Help)', hi: 'व्यक्तिगत सहायता');
+      case 'Donation':
+        return AppTranslations.pick(lang, en: 'Donation', mr: 'देणगी / निधी (Donation)', hi: 'दान / निधि');
+      case 'Other':
+        return AppTranslations.pick(lang, en: 'Other', mr: 'इतर (Other)', hi: 'अन्य');
+      default:
+        return purpose;
+    }
+  }
+
   void _showDeleteDialog() {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.delete_outline, color: Colors.red, size: 22),
-            SizedBox(width: 8),
-            Text('Delete Visitor Log?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          children: [
+            const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Delete Visitor Log?',
+                  mr: 'अभ्यागत नोंद हटवायची का?',
+                  hi: 'आगंतुक रिकॉर्ड हटाएँ?',
+                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
           ],
         ),
-        content: Text(
-          'Are you sure you want to remove the visit record for "${_visitor.name}"? This action cannot be undone.',
+        content: AppTranslatedText(
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to remove the visit record for "${_visitor.name}"? This action cannot be undone.',
+            mr: '"${_visitor.name}" यांची भेट नोंद कायमची काढायची का? ही कृती पूर्ववत करता येणार नाही.',
+            hi: 'क्या आप "${_visitor.name}" का आगंतुक रिकॉर्ड स्थायी रूप से हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।',
+          ),
+          targetLanguage: lang,
           style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -81,14 +123,33 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                 widget.onVisitorUpdated?.call();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Visitor log deleted'), backgroundColor: Color(0xFF0F766E)),
+                    SnackBar(
+                      content: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Visitor log deleted',
+                          mr: 'अभ्यागत नोंद हटवली',
+                          hi: 'आगंतुक रिकॉर्ड हटाया गया',
+                        ),
+                      ),
+                      backgroundColor: const Color(0xFF0F766E),
+                    ),
                   );
                   Navigator.pop(context);
                 }
               } catch (e) {
                 if (mounted) {
+                  final prefix = AppTranslations.pick(
+                    lang,
+                    en: 'Failed to delete: ',
+                    mr: 'हटवताना त्रुटी: ',
+                    hi: 'हटाने में विफल: ',
+                  );
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete: $e'), backgroundColor: Colors.red),
+                    SnackBar(
+                      content: AppTranslatedText('$prefix$e', targetLanguage: lang, style: const TextStyle(color: Colors.white)),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               } finally {
@@ -100,7 +161,7 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ')),
           ),
         ],
       ),
@@ -108,7 +169,7 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
   }
 
   void _showEditSheet() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameCtrl = TextEditingController(text: _visitor.name);
     final mobileCtrl = TextEditingController(text: _visitor.mobile);
     final areaCtrl = TextEditingController(text: _visitor.area ?? '');
@@ -146,13 +207,23 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
               children: [
                 AppModalHeader(
                   icon: Icons.edit_note_rounded,
-                  title: isMr ? 'अभ्यागत माहिती संपादित करा' : 'Edit Visitor Details',
-                  subtitle: isMr ? 'अभ्यागताचे तपशील अद्यतनित करा' : 'Update visitor details',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Edit Visitor Details',
+                    mr: 'अभ्यागत माहिती संपादित करा',
+                    hi: 'आगंतुक विवरण संपादित करें',
+                  ),
+                  subtitle: AppTranslations.pick(
+                    lang,
+                    en: 'Update visitor details',
+                    mr: 'अभ्यागताचे तपशील अद्यतनित करा',
+                    hi: 'आगंतुक विवरण अपडेट करें',
+                  ),
                   onClose: () => Navigator.pop(ctx),
                 ),
                 Flexible(
-              child: ListView(
-                shrinkWrap: true,
+                  child: ListView(
+                    shrinkWrap: true,
                     padding: EdgeInsets.only(
                       left: 20,
                       right: 20,
@@ -161,12 +232,24 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                     ),
                     children: [
                       AppFieldLabel(
-                        label: isMr ? 'अभ्यागताचे पूर्ण नाव' : 'Visitor Full Name',
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Visitor Full Name',
+                          mr: 'अभ्यागताचे पूर्ण नाव',
+                          hi: 'आगंतुक का पूरा नाम',
+                        ),
                         isRequired: true,
                       ),
                       TextField(
                         controller: nameCtrl,
-                        decoration: appInputDecoration(hint: isMr ? 'उदा. रमेश पाटील' : 'e.g. Ramesh Patil'),
+                        decoration: appInputDecoration(
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. Ramesh Patil',
+                            mr: 'उदा. रमेश पाटील',
+                            hi: 'उदा. रमेश पाटिल',
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 14),
 
@@ -179,7 +262,14 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(label: isMr ? 'मोबाईल (+91)' : 'Mobile (+91)'),
+                                AppFieldLabel(
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Mobile (+91)',
+                                    mr: 'मोबाईल (+91)',
+                                    hi: 'मोबाइल (+91)',
+                                  ),
+                                ),
                                 TextField(
                                   controller: mobileCtrl,
                                   keyboardType: TextInputType.phone,
@@ -198,16 +288,22 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<String>(
-                                  label: isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Visit Purpose',
+                                    mr: 'भेटीचे कारण / स्वरूप',
+                                    hi: 'भेंट का उद्देश्य',
+                                  ),
                                   isRequired: true,
-                                  value: ['Complaint', 'Meeting', 'Greeting', 'Donation', 'Help', 'Other'].contains(selectedPurpose) ? selectedPurpose : 'Meeting',
+                                  value: ['Complaint', 'Meeting', 'Greeting', 'Donation', 'Help', 'Other'].contains(selectedPurpose)
+                                      ? selectedPurpose
+                                      : 'Meeting',
                                   items: [
-                                    DropdownMenuItem(value: 'Complaint', child: Text(isMr ? 'तक्रार (Complaint)' : 'Complaint')),
-                                    DropdownMenuItem(value: 'Meeting', child: Text(isMr ? 'भेट / चर्चा (Meeting)' : 'Meeting')),
-                                    DropdownMenuItem(value: 'Greeting', child: Text(isMr ? 'निमंत्रण / सत्कार' : 'Greeting / Invite')),
-                                    DropdownMenuItem(value: 'Help', child: Text(isMr ? 'वैयक्तिक मदत (Help)' : 'Help / Relief')),
-                                    DropdownMenuItem(value: 'Donation', child: Text(isMr ? 'देणगी / निधी (Donation)' : 'Donation')),
-                                    DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर (Other)' : 'Other')),
+                                    for (final code in const ['Complaint', 'Meeting', 'Greeting', 'Help', 'Donation', 'Other'])
+                                      DropdownMenuItem(
+                                        value: code,
+                                        child: Text(_localizedPurpose(code, lang)),
+                                      ),
                                   ],
                                   onChanged: (val) {
                                     if (val != null) setModalState(() => selectedPurpose = val);
@@ -230,15 +326,38 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                               children: [
                                 AppFieldLabel(
                                   label: isGreeting
-                                      ? (isMr ? 'कार्यक्रमाचे ठिकाण / पत्ता' : 'Event Venue / Address')
-                                      : (isMr ? 'क्षेत्र / परिसर' : 'Area / Locality'),
+                                      ? AppTranslations.pick(
+                                          lang,
+                                          en: 'Event Venue / Address',
+                                          mr: 'कार्यक्रमाचे ठिकाण / पत्ता',
+                                          hi: 'कार्यक्रम स्थल / पता',
+                                        )
+                                      : AppTranslations.pick(
+                                          lang,
+                                          en: 'Area / Locality',
+                                          mr: 'क्षेत्र / परिसर',
+                                          hi: 'क्षेत्र / इलाका',
+                                        ),
                                 ),
                                 TextField(
                                   controller: areaCtrl,
                                   decoration: appInputDecoration(
                                     hint: isGreeting
-                                        ? (isMr ? 'उदा. शिवाजी चौक सभागृह' : 'e.g. Shivaji Chowk Hall')
-                                        : (isMr ? 'उदा. गल्ली क्र. ४, प्रभाग १२' : 'e.g. Lane 4, Ward 12'),
+                                        ? AppTranslations.pick(
+                                            lang,
+                                            en: 'e.g. Shivaji Chowk Hall',
+                                            mr: 'उदा. शिवाजी चौक सभागृह',
+                                            hi: 'उदा. शिवाजी चौक हॉल',
+                                          )
+                                        : AppTranslations.formatDigits(
+                                            AppTranslations.pick(
+                                              lang,
+                                              en: 'e.g. Lane 4, Ward 12',
+                                              mr: 'उदा. गल्ली क्र. 4, प्रभाग 12',
+                                              hi: 'उदा. गली नं. 4, वार्ड 12',
+                                            ),
+                                            lang,
+                                          ),
                                   ),
                                 ),
                               ],
@@ -249,11 +368,23 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(label: isMr ? 'संदर्भ / नेता (ऐच्छिक)' : 'Reference / Leader'),
+                                AppFieldLabel(
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Reference / Leader',
+                                    mr: 'संदर्भ / नेता (ऐच्छिक)',
+                                    hi: 'संदर्भ / नेता (वैकल्पिक)',
+                                  ),
+                                ),
                                 TextField(
                                   controller: refCtrl,
                                   decoration: appInputDecoration(
-                                    hint: isMr ? 'उदा. सुनील शिंदे' : 'e.g. Sunil Shinde',
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Sunil Shinde',
+                                      mr: 'उदा. सुनील शिंदे',
+                                      hi: 'उदा. सुनील शिंदे',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -264,7 +395,6 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
 
                       if (isGreeting) ...[
                         const SizedBox(height: 14),
-                        // Side-by-side: Event Date & Event Time
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -272,7 +402,14 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(label: isMr ? 'कार्यक्रमाची तारीख' : 'Event Date'),
+                                  AppFieldLabel(
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Event Date',
+                                      mr: 'कार्यक्रमाची तारीख',
+                                      hi: 'कार्यक्रम की तिथि',
+                                    ),
+                                  ),
                                   TextField(
                                     controller: eventDateCtrl,
                                     decoration: appInputDecoration(hint: 'YYYY-MM-DD'),
@@ -285,10 +422,24 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(label: isMr ? 'कार्यक्रमाची वेळ' : 'Event Time'),
+                                  AppFieldLabel(
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Event Time',
+                                      mr: 'कार्यक्रमाची वेळ',
+                                      hi: 'कार्यक्रम का समय',
+                                    ),
+                                  ),
                                   TextField(
                                     controller: eventTimeCtrl,
-                                    decoration: appInputDecoration(hint: 'उदा. 18:30'),
+                                    decoration: appInputDecoration(
+                                      hint: AppTranslations.pick(
+                                        lang,
+                                        en: 'e.g. 18:30',
+                                        mr: 'उदा. 18:30',
+                                        hi: 'उदा. 18:30',
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -299,7 +450,14 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
 
                       if (isDonation) ...[
                         const SizedBox(height: 14),
-                        AppFieldLabel(label: isMr ? 'अपेक्षित रक्कम (₹)' : 'Requested Amount (₹)'),
+                        AppFieldLabel(
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Requested Amount (₹)',
+                            mr: 'अपेक्षित रक्कम (₹)',
+                            hi: 'अनुरोधित राशि (₹)',
+                          ),
+                        ),
                         TextField(
                           controller: amountCtrl,
                           keyboardType: TextInputType.number,
@@ -312,12 +470,24 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                       const SizedBox(height: 14),
 
                       // Discussion Remarks
-                      AppFieldLabel(label: isMr ? 'चर्चा नोंदी व शेरा' : 'Discussion Notes & Remarks'),
+                      AppFieldLabel(
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Discussion Notes & Remarks',
+                          mr: 'चर्चा नोंदी व शेरा',
+                          hi: 'चर्चा नोट्स और टिप्पणी',
+                        ),
+                      ),
                       TextField(
                         controller: remarksCtrl,
                         maxLines: 3,
                         decoration: appInputDecoration(
-                          hint: isMr ? 'चर्चेचा गोषवारा, तक्रार तपशील...' : 'Discussion summary, citizen grievance details...',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'Discussion summary, citizen grievance details...',
+                            mr: 'चर्चेचा गोषवारा, तक्रार तपशील...',
+                            hi: 'चर्चा का सारांश, नागरिक शिकायत विवरण...',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -330,7 +500,16 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                             final name = nameCtrl.text.trim();
                             if (name.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(isMr ? 'कृपया अभ्यागताचे नाव प्रविष्ट करा' : 'Please enter visitor name')),
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Please enter visitor name',
+                                      mr: 'कृपया अभ्यागताचे नाव प्रविष्ट करा',
+                                      hi: 'कृपया आगंतुक का नाम दर्ज करें',
+                                    ),
+                                  ),
+                                ),
                               );
                               return;
                             }
@@ -370,15 +549,35 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(isMr ? 'अभ्यागत माहिती यशस्वीरित्या अद्यतनित केली!' : 'Visitor updated successfully'),
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Visitor updated successfully',
+                                        mr: 'अभ्यागत माहिती यशस्वीरित्या अद्यतनित केली!',
+                                        hi: 'आगंतुक विवरण सफलतापूर्वक अपडेट किया गया!',
+                                      ),
+                                    ),
                                     backgroundColor: const Color(0xFF0F766E),
                                   ),
                                 );
                               }
                             } catch (e) {
                               if (mounted) {
+                                final prefix = AppTranslations.pick(
+                                  lang,
+                                  en: 'Failed to update: ',
+                                  mr: 'अद्यतनित करताना त्रुटी: ',
+                                  hi: 'अपडेट करने में विफल: ',
+                                );
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
+                                  SnackBar(
+                                    content: AppTranslatedText(
+                                      '$prefix$e',
+                                      targetLanguage: lang,
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                               }
                             } finally {
@@ -392,7 +591,12 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           child: Text(
-                            isMr ? 'बदल जतन करा' : 'Save Changes',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Save Changes',
+                              mr: 'बदल जतन करा',
+                              hi: 'परिवर्तन सहेजें',
+                            ),
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -411,7 +615,15 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final localizedDate = AppTranslations.formatDate(_visitor.visitDate, lang, pattern: 'dd MMM yyyy');
+    final localizedTime = AppTranslations.formatTime(_visitor.visitDate, lang);
+    final dateTimeDisplay = AppTranslations.pick(
+      lang,
+      en: '$localizedDate at $localizedTime',
+      mr: '$localizedDate • $localizedTime',
+      hi: '$localizedDate • $localizedTime',
+    );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -437,7 +649,12 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'भेट देणारा तपशील' : 'Visitor Details',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Visitor Details',
+                  mr: 'भेट देणारा तपशील',
+                  hi: 'आगंतुक विवरण',
+                ),
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -445,10 +662,10 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                 ),
               ),
               Text(
-                _visitor.formattedDate,
+                localizedDate,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                 ),
               ),
             ],
@@ -458,20 +675,20 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: 'Download Report',
+                  tooltip: AppTranslations.getDownloadReport(lang),
                   onPressed: () {
-                    VisitorReportGenerator.generateAndPrintVisitorSlip(_visitor);
+                    VisitorReportGenerator.generateAndPrintVisitorSlip(_visitor, lang: lang);
                   },
                 ),
               ),
             ),
             IconButton(
-              tooltip: 'Edit Visitor',
+              tooltip: AppTranslations.pick(lang, en: 'Edit Visitor', mr: 'माहिती संपादित करा', hi: 'विवरण संपादित करें'),
               icon: const Icon(Icons.edit_outlined, color: Colors.white),
               onPressed: _showEditSheet,
             ),
             IconButton(
-              tooltip: 'Delete Log',
+              tooltip: AppTranslations.pick(lang, en: 'Delete Log', mr: 'नोंद हटवा', hi: 'रिकॉर्ड हटाएँ'),
               icon: const Icon(Icons.delete_outline, color: Colors.white),
               onPressed: _showDeleteDialog,
             ),
@@ -518,8 +735,10 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    AppTranslatedText(
                                       _visitor.name,
+                                      isName: true,
+                                      targetLanguage: lang,
                                       style: const TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.bold,
@@ -528,7 +747,14 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      _visitor.mobile.isNotEmpty ? '+91 ${_visitor.mobile}' : 'No Mobile Added',
+                                      _visitor.mobile.isNotEmpty
+                                          ? AppTranslations.formatDigits('+91 ${_visitor.mobile}', lang)
+                                          : AppTranslations.pick(
+                                              lang,
+                                              en: 'No Mobile Added',
+                                              mr: 'मोबाईल क्रमांक नाही',
+                                              hi: 'मोबाइल नंबर उपलब्ध नहीं',
+                                            ),
                                       style: const TextStyle(
                                         fontSize: 13,
                                         color: Color(0xFF64748B),
@@ -543,10 +769,11 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                                 decoration: BoxDecoration(
                                   color: _visitor.purposeBgColor,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: _visitor.purposeColor.withOpacity(0.3)),
+                                  border: Border.all(color: _visitor.purposeColor.withValues(alpha: 0.3)),
                                 ),
-                                child: Text(
-                                  _visitor.purpose,
+                                child: AppTranslatedText(
+                                  _localizedPurpose(_visitor.purpose, lang),
+                                  targetLanguage: lang,
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -565,7 +792,15 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                                   child: OutlinedButton.icon(
                                     onPressed: () => _makePhoneCall(_visitor.mobile),
                                     icon: const Icon(Icons.phone_rounded, size: 16, color: Color(0xFF0284C7)),
-                                    label: const Text('Call Citizen', style: TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold)),
+                                    label: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Call Citizen',
+                                        mr: 'कॉल करा',
+                                        hi: 'कॉल करें',
+                                      ),
+                                      style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
+                                    ),
                                     style: OutlinedButton.styleFrom(
                                       side: const BorderSide(color: Color(0xFF0284C7)),
                                       padding: const EdgeInsets.symmetric(vertical: 9),
@@ -578,7 +813,10 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                                   child: ElevatedButton.icon(
                                     onPressed: () => _openWhatsApp(_visitor.mobile),
                                     icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: Colors.white),
-                                    label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    label: Text(
+                                      AppTranslations.pick(lang, en: 'WhatsApp', mr: 'व्हॉट्सॲप', hi: 'व्हाट्सऐप'),
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF25D366),
                                       foregroundColor: Colors.white,
@@ -608,39 +846,76 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Visit Details',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                          Text(
+                            AppTranslations.pick(lang, en: 'Visit Details', mr: 'भेटीचा तपशील', hi: 'भेंट विवरण'),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 12),
                           _buildDetailRow(
                             Icons.calendar_today_outlined,
-                            'Visit Date & Time',
-                            '${_visitor.formattedDate} at ${_visitor.formattedTime}',
+                            AppTranslations.pick(lang, en: 'Visit Date & Time', mr: 'भेटीची तारीख व वेळ', hi: 'भेंट की तिथि व समय'),
+                            dateTimeDisplay,
+                            lang,
+                            translateValue: false,
                           ),
                           if (_visitor.area != null && _visitor.area!.isNotEmpty)
                             _buildDetailRow(
                               Icons.location_on_outlined,
-                              'Citizen Area / Ward Address',
-                              _visitor.area!,
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Citizen Area / Ward Address',
+                                mr: 'नागरिकाचा परिसर / प्रभाग पत्ता',
+                                hi: 'नागरिक क्षेत्र / वार्ड पता',
+                              ),
+                              AppTranslations.getAreaName(_visitor.area!, lang),
+                              lang,
                             ),
                           if (_visitor.reference != null && _visitor.reference!.isNotEmpty)
                             _buildDetailRow(
                               Icons.person_pin_circle_outlined,
-                              'Reference / Recommendation',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Reference / Recommendation',
+                                mr: 'संदर्भ / शिफारस',
+                                hi: 'संदर्भ / सिफारिश',
+                              ),
                               _visitor.reference!,
+                              lang,
+                              isName: true,
                             ),
                           if (_visitor.amount != null && _visitor.amount!.isNotEmpty)
                             _buildDetailRow(
                               Icons.currency_rupee_rounded,
-                              'Requested Financial Assistance',
-                              '₹${_visitor.amount}',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Requested Financial Assistance',
+                                mr: 'अपेक्षित आर्थिक मदत',
+                                hi: 'अनुरोधित वित्तीय सहायता',
+                              ),
+                              AppTranslations.formatCurrency(_visitor.amount!, lang),
+                              lang,
+                              translateValue: false,
                             ),
                           if (_visitor.eventDate != null && _visitor.eventDate!.isNotEmpty)
                             _buildDetailRow(
                               Icons.celebration_outlined,
-                              'Event / Invitation Schedule',
-                              'Date: ${_visitor.eventDate} | Time: ${_visitor.eventTime ?? "Flexible"}',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Event / Invitation Schedule',
+                                mr: 'कार्यक्रम / निमंत्रण वेळापत्रक',
+                                hi: 'कार्यक्रम / निमंत्रण समय-सारणी',
+                              ),
+                              AppTranslations.formatDigits(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Date: ${_visitor.eventDate} | Time: ${_visitor.eventTime ?? "Flexible"}',
+                                  mr: 'तारीख: ${_visitor.eventDate} | वेळ: ${_visitor.eventTime ?? "लवचिक"}',
+                                  hi: 'तिथि: ${_visitor.eventDate} | समय: ${_visitor.eventTime ?? "सुविधाजनक"}',
+                                ),
+                                lang,
+                              ),
+                              lang,
+                              translateValue: false,
                             ),
                         ],
                       ),
@@ -660,17 +935,32 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Discussion Notes & Action Taken',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                          Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Discussion Notes & Action Taken',
+                              mr: 'चर्चा नोंदी व कार्यवाही',
+                              hi: 'चर्चा नोट्स और की गई कार्रवाई',
+                            ),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            _visitor.remarks != null && _visitor.remarks!.isNotEmpty
-                                ? _visitor.remarks!
-                                : 'No notes or special remarks logged for this visit.',
-                            style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B), height: 1.5),
-                          ),
+                          if (_visitor.remarks != null && _visitor.remarks!.isNotEmpty)
+                            AppTranslatedText(
+                              _visitor.remarks!,
+                              targetLanguage: lang,
+                              style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B), height: 1.5),
+                            )
+                          else
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'No notes or special remarks logged for this visit.',
+                                mr: 'या भेटीसाठी कोणताही विशेष शेरा नोंदवलेला नाही.',
+                                hi: 'इस भेंट के लिए कोई नोट्स या विशेष टिप्पणी दर्ज नहीं की गई है।',
+                              ),
+                              style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B), height: 1.5),
+                            ),
                         ],
                       ),
                     ),
@@ -683,7 +973,14 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String title, String value) {
+  Widget _buildDetailRow(
+    IconData icon,
+    String title,
+    String value,
+    String lang, {
+    bool isName = false,
+    bool translateValue = true,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -697,7 +994,18 @@ class _VisitorDetailScreenState extends ConsumerState<VisitorDetailScreen> {
               children: [
                 Text(title, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                if (translateValue)
+                  AppTranslatedText(
+                    value,
+                    isName: isName,
+                    targetLanguage: lang,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  )
+                else
+                  Text(
+                    value,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
               ],
             ),
           ),

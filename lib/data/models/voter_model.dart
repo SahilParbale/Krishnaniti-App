@@ -39,6 +39,13 @@ class VoterModel {
 
   String get displayName => nameMarathi.isNotEmpty ? nameMarathi : nameEnglish;
 
+  String displayNameFor(String lang) {
+    if (lang == 'en' && nameEnglish.trim().isNotEmpty) {
+      return nameEnglish;
+    }
+    return nameMarathi.trim().isNotEmpty ? nameMarathi : nameEnglish;
+  }
+
   String get genderLabelMarathi {
     switch (gender.toUpperCase()) {
       case 'F':
@@ -48,6 +55,17 @@ class VoterModel {
       default:
         return 'इतर';
     }
+  }
+
+  String genderLabel(String lang) {
+    final g = gender.toUpperCase();
+    if (g == 'F') {
+      return lang == 'mr' ? 'महिला' : (lang == 'hi' ? 'महिला' : 'Female');
+    }
+    if (g == 'M') {
+      return lang == 'mr' ? 'पुरुष' : (lang == 'hi' ? 'पुरुष' : 'Male');
+    }
+    return lang == 'mr' ? 'इतर' : (lang == 'hi' ? 'अन्य' : 'Other');
   }
 
   String get favourLabelMarathi {
@@ -65,21 +83,58 @@ class VoterModel {
     }
   }
 
-  String get displayPollingStation {
+  String favourLabel(String lang) {
+    switch (favour?.toLowerCase()) {
+      case 'favourable':
+        return lang == 'mr' ? 'अनुकूल' : (lang == 'hi' ? 'अनुकूल' : 'Favourable');
+      case 'against':
+        return lang == 'mr' ? 'प्रतिकूल' : (lang == 'hi' ? 'प्रतिकूल' : 'Against');
+      case 'neutral':
+        return lang == 'mr' ? 'तटस्थ' : (lang == 'hi' ? 'तटस्थ' : 'Neutral');
+      case 'swing':
+        return lang == 'mr' ? 'अनिश्चित' : (lang == 'hi' ? 'अनिश्चित' : 'Undecided');
+      default:
+        return lang == 'mr' ? 'नोंद नाही' : (lang == 'hi' ? 'दर्ज नहीं' : 'Not Tagged');
+    }
+  }
+
+  String get displayPollingStation => displayPollingStationFor('mr');
+
+  String displayPollingStationFor(String lang) {
     if (pollingStation != null && pollingStation!.isNotEmpty) {
       return pollingStation!;
     }
     // Standard booth-to-station mapping in Prabhag 12 (Kasba Peth - 214)
     if (booth.contains('28') || booth.contains('२८')) {
-      return 'न्यू इंग्लिश स्कूल, शनिवार पेठ, पुणे - ४११०३०';
+      return lang == 'en'
+          ? 'New English School, Shaniwar Peth, Pune - 411030'
+          : (lang == 'hi'
+              ? 'न्यू इंग्लिश स्कूल, शनिवार पेठ, पुणे - ४११०३०'
+              : 'न्यू इंग्लिश स्कूल, शनिवार पेठ, पुणे - ४११०३०');
     } else if (booth.contains('29') || booth.contains('२९')) {
-      return 'पुणे मनपा शाळा क्र. १५ (मुलांची), कसबा पेठ, पुणे';
+      return lang == 'en'
+          ? 'Pune Municipal School No. 15 (Boys), Kasba Peth, Pune'
+          : (lang == 'hi'
+              ? 'पुणे मनपा स्कूल क्र. १५ (लड़के), कसबा पेठ, पुणे'
+              : 'पुणे मनपा शाळा क्र. १५ (मुलांची), कसबा पेठ, पुणे');
     } else if (booth.contains('30') || booth.contains('३०')) {
-      return 'अहिल्यादेवी हायस्कूल, शनिवार पेठ, पुणे - ४११०३०';
+      return lang == 'en'
+          ? 'Ahilyadevi High School, Shaniwar Peth, Pune - 411030'
+          : (lang == 'hi'
+              ? 'अहिल्यादेवी हाई स्कूल, शनिवार पेठ, पुणे - ४११०३०'
+              : 'अहिल्यादेवी हायस्कूल, शनिवार पेठ, पुणे - ४११०३०');
     } else if (booth.contains('31') || booth.contains('३१')) {
-      return 'के.पी.बी. हिंदू हायस्कूल, रविवार पेठ, पुणे';
+      return lang == 'en'
+          ? 'K.P.B. Hindu High School, Raviwar Peth, Pune'
+          : (lang == 'hi'
+              ? 'के.पी.बी. हिंदू हाई स्कूल, रविवार पेठ, पुणे'
+              : 'के.पी.बी. हिंदू हायस्कूल, रविवार पेठ, पुणे');
     }
-    return 'मतदान केंद्र क्र. $booth, प्रभाग १२, पुणे';
+    return lang == 'en'
+        ? 'Polling Station No. $booth, Ward 12, Pune'
+        : (lang == 'hi'
+            ? 'मतदान केंद्र क्र. $booth, वार्ड १२, पुणे'
+            : 'मतदान केंद्र क्र. $booth, प्रभाग १२, पुणे');
   }
 
   VoterModel copyWith({

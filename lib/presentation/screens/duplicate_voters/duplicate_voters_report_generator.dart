@@ -3,22 +3,99 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../data/models/duplicate_voter_group_model.dart';
+import '../../../data/models/voter_model.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
 
 class DuplicateVotersReportGenerator {
   DuplicateVotersReportGenerator._();
 
+  static String _pickVoterNameSource(VoterModel v, String lang) {
+    if (lang == 'en') {
+      return v.nameEnglish.trim().isNotEmpty
+          ? v.nameEnglish.trim()
+          : v.nameMarathi.trim();
+    }
+    return v.nameMarathi.trim().isNotEmpty
+        ? v.nameMarathi.trim()
+        : v.nameEnglish.trim();
+  }
+
+  static String _pickGroupNameSource(DuplicateVoterGroupModel g, String lang) {
+    if (lang == 'en' && g.voters.isNotEmpty) {
+      final firstEng = g.voters.first.nameEnglish.trim();
+      if (firstEng.isNotEmpty) return firstEng;
+    }
+    if (lang != 'en' && g.voters.isNotEmpty) {
+      final firstMar = g.voters.first.nameMarathi.trim();
+      if (firstMar.isNotEmpty) return firstMar;
+    }
+    return g.displayName.trim();
+  }
+
+  static String _resolveGender(
+    String gender,
+    String lang,
+    Map<String, String> textCache,
+  ) {
+    if (gender.trim().isEmpty) return '-';
+    final g = AppTranslations.getGender(gender, lang);
+    if (g != gender) return g;
+    return PdfTranslationHelper.resolve(textCache, gender, lang);
+  }
+
   static Future<void> generateAndPrintReport({
     BuildContext? context,
     required List<DuplicateVoterGroupModel> duplicateGroups,
     required int totalAffectedVoters,
+    String? lang,
   }) async {
-    final pdf = pw.Document();
+    final activeLang =
+        (lang != null && lang.isNotEmpty) ? lang : appLanguageValueNotifier.value;
+    final pdf = await WebReportTheme.createDocument(lang: activeLang);
     final now = DateTime.now();
-    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(now);
-    final estExtraRecords = duplicateGroups.fold<int>(0, (sum, g) => sum + g.extraRecordsCount);
+    final formattedDate = PdfTranslationHelper.formatDateTime(now, activeLang);
+    final estExtraRecords =
+        duplicateGroups.fold<int>(0, (sum, g) => sum + g.extraRecordsCount);
+
+    final nameItems = <String?>[];
+    final textItems = <String?>[];
+    for (final g in duplicateGroups) {
+      if (g.matchType != 'epic' && g.matchType != 'mobile') {
+        nameItems.add(_pickGroupNameSource(g, activeLang));
+      }
+      for (final v in g.voters) {
+        nameItems.add(_pickVoterNameSource(v, activeLang));
+        textItems.add(v.address);
+        textItems.add(v.booth);
+        textItems.add(v.gender);
+      }
+    }
+
+    final nameCache = await PdfTranslationHelper.batchNames(nameItems, activeLang);
+    final textCache = await PdfTranslationHelper.batchText(textItems, activeLang);
+
+    final reportTitle = AppTranslations.pick(
+      activeLang,
+      en: 'Duplicate Voters Report',
+      mr: 'दुबार मतदार अहवाल',
+      hi: 'डुप्लिकेट मतदाता रिपोर्ट',
+    );
+    final continuationTitle = AppTranslations.pick(
+      activeLang,
+      en: 'Duplicate Voters Audit',
+      mr: 'दुबार मतदार पडताळणी',
+      hi: 'डुप्लिकेट मतदाता ऑडिट',
+    );
+    final reportSubtitle = AppTranslations.pick(
+      activeLang,
+      en: 'Identification of duplicated voter registrations across electoral rolls',
+      mr: 'मतदार याद्यांमधील दुबार मतदार नोंदींची ओळख व पडताळणी',
+      hi: 'मतदाता सूचियों में दोहरी मतदाता प्रविष्टियों की पहचान',
+    );
 
     pdf.addPage(
       pw.MultiPage(
@@ -28,20 +105,23 @@ class DuplicateVotersReportGenerator {
           if (context.pageNumber == 1) return pw.SizedBox.shrink();
           return WebReportTheme.buildContinuationHeader(
             context,
-            title: 'Duplicate Voters Audit (Continued)',
+            title: continuationTitle,
+            lang: activeLang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) =>
+            WebReportTheme.buildFooter(context, lang: activeLang),
         build: (pw.Context context) {
           return [
             WebReportTheme.buildHeader(
-              title: 'Duplicate Voters Report',
-              subtitle: 'Identification of duplicated voter registrations across electoral rolls',
+              title: reportTitle,
+              subtitle: reportSubtitle,
               metaLines: [
-                'Date: $formattedDate',
-                'Affected Voters: $totalAffectedVoters',
-                'Extra Records: $estExtraRecords',
+                '${AppTranslations.pick(activeLang, en: 'Date', mr: 'दिनांक', hi: 'दिनांक')}: $formattedDate',
+                '${AppTranslations.pick(activeLang, en: 'Affected Voters', mr: 'प्रभावित मतदार', hi: 'प्रभावित मतदाता')}: ${PdfTranslationHelper.formatNumber(totalAffectedVoters, activeLang)}',
+                '${AppTranslations.pick(activeLang, en: 'Extra Records', mr: 'अतिरिक्त नोंदी', hi: 'अतिरिक्त रिकॉर्ड')}: ${PdfTranslationHelper.formatNumber(estExtraRecords, activeLang)}',
               ],
+              lang: activeLang,
             ),
             pw.SizedBox(height: 12),
 
@@ -55,9 +135,41 @@ class DuplicateVotersReportGenerator {
               ),
               child: pw.Row(
                 children: [
-                  _buildSummaryItem('Duplicate Groups', '${duplicateGroups.length}'),
-                  _buildSummaryItem('Total Affected', '$totalAffectedVoters', highlightColor: PdfColors.red700),
-                  _buildSummaryItem('Est. Extra Records', '$estExtraRecords', highlightColor: WebReportTheme.brand700),
+                  _buildSummaryItem(
+                    AppTranslations.pick(
+                      activeLang,
+                      en: 'Duplicate Groups',
+                      mr: 'दुबार गट',
+                      hi: 'डुप्लिकेट समूह',
+                    ),
+                    PdfTranslationHelper.formatNumber(
+                      duplicateGroups.length,
+                      activeLang,
+                    ),
+                  ),
+                  _buildSummaryItem(
+                    AppTranslations.pick(
+                      activeLang,
+                      en: 'Total Affected',
+                      mr: 'एकूण प्रभावित',
+                      hi: 'कुल प्रभावित',
+                    ),
+                    PdfTranslationHelper.formatNumber(
+                      totalAffectedVoters,
+                      activeLang,
+                    ),
+                    highlightColor: PdfColors.red700,
+                  ),
+                  _buildSummaryItem(
+                    AppTranslations.pick(
+                      activeLang,
+                      en: 'Est. Extra Records',
+                      mr: 'अंदाजे अतिरिक्त नोंदी',
+                      hi: 'अनुमानित अतिरिक्त रिकॉर्ड',
+                    ),
+                    PdfTranslationHelper.formatNumber(estExtraRecords, activeLang),
+                    highlightColor: WebReportTheme.brand700,
+                  ),
                 ],
               ),
             ),
@@ -68,12 +180,41 @@ class DuplicateVotersReportGenerator {
                 padding: const pw.EdgeInsets.all(32),
                 alignment: pw.Alignment.center,
                 child: pw.Text(
-                  'No duplicate voters found. All voter records are unique.',
-                  style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
+                  AppTranslations.pick(
+                    activeLang,
+                    en: 'No duplicate voters found. All voter records are unique.',
+                    mr: 'कोणतेही दुबार मतदार आढळले नाहीत. सर्व मतदार नोंदी अद्वितीय आहेत.',
+                    hi: 'कोई डुप्लिकेट मतदाता नहीं मिला। सभी मतदाता रिकॉर्ड अद्वितीय हैं।',
+                  ),
+                  style: const pw.TextStyle(
+                    fontSize: 11,
+                    color: WebReportTheme.slate500,
+                  ),
                 ),
               )
             else
               ...duplicateGroups.map((group) {
+                final groupTitle =
+                    (group.matchType == 'epic' || group.matchType == 'mobile')
+                        ? group.displayName
+                        : PdfTranslationHelper.resolveName(
+                            nameCache,
+                            _pickGroupNameSource(group, activeLang),
+                            activeLang,
+                          );
+                final recordsLabel = AppTranslations.pick(
+                  activeLang,
+                  en: 'records',
+                  mr: 'नोंदी',
+                  hi: 'रिकॉर्ड',
+                );
+                final extraForm7Label = AppTranslations.pick(
+                  activeLang,
+                  en: 'extra records (Form 7)',
+                  mr: 'अतिरिक्त नोंदी (फॉर्म ७)',
+                  hi: 'अतिरिक्त रिकॉर्ड (फॉर्म ७)',
+                );
+
                 return pw.Container(
                   margin: const pw.EdgeInsets.only(bottom: 12),
                   decoration: pw.BoxDecoration(
@@ -85,24 +226,32 @@ class DuplicateVotersReportGenerator {
                     children: [
                       // Group Header Banner
                       pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: const pw.BoxDecoration(
                           color: WebReportTheme.brand50,
-                          borderRadius: pw.BorderRadius.vertical(top: pw.Radius.circular(5)),
+                          borderRadius: pw.BorderRadius.vertical(
+                            top: pw.Radius.circular(5),
+                          ),
                         ),
                         child: pw.Row(
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
-                            pw.Text(
-                              '${group.displayName} (${group.recordsCount} records)',
-                              style: pw.TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: pw.FontWeight.bold,
-                                color: WebReportTheme.brand900,
+                            pw.Expanded(
+                              child: pw.Text(
+                                '$groupTitle (${PdfTranslationHelper.formatNumber(group.recordsCount, activeLang)} $recordsLabel)',
+                                style: pw.TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: WebReportTheme.brand900,
+                                ),
                               ),
                             ),
+                            pw.SizedBox(width: 8),
                             pw.Text(
-                              '${group.extraRecordsCount} extra records (Form 7)',
+                              '${PdfTranslationHelper.formatNumber(group.extraRecordsCount, activeLang)} $extraForm7Label',
                               style: const pw.TextStyle(
                                 fontSize: 8,
                                 color: PdfColors.red700,
@@ -132,31 +281,86 @@ class DuplicateVotersReportGenerator {
                           6: pw.FlexColumnWidth(1.2),
                           7: pw.FlexColumnWidth(2.4),
                         },
-                        headers: const [
-                          '#',
-                          'Voter Name',
-                          'EPIC No.',
-                          'Serial',
-                          'Age',
-                          'Gender',
-                          'Booth',
-                          'Address / Area',
+                        headers: [
+                          AppTranslations.pick(activeLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+                          AppTranslations.pick(
+                            activeLang,
+                            en: 'Voter Name',
+                            mr: 'मतदाराचे नाव',
+                            hi: 'मतदाता का नाम',
+                          ),
+                          AppTranslations.pick(
+                            activeLang,
+                            en: 'EPIC No.',
+                            mr: 'ओळखपत्र क्र.',
+                            hi: 'ईपीआईसी सं.',
+                          ),
+                          AppTranslations.pick(
+                            activeLang,
+                            en: 'Serial',
+                            mr: 'अनुक्रमांक',
+                            hi: 'क्रम सं.',
+                          ),
+                          AppTranslations.pick(
+                            activeLang,
+                            en: 'Age',
+                            mr: 'वय',
+                            hi: 'आयु',
+                          ),
+                          AppTranslations.pick(
+                            activeLang,
+                            en: 'Gender',
+                            mr: 'लिंग',
+                            hi: 'लिंग',
+                          ),
+                          AppTranslations.pick(
+                            activeLang,
+                            en: 'Booth',
+                            mr: 'बूथ',
+                            hi: 'बूथ',
+                          ),
+                          AppTranslations.pick(
+                            activeLang,
+                            en: 'Address / Area',
+                            mr: 'पत्ता / परिसर',
+                            hi: 'पता / क्षेत्र',
+                          ),
                         ],
                         data: List.generate(group.voters.length, (idx) {
                           final v = group.voters[idx];
-                          final namePart = [v.nameEnglish, v.nameMarathi]
-                              .where((s) => s.isNotEmpty)
-                              .join('\n');
+                          final nameSrc = _pickVoterNameSource(v, activeLang);
+                          final resolvedName = PdfTranslationHelper.resolveName(
+                            nameCache,
+                            nameSrc,
+                            activeLang,
+                          );
 
                           return [
-                            '${idx + 1}',
-                            namePart,
-                            v.epicNo.isNotEmpty ? v.epicNo : '-',
-                            v.serialNo != null ? '${v.serialNo}' : '-',
-                            '${v.age}',
-                            v.gender.isNotEmpty ? v.gender : '-',
-                            v.booth.isNotEmpty ? v.booth : '-',
-                            v.address.isNotEmpty ? v.address : '-',
+                            PdfTranslationHelper.formatNumber(idx + 1, activeLang),
+                            resolvedName,
+                            v.epicNo.trim().isNotEmpty ? v.epicNo.trim() : '-',
+                            v.serialNo != null
+                                ? PdfTranslationHelper.formatNumber(
+                                    v.serialNo,
+                                    activeLang,
+                                  )
+                                : '-',
+                            PdfTranslationHelper.formatNumber(v.age, activeLang),
+                            _resolveGender(v.gender, activeLang, textCache),
+                            v.booth.trim().isNotEmpty
+                                ? PdfTranslationHelper.resolve(
+                                    textCache,
+                                    v.booth,
+                                    activeLang,
+                                  )
+                                : '-',
+                            v.address.trim().isNotEmpty
+                                ? PdfTranslationHelper.resolve(
+                                    textCache,
+                                    v.address,
+                                    activeLang,
+                                  )
+                                : '-',
                           ];
                         }),
                         oddRowDecoration: WebReportTheme.oddRowDecoration,
@@ -170,12 +374,14 @@ class DuplicateVotersReportGenerator {
       ),
     );
 
-    final fileName = 'Duplicate_Voters_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    final fileName =
+        'Duplicate_Voters_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}';
     if (context != null) {
+      if (!context.mounted) return;
       await AppReportPreviewModal.show(
         context: context,
-        title: 'Duplicate Voters Report',
-        subtitle: 'Identification of duplicated voter registrations across electoral rolls',
+        title: reportTitle,
+        subtitle: reportSubtitle,
         fileName: fileName,
         onBuildPdf: () async => pdf.save(),
       );

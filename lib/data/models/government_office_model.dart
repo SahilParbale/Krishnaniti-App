@@ -196,5 +196,34 @@ class GovernmentOfficeModel {
         return 'मनपा क्षेत्रीय कार्यालय';
     }
   }
+
+  String get categoryDisplayHi {
+    switch (category.toLowerCase()) {
+      case 'police':
+        return 'पुलिस थाना';
+      case 'fire & disaster':
+      case 'emergency':
+        return 'अग्निशमन एवं आपदा';
+      case 'msedcl electricity':
+      case 'electricity':
+        return 'महावितरण विद्युत';
+      case 'water supply':
+        return 'जल आपूर्ति विभाग';
+      case 'health & hospital':
+      case 'health':
+        return 'स्वास्थ्य एवं अस्पताल';
+      case 'revenue & post':
+        return 'राजस्व एवं डाक';
+      case 'municipal pmc':
+      default:
+        return 'नगर निगम क्षेत्रीय कार्यालय';
+    }
+  }
+
+  String categoryDisplay(String lang) {
+    if (lang == 'mr') return categoryDisplayMr;
+    if (lang == 'hi') return categoryDisplayHi;
+    return category;
+  }
 }
 

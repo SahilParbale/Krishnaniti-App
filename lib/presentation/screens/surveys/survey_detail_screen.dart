@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/survey_model.dart';
 import '../../../data/repositories/surveys_repository.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 
 class SurveyDetailScreen extends ConsumerStatefulWidget {
@@ -39,8 +40,14 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
     }
   }
 
-  Future<void> _shareOnWhatsApp() async {
-    final text = 'Hello, important citizen opinion survey for Ward 12:\n"${widget.survey.title}"\nPlease register your opinion and help us develop the ward.';
+  Future<void> _shareOnWhatsApp(String lang) async {
+    final tTitle = await DynamicTranslationService.translateOrRaw(widget.survey.title, lang);
+    final text = AppTranslations.pick(
+      lang,
+      en: 'Hello, important citizen opinion survey for Ward 12:\n"$tTitle"\nPlease register your opinion and help us develop the ward.',
+      mr: 'नमस्कार, प्रभाग १२ साठी महत्त्वाचे नागरिक मत सर्व्हेक्षण:\n"$tTitle"\nकृपया आपले मत नोंदवा आणि प्रभागाच्या विकासात सहभागी व्हा.',
+      hi: 'नमस्ते, वार्ड १२ के लिए महत्वपूर्ण नागरिक राय सर्वेक्षण:\n"$tTitle"\nकृपया अपनी राय दर्ज करें और वार्ड के विकास में सहयोग करें।',
+    );
     final uri = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(text)}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -54,10 +61,16 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final totalResponses = _responses.length;
     final target = widget.survey.targetSampleSize > 0 ? widget.survey.targetSampleSize : 100;
     final completionRate = ((totalResponses / target) * 100).clamp(0, 100).toInt();
-    final dateFormatted = DateFormat('dd MMMM yyyy').format(widget.survey.createdAt);
+    final dateFormatted = AppTranslations.formatDate(
+      widget.survey.createdAt,
+      lang,
+      pattern: 'dd MMMM yyyy',
+    );
+    final qCountStr = AppTranslations.formatDigits(widget.survey.questions.length, lang);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -66,19 +79,30 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'पीछे'),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Survey Analysis & Results',
+        title: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Survey Analysis & Results',
+            mr: 'सर्व्हेक्षण विश्लेषण व निकाल',
+            hi: 'सर्वेक्षण विश्लेषण और परिणाम',
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.share_rounded, color: Colors.white),
-            tooltip: 'Share on WhatsApp',
-            onPressed: _shareOnWhatsApp,
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Share on WhatsApp',
+              mr: 'व्हॉट्सअॅपवर शेअर करा',
+              hi: 'व्हाट्सऐप पर साझा करें',
+            ),
+            onPressed: () => _shareOnWhatsApp(lang),
           ),
         ],
       ),
@@ -91,60 +115,78 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title & Meta Card
-                  _buildSurveyHeaderCard(dateFormatted),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title & Meta Card
+                    _buildSurveyHeaderCard(dateFormatted, lang),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // KPI Response Progress Cards
-                  _buildProgressKpiCards(totalResponses, target, completionRate),
+                    // KPI Response Progress Cards
+                    _buildProgressKpiCards(totalResponses, target, completionRate, lang),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // Analytics Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Question-wise Citizen Response Analysis',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                      Text(
-                        '${widget.survey.questions.length} Questions',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                      ),
-                    ],
-                  ),
+                    // Analytics Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Question-wise Citizen Response Analysis',
+                              mr: 'प्रश्ननिहाय नागरिक प्रतिसाद विश्लेषण',
+                              hi: 'प्रश्न-वार नागरिक प्रतिक्रिया विश्लेषण',
+                            ),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: '$qCountStr Questions',
+                            mr: '$qCountStr प्रश्न',
+                            hi: '$qCountStr प्रश्न',
+                          ),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                  // Question Breakdown Cards
-                  ...widget.survey.questions.asMap().entries.map((entry) {
-                    final idx = entry.key + 1;
-                    final q = entry.value;
-                    return _buildQuestionAnalyticsCard(idx, q);
-                  }),
+                    // Question Breakdown Cards
+                    ...widget.survey.questions.asMap().entries.map((entry) {
+                      final idx = entry.key + 1;
+                      final q = entry.value;
+                      return _buildQuestionAnalyticsCard(idx, q, lang);
+                    }),
 
-                  const SizedBox(height: 80),
-                ],
+                    const SizedBox(height: 80),
+                  ],
+                ),
               ),
             ),
-          ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openRecordResponseModal,
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.rate_review_outlined, color: Colors.white),
-        label: const Text(
-          'Record Citizen Response',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        label: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Record Citizen Response',
+            mr: 'नागरिक प्रतिसाद नोंदवा',
+            hi: 'नागरिक प्रतिक्रिया दर्ज करें',
+          ),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
-  Widget _buildSurveyHeaderCard(String dateFormatted) {
+  Widget _buildSurveyHeaderCard(String dateFormatted, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -184,7 +226,14 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      widget.survey.isActive ? 'Active Survey' : 'Closed',
+                      widget.survey.isActive
+                          ? AppTranslations.pick(
+                              lang,
+                              en: 'Active Survey',
+                              mr: 'सक्रिय सर्व्हेक्षण',
+                              hi: 'सक्रिय सर्वेक्षण',
+                            )
+                          : AppTranslations.pick(lang, en: 'Closed', mr: 'बंद', hi: 'बंद'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -195,27 +244,34 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 ),
               ),
               if (widget.survey.area != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    widget.survey.area!,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: AppTranslatedText(
+                      AppTranslations.getAreaName(widget.survey.area!, lang),
+                      targetLanguage: lang,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(
+          AppTranslatedText(
             widget.survey.title,
+            targetLanguage: lang,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
           ),
           const SizedBox(height: 6),
-          Text(
+          AppTranslatedText(
             widget.survey.description,
+            targetLanguage: lang,
             style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
           ),
           const SizedBox(height: 12),
@@ -225,11 +281,21 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Started: $dateFormatted',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Started: $dateFormatted',
+                  mr: 'सुरुवात: $dateFormatted',
+                  hi: 'प्रारंभ: $dateFormatted',
+                ),
                 style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
               ),
               Text(
-                'Ward 12 (Kasba-Vishrambaug)',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Ward 12 (Kasba-Vishrambaug)',
+                  mr: 'प्रभाग १२ (कसबा-विश्रामबाग)',
+                  hi: 'वार्ड १२ (कसबा-विश्रामबाग)',
+                ),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
               ),
             ],
@@ -239,7 +305,11 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
     );
   }
 
-  Widget _buildProgressKpiCards(int totalResponses, int target, int completionRate) {
+  Widget _buildProgressKpiCards(int totalResponses, int target, int completionRate, String lang) {
+    final respStr = AppTranslations.formatDigits(totalResponses, lang);
+    final targetStr = AppTranslations.formatDigits(target, lang);
+    final rateStr = AppTranslations.formatDigits(completionRate, lang);
+
     return Row(
       children: [
         Expanded(
@@ -253,19 +323,24 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
-                        'Recorded Responses',
-                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Recorded Responses',
+                          mr: 'नोंदवलेले प्रतिसाद',
+                          hi: 'दर्ज प्रतिक्रियाएं',
+                        ),
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Icon(Icons.how_to_reg_rounded, size: 18, color: Color(0xFF2563EB)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.how_to_reg_rounded, size: 18, color: Color(0xFF2563EB)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -273,13 +348,18 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '$totalResponses',
+                    respStr,
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A)),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Sample Target: out of $target',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Sample Target: out of $targetStr',
+                    mr: 'नमुना उद्दिष्ट: $targetStr पैकी',
+                    hi: 'नमूना लक्ष्य: $targetStr में से',
+                  ),
                   style: const TextStyle(fontSize: 11, color: Color(0xFF60A5FA), fontWeight: FontWeight.w500),
                 ),
               ],
@@ -298,19 +378,24 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
-                        'Sample Completion',
-                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Sample Completion',
+                          mr: 'नमुना पूर्णता',
+                          hi: 'नमूना पूर्णता',
+                        ),
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Icon(Icons.pie_chart_rounded, size: 18, color: Color(0xFF16A34A)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.pie_chart_rounded, size: 18, color: Color(0xFF16A34A)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -318,7 +403,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '$completionRate%',
+                    '$rateStr%',
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF14532D)),
                   ),
                 ),
@@ -340,7 +425,14 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
     );
   }
 
-  Widget _buildQuestionAnalyticsCard(int index, SurveyQuestionModel q) {
+  Widget _buildQuestionAnalyticsCard(int index, SurveyQuestionModel q, String lang) {
+    final idxStr = AppTranslations.formatDigits(index, lang);
+    final typeLabel = switch (q.type) {
+      SurveyQuestionType.yesNo => AppTranslations.pick(lang, en: 'YES / NO', mr: 'होय / नाही', hi: 'हाँ / नहीं'),
+      SurveyQuestionType.mcq => AppTranslations.pick(lang, en: 'MCQ', mr: 'बहुपर्यायी', hi: 'बहुविकल्पीय'),
+      SurveyQuestionType.rating => AppTranslations.pick(lang, en: 'RATING', mr: 'रेटिंग', hi: 'रेटिंग'),
+    };
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -356,7 +448,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 26,
+                width: 28,
                 height: 26,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE0F2FE),
@@ -364,7 +456,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'Q.$index',
+                  AppTranslations.pick(lang, en: 'Q.$idxStr', mr: 'प्र.$idxStr', hi: 'प्र.$idxStr'),
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                 ),
               ),
@@ -373,13 +465,19 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppTranslatedText(
                       q.text,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Type: ${q.type.name.toUpperCase()}',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Type: $typeLabel',
+                        mr: 'प्रकार: $typeLabel',
+                        hi: 'प्रकार: $typeLabel',
+                      ),
                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                     ),
                   ],
@@ -394,17 +492,17 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
 
           // Response Visualization based on Type
           if (q.type == SurveyQuestionType.yesNo)
-            _buildYesNoBreakdown(q.id)
+            _buildYesNoBreakdown(q.id, lang)
           else if (q.type == SurveyQuestionType.mcq)
-            _buildMcqBreakdown(q)
+            _buildMcqBreakdown(q, lang)
           else if (q.type == SurveyQuestionType.rating)
-            _buildRatingBreakdown(q.id),
+            _buildRatingBreakdown(q.id, lang),
         ],
       ),
     );
   }
 
-  Widget _buildYesNoBreakdown(String qId) {
+  Widget _buildYesNoBreakdown(String qId, String lang) {
     int yesCount = 0;
     int noCount = 0;
     for (final r in _responses) {
@@ -416,25 +514,56 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
     final total = yesCount + noCount;
     final yesPerc = total > 0 ? ((yesCount / total) * 100).round() : 0;
     final noPerc = total > 0 ? (100 - yesPerc) : 0;
+    final yesCountStr = AppTranslations.formatDigits(yesCount, lang);
+    final yesPercStr = AppTranslations.formatDigits(yesPerc, lang);
+    final noCountStr = AppTranslations.formatDigits(noCount, lang);
+    final noPercStr = AppTranslations.formatDigits(noPerc, lang);
 
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.thumb_up_alt_rounded, size: 14, color: Color(0xFF16A34A)),
-                const SizedBox(width: 6),
-                Text('Yes: $yesCount votes ($yesPerc%)', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
-              ],
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.thumb_up_alt_rounded, size: 14, color: Color(0xFF16A34A)),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Yes: $yesCountStr votes ($yesPercStr%)',
+                        mr: 'होय: $yesCountStr मते ($yesPercStr%)',
+                        hi: 'हाँ: $yesCountStr वोट ($yesPercStr%)',
+                      ),
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Row(
-              children: [
-                const Icon(Icons.thumb_down_alt_rounded, size: 14, color: Color(0xFFDC2626)),
-                const SizedBox(width: 6),
-                Text('No: $noCount votes ($noPerc%)', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFB91C1C))),
-              ],
+            const SizedBox(width: 8),
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.thumb_down_alt_rounded, size: 14, color: Color(0xFFDC2626)),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'No: $noCountStr votes ($noPercStr%)',
+                        mr: 'नाही: $noCountStr मते ($noPercStr%)',
+                        hi: 'नहीं: $noCountStr वोट ($noPercStr%)',
+                      ),
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFB91C1C)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -458,7 +587,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
     );
   }
 
-  Widget _buildMcqBreakdown(SurveyQuestionModel q) {
+  Widget _buildMcqBreakdown(SurveyQuestionModel q, String lang) {
     final Map<String, int> counts = {};
     for (final opt in q.options) {
       counts[opt] = 0;
@@ -477,6 +606,8 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
       children: q.options.map((opt) {
         final count = counts[opt] ?? 0;
         final perc = totalAnswered > 0 ? ((count / totalAnswered) * 100).round() : 0;
+        final cStr = AppTranslations.formatDigits(count, lang);
+        final pStr = AppTranslations.formatDigits(perc, lang);
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
@@ -486,8 +617,23 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(opt, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                  Text('$count votes ($perc%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                  Expanded(
+                    child: AppTranslatedText(
+                      opt,
+                      targetLanguage: lang,
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: '$cStr votes ($pStr%)',
+                      mr: '$cStr मते ($pStr%)',
+                      hi: '$cStr वोट ($pStr%)',
+                    ),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -507,7 +653,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
     );
   }
 
-  Widget _buildRatingBreakdown(String qId) {
+  Widget _buildRatingBreakdown(String qId, String lang) {
     final Map<int, int> dist = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
     int sum = 0;
     int total = 0;
@@ -522,6 +668,8 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
     }
 
     final avg = total > 0 ? (sum / total).toStringAsFixed(1) : '0.0';
+    final avgStr = AppTranslations.formatDigits(avg, lang);
+    final totalStr = AppTranslations.formatDigits(total, lang);
 
     return Row(
       children: [
@@ -538,13 +686,21 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(avg, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFB45309))),
+                  Text(avgStr, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFB45309))),
                   const SizedBox(width: 4),
                   const Icon(Icons.star_rounded, size: 22, color: Color(0xFFF59E0B)),
                 ],
               ),
               const SizedBox(height: 2),
-              Text('$total votes', style: const TextStyle(fontSize: 10, color: Color(0xFF92400E))),
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: '$totalStr votes',
+                  mr: '$totalStr मते',
+                  hi: '$totalStr वोट',
+                ),
+                style: const TextStyle(fontSize: 10, color: Color(0xFF92400E)),
+              ),
             ],
           ),
         ),
@@ -561,7 +717,10 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(
                   children: [
-                    Text('$stars ★', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    Text(
+                      '${AppTranslations.formatDigits(stars, lang)} ★',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: ClipRRect(
@@ -575,7 +734,10 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text('$count', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                    Text(
+                      AppTranslations.formatDigits(count, lang),
+                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                    ),
                   ],
                 ),
               );
@@ -587,7 +749,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
   }
 
   void _openRecordResponseModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final Map<String, dynamic> localAnswers = {};
 
     showModalBottomSheet(
@@ -597,8 +759,8 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
           constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -615,15 +777,25 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
               // 1. FIXED HEADER
               AppModalHeader(
                 icon: Icons.rate_review_rounded,
-                title: isMr ? 'नागरिक प्रतिसाद नोंदवा' : 'Record Citizen Response',
-                subtitle: isMr ? 'स्थानिक नागरिकांचे थेट मत नोंदवा' : 'Record ground feedback directly',
+                title: AppTranslations.pick(
+                  lang,
+                  en: 'Record Citizen Response',
+                  mr: 'नागरिक प्रतिसाद नोंदवा',
+                  hi: 'नागरिक प्रतिक्रिया दर्ज करें',
+                ),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Record ground feedback directly',
+                  mr: 'स्थानिक नागरिकांचे थेट मत नोंदवा',
+                  hi: 'स्थानीय नागरिकों की सीधी प्रतिक्रिया दर्ज करें',
+                ),
                 onClose: () => Navigator.pop(ctx),
               ),
 
               // 2. SCROLLABLE FORM & SUBMIT BUTTON
               Flexible(
-              child: ListView(
-                shrinkWrap: true,
+                child: ListView(
+                  shrinkWrap: true,
                   padding: EdgeInsets.only(
                     left: 16,
                     right: 16,
@@ -634,6 +806,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                     ...widget.survey.questions.asMap().entries.map((entry) {
                       final i = entry.key;
                       final q = entry.value;
+                      final qNum = AppTranslations.formatDigits(i + 1, lang);
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(12),
@@ -645,16 +818,28 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Q.${i + 1}. ${q.text}',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppTranslations.pick(lang, en: 'Q.$qNum. ', mr: 'प्र.$qNum. ', hi: 'प्र.$qNum. '),
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                ),
+                                Expanded(
+                                  child: AppTranslatedText(
+                                    q.text,
+                                    targetLanguage: lang,
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 8),
                             if (q.type == SurveyQuestionType.yesNo)
                               Row(
                                 children: [
                                   ChoiceChip(
-                                    label: Text(isMr ? 'होय (Yes)' : 'Yes'),
+                                    label: Text(AppTranslations.pick(lang, en: 'Yes', mr: 'होय', hi: 'हाँ')),
                                     selected: localAnswers[q.id] == 'Yes',
                                     selectedColor: const Color(0xFF0284C7),
                                     labelStyle: TextStyle(
@@ -667,7 +852,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   ChoiceChip(
-                                    label: Text(isMr ? 'नाही (No)' : 'No'),
+                                    label: Text(AppTranslations.pick(lang, en: 'No', mr: 'नाही', hi: 'नहीं')),
                                     selected: localAnswers[q.id] == 'No',
                                     selectedColor: const Color(0xFFDC2626),
                                     labelStyle: TextStyle(
@@ -687,7 +872,7 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                                 children: q.options.map((opt) {
                                   final isSel = localAnswers[q.id] == opt;
                                   return ChoiceChip(
-                                    label: Text(opt),
+                                    label: AppTranslatedText(opt, targetLanguage: lang),
                                     selected: isSel,
                                     selectedColor: const Color(0xFF0284C7),
                                     labelStyle: TextStyle(
@@ -743,9 +928,12 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  isMr
-                                      ? 'नागरिक प्रतिसाद यशस्वीरित्या नोंदवला गेला!'
-                                      : 'Citizen response recorded successfully!',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Citizen response recorded successfully!',
+                                    mr: 'नागरिक प्रतिसाद यशस्वीरित्या नोंदवला गेला!',
+                                    hi: 'नागरिक प्रतिक्रिया सफलतापूर्वक दर्ज की गई!',
+                                  ),
                                 ),
                                 backgroundColor: const Color(0xFF16A34A),
                               ),
@@ -760,7 +948,12 @@ class _SurveyDetailScreenState extends ConsumerState<SurveyDetailScreen> {
                         ),
                         icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                         label: Text(
-                          isMr ? 'प्रतिसाद जतन करा' : 'Save Response',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Save Response',
+                            mr: 'प्रतिसाद जतन करा',
+                            hi: 'प्रतिक्रिया सहेजें',
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ),

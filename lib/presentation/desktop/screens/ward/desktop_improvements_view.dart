@@ -1,16 +1,16 @@
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/localization/app_translations.dart';
-import '../../shell/desktop_sidebar.dart';
-import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../data/models/improvement_model.dart';
 import '../../../../data/repositories/improvements_repository.dart';
+import '../../../providers/language_provider.dart';
 import '../../../screens/ward_improvements/improvement_detail_screen.dart';
 import '../../../screens/ward_improvements/improvement_report_generator.dart';
 import '../../../widgets/app_dropdown.dart';
 import '../../../widgets/app_load_more_footer.dart';
+import '../../common/desktop_modal_dialog.dart';
 
 class DesktopImprovementsView extends ConsumerStatefulWidget {
   const DesktopImprovementsView({super.key});
@@ -44,7 +44,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
 
   List<String> get _uniqueDates {
     final dates = _improvements
-        .map((i) => _formatDate(i.createdAt).trim())
+        .map((i) => _canonicalDateKey(i.createdAt))
         .where((d) => d.isNotEmpty)
         .toSet()
         .toList()
@@ -79,28 +79,52 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     }
   }
 
-  String _formatDate(String raw) {
+  String _canonicalDateKey(String raw) {
     if (raw.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(raw);
-      return DateFormat('MMM d, yyyy').format(dt);
-    } catch (_) {
-      return raw;
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw.trim();
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDate(String raw, String lang) {
+    if (raw.isEmpty) return '';
+    final dt = DateTime.tryParse(raw);
+    if (dt != null) {
+      return AppTranslations.formatDate(dt, lang, pattern: 'MMM d, yyyy');
+    }
+    return AppTranslations.formatDigits(raw, lang);
+  }
+
+  String _localizedStatus(String status, String lang) {
+    switch (status.toLowerCase()) {
+      case 'complete':
+      case 'completed':
+        return AppTranslations.pick(lang, en: 'Complete', mr: 'पूर्ण झाले', hi: 'पूर्ण हुआ');
+      case 'in progress':
+      case 'inprogress':
+        return AppTranslations.pick(lang, en: 'In Progress', mr: 'प्रगतीपथावर', hi: 'प्रगति पर');
+      case 'planned':
+        return AppTranslations.pick(lang, en: 'Planned', mr: 'नियोजित', hi: 'नियोजित');
+      case 'pending':
+      default:
+        return AppTranslations.pick(lang, en: 'Pending', mr: 'प्रलंबित', hi: 'लंबित');
     }
   }
 
   List<ImprovementModel> get _filteredImprovements {
+    final q = AppTranslations.normalizeAsciiDigits(_searchTerm.trim()).toLowerCase();
     return _improvements.where((item) {
-      final matchesSearch = _searchTerm.isEmpty ||
-          item.title.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          item.description.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          item.location.toLowerCase().contains(_searchTerm.toLowerCase());
+      final matchesSearch = q.isEmpty ||
+          AppTranslations.normalizeAsciiDigits(item.title).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.description).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.location).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.area).toLowerCase().contains(q);
 
       final matchesArea = _selectedArea == 'All' ||
           item.area.toLowerCase().trim() == _selectedArea.toLowerCase().trim();
 
       final matchesDate = _selectedDate == 'All' ||
-          _formatDate(item.createdAt).toLowerCase().trim() == _selectedDate.toLowerCase().trim();
+          _canonicalDateKey(item.createdAt) == _selectedDate;
 
       final matchesStatus = _statusFilter == 'All' || item.status == _statusFilter;
 
@@ -114,6 +138,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
   }
 
   Future<void> _handleVote(ImprovementModel item) async {
+    final lang = ref.read(desktopLanguageProvider);
     final repo = ref.read(improvementsRepoProvider);
     final newVotes = await repo.voteImprovement(item.id);
     if (mounted) {
@@ -126,10 +151,17 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
         }).toList();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: const Text('Vote registered successfully!'),
-          duration: Duration(seconds: 2),
-          backgroundColor: Color(0xFF16A34A),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Vote registered successfully!',
+              mr: 'मत यशस्वीरित्या नोंदवले!',
+              hi: 'वोट सफलतापूर्वक दर्ज किया गया!',
+            ),
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: const Color(0xFF16A34A),
         ),
       );
     }
@@ -147,56 +179,90 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          return DesktopModalDialog(
-            title: 'Suggest Ward Improvement',
-            subtitle: 'Civic suggestions, road works, and infrastructural proposals',
-            icon: Icons.lightbulb_outline_rounded,
-            width: 600,
-            onClose: () => Navigator.pop(ctx),
-            actions: [
-              DesktopModalDialog.cancelButton(ctx),
-              const SizedBox(width: 12),
-              DesktopModalDialog.primaryButton(
-                text: 'Submit Improvement',
-                onPressed: () async {
-                            if (titleController.text.trim().isEmpty) return;
-                            final newImp = ImprovementModel(
-                              id: 'imp-${DateTime.now().millisecondsSinceEpoch}',
-                              title: titleController.text.trim(),
-                              description: descController.text.trim(),
-                              location: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
-                              area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
-                              status: selectedStatus,
-                              peopleBenefited: int.tryParse(peopleController.text.trim()),
-                              createdAt: DateTime.now().toIso8601String(),
-                            );
+      builder: (ctx) => Consumer(
+        builder: (ctx, modalRef, _) {
+          final lang = modalRef.watch(desktopLanguageProvider);
+          return StatefulBuilder(
+            builder: (ctx, setModalState) {
+              return DesktopModalDialog(
+                title: AppTranslations.pick(
+                  lang,
+                  en: 'Suggest Ward Improvement',
+                  mr: 'प्रभाग सुधारणा सुचवा',
+                  hi: 'वार्ड सुधार का सुझाव दें',
+                ),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Civic suggestions, road works, and infrastructural proposals',
+                  mr: 'नागरी सूचना, रस्ते कामे आणि पायाभूत सुविधा प्रस्ताव',
+                  hi: 'नागरिक सुझाव, सड़क कार्य और बुनियादी ढांचा प्रस्ताव',
+                ),
+                icon: Icons.lightbulb_outline_rounded,
+                width: 600,
+                onClose: () => Navigator.pop(ctx),
+                actions: [
+                  DesktopModalDialog.cancelButton(ctx),
+                  const SizedBox(width: 12),
+                  DesktopModalDialog.primaryButton(
+                    text: AppTranslations.pick(
+                      lang,
+                      en: 'Submit Improvement',
+                      mr: 'सुधारणा सबमिट करा',
+                      hi: 'सुधार सबमिट करें',
+                    ),
+                    onPressed: () async {
+                      if (titleController.text.trim().isEmpty) return;
+                      final newImp = ImprovementModel(
+                        id: 'imp-${DateTime.now().millisecondsSinceEpoch}',
+                        title: titleController.text.trim(),
+                        description: descController.text.trim(),
+                        location: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
+                        area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
+                        status: selectedStatus,
+                        peopleBenefited: int.tryParse(
+                          AppTranslations.normalizeAsciiDigits(peopleController.text.trim()),
+                        ),
+                        createdAt: DateTime.now().toIso8601String(),
+                      );
 
-                            final repo = ref.read(improvementsRepoProvider);
-                            await repo.addImprovement(newImp);
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchData();
-                          },
-              ),
-            ],
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                    const Text('Improvement Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      final repo = ref.read(improvementsRepoProvider);
+                      await repo.addImprovement(newImp);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      _fetchData();
+                    },
+                  ),
+                ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Improvement Title *',
+                        mr: 'सुधारणेचे शीर्षक *',
+                        hi: 'सुधार शीर्षक *',
+                      ),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: titleController,
+                      onChanged: (_) => setModalState(() {}),
                       decoration: InputDecoration(
-                        hintText: 'e.g. Install open gym equipment in garden...',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'e.g. Install open gym equipment in garden...',
+                          mr: 'उदा. उद्यानात ओपन जिम उपकरणे बसवणे...',
+                          hi: 'उदा. उद्यान में ओपन जिम उपकरण लगाना...',
+                        ),
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                        focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                        fillColor: const Color(0xFFF8FAFC),
+                        filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -206,22 +272,32 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Description *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                        Text(
+                          AppTranslations.pick(lang, en: 'Description *', mr: 'वर्णन *', hi: 'विवरण *'),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                        ),
                         TextButton.icon(
                           onPressed: isGeneratingAI || titleController.text.trim().isEmpty
                               ? null
                               : () async {
                                   setModalState(() => isGeneratingAI = true);
                                   await Future.delayed(const Duration(milliseconds: 600));
-                                  descController.text =
-                                      'Under ${titleController.text.trim()}, community infrastructure will improve significantly for citizens.';
+                                  final topic = titleController.text.trim();
+                                  descController.text = AppTranslations.pick(
+                                    lang,
+                                    en: 'Under $topic, community infrastructure will improve significantly for citizens.',
+                                    mr: '$topic अंतर्गत नागरिकांसाठी सामुदायिक पायाभूत सुविधांमध्ये लक्षणीय सुधारणा होईल.',
+                                    hi: '$topic के अंतर्गत नागरिकों के लिए सामुदायिक बुनियादी ढांचे में उल्लेखनीय सुधार होगा।',
+                                  );
                                   setModalState(() => isGeneratingAI = false);
                                 },
                           icon: isGeneratingAI
                               ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                               : const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF0284C7)),
                           label: Text(
-                            isGeneratingAI ? 'Generating...' : 'Auto-Generate (AI)',
+                            isGeneratingAI
+                                ? AppTranslations.pick(lang, en: 'Generating...', mr: 'तयार करत आहे...', hi: 'तैयार हो रहा है...')
+                                : AppTranslations.pick(lang, en: 'Auto-Generate (AI)', mr: 'AI ने तयार करा', hi: 'AI से तैयार करें'),
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
                           ),
                         ),
@@ -232,13 +308,18 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                       controller: descController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'Provide details about the suggested improvement...',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'Provide details about the suggested improvement...',
+                          mr: 'सुचवलेल्या सुधारणेचा तपशील द्या...',
+                          hi: 'सुझाए गए सुधार का विवरण दें...',
+                        ),
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                        focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                        fillColor: const Color(0xFFF8FAFC),
+                        filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
@@ -251,12 +332,20 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Location *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Location *', mr: 'ठिकाण *', hi: 'स्थान *'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                               const SizedBox(height: 6),
                               TextField(
                                 controller: locationController,
                                 decoration: InputDecoration(
-                                  hintText: 'e.g. Public Garden',
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Public Garden',
+                                    mr: 'उदा. सार्वजनिक उद्यान',
+                                    hi: 'उदा. सार्वजनिक उद्यान',
+                                  ),
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
                                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
@@ -274,7 +363,10 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Ward / Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Ward / Area', mr: 'प्रभाग / परिसर', hi: 'वार्ड / क्षेत्र'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                               const SizedBox(height: 6),
                               TextField(
                                 controller: areaController,
@@ -301,18 +393,21 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                               const SizedBox(height: 6),
                               AppDropdown<String>(
                                 value: selectedStatus,
                                 height: 44,
                                 backgroundColor: const Color(0xFFF8FAFC),
                                 borderColor: const Color(0xFFE2E8F0),
-                                items: const [
-                                  DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-                                  DropdownMenuItem(value: 'Planned', child: Text('Planned')),
-                                  DropdownMenuItem(value: 'In Progress', child: Text('In Progress')),
-                                  DropdownMenuItem(value: 'Complete', child: Text('Complete')),
+                                items: [
+                                  DropdownMenuItem(value: 'Pending', child: Text(_localizedStatus('Pending', lang))),
+                                  DropdownMenuItem(value: 'Planned', child: Text(_localizedStatus('Planned', lang))),
+                                  DropdownMenuItem(value: 'In Progress', child: Text(_localizedStatus('In Progress', lang))),
+                                  DropdownMenuItem(value: 'Complete', child: Text(_localizedStatus('Complete', lang))),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => selectedStatus = val);
@@ -326,13 +421,21 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Estimated Beneficiaries', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Estimated Beneficiaries',
+                                  mr: 'अंदाजे लाभार्थी',
+                                  hi: 'अनुमानित लाभार्थी',
+                                ),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                               const SizedBox(height: 6),
                               TextField(
                                 controller: peopleController,
                                 keyboardType: TextInputType.number,
                                 decoration: InputDecoration(
-                                  hintText: 'e.g. 500',
+                                  hintText: AppTranslations.pick(lang, en: 'e.g. 500', mr: 'उदा. ५००', hi: 'उदा. ५००'),
                                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
                                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
@@ -347,15 +450,19 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                         ),
                       ],
                     ),
-                                      ],
-            ),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),
-    );  }
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(desktopLanguageProvider);
     final filtered = _filteredImprovements;
     final visible = _visibleImprovements;
 
@@ -365,24 +472,24 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Section
-          _buildHeader(),
+          _buildHeader(lang),
           const SizedBox(height: 16),
 
           // Search Filters
-          _buildFilterRow(),
+          _buildFilterRow(lang),
           const SizedBox(height: 16),
 
           // Status Tabs
-          _buildStatusTabs(),
+          _buildStatusTabs(lang),
           const SizedBox(height: 24),
 
           // Content
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildReportTable(visible)
+            _buildReportTable(visible, lang)
           else
-            _buildCardGrid(visible),
+            _buildCardGrid(visible, lang),
 
           if (!_loading && filtered.isNotEmpty)
             AppLoadMoreFooter(
@@ -392,37 +499,45 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
               onLoadMore: () {
                 setState(() => _displayedLimit += 20);
               },
-              label: 'सुधारणा',
-              isMarathi: true,
+              label: AppTranslations.pick(lang, en: 'improvements', mr: 'सुधारणा', hi: 'सुधार'),
+              isMarathi: lang == 'mr',
             ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Possible Improvements',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.5,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppTranslations.getNavTitle('improvements', lang),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Track civic improvement proposals and public suggestions',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Track civic improvement proposals and public suggestions',
+                  mr: 'नागरी सुधारणा प्रस्ताव आणि सार्वजनिक सूचनांचा मागोवा घ्या',
+                  hi: 'नागरिक सुधार प्रस्तावों और सार्वजनिक सुझावों को ट्रैक करें',
+                ),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 16),
 
         // Actions: Download Report + Propose Improvement
         Row(
@@ -432,11 +547,14 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                 ImprovementReportGenerator.generateAndPrintImprovementReport(
                   context: context,
                   improvements: _filteredImprovements,
+                  statusFilter: _statusFilter,
+                  areaFilter: _selectedArea,
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -458,14 +576,19 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
-                  SizedBox(width: 8), // gap-2
+                  const Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
+                  const SizedBox(width: 8), // gap-2
                   Text(
-                    'Propose Improvement',
-                    style: TextStyle(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Propose Improvement',
+                      mr: 'सुधारणा सुचवा',
+                      hi: 'सुधार का सुझाव दें',
+                    ),
+                    style: const TextStyle(
                       fontSize: 14, // text-sm
                       fontWeight: FontWeight.w600, // font-semibold
                       color: Colors.white,
@@ -509,7 +632,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     );
   }
 
-  Widget _buildFilterRow() {
+  Widget _buildFilterRow(String lang) {
     return Row(
       children: [
         // Main Search (Col 6)
@@ -526,12 +649,17 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                 _searchTerm = val;
                 _displayedLimit = 20;
               }),
-              decoration: const InputDecoration(
-                hintText: 'Search improvement, location, topic...',
-                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+              decoration: InputDecoration(
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search improvement, location, topic...',
+                  mr: 'सुधारणा, ठिकाण, विषय शोधा...',
+                  hi: 'सुधार, स्थान, विषय खोजें...',
+                ),
+                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
           ),
@@ -548,9 +676,12 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueAreas.map((area) {
+              final label = area == 'All'
+                  ? AppTranslations.getAllAreas(lang)
+                  : AppTranslations.getAreaName(area, lang);
               return DropdownMenuItem(
                 value: area,
-                child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+                child: Text(label, overflow: TextOverflow.ellipsis),
               );
             }).toList(),
             onChanged: (val) {
@@ -575,9 +706,12 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueDates.map((date) {
+              final label = date == 'All'
+                  ? AppTranslations.pick(lang, en: 'All Dates', mr: 'सर्व तारखा', hi: 'सभी तिथियां')
+                  : _formatDate(date, lang);
               return DropdownMenuItem(
                 value: date,
-                child: Text(date == 'All' ? 'All Dates' : date, overflow: TextOverflow.ellipsis),
+                child: Text(label, overflow: TextOverflow.ellipsis),
               );
             }).toList(),
             onChanged: (val) {
@@ -594,78 +728,81 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     );
   }
 
-  Widget _buildStatusTabs() {
+  Widget _buildStatusTabs(String lang) {
     final tabs = [
-      {'key': 'All', 'label': 'All'},
-      {'key': 'Pending', 'label': 'Pending'},
-      {'key': 'Planned', 'label': 'Planned'},
-      {'key': 'In Progress', 'label': 'In Progress'},
-      {'key': 'Complete', 'label': 'Complete'},
+      {'key': 'All', 'label': AppTranslations.getAll(lang)},
+      {'key': 'Pending', 'label': _localizedStatus('Pending', lang)},
+      {'key': 'Planned', 'label': _localizedStatus('Planned', lang)},
+      {'key': 'In Progress', 'label': _localizedStatus('In Progress', lang)},
+      {'key': 'Complete', 'label': _localizedStatus('Complete', lang)},
     ];
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: tabs.map((tab) {
-            final key = tab['key']!;
-            final label = tab['label']!;
-            final isSelected = _statusFilter == key;
-            final count = _countForStatus(key);
+        Expanded(
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tabs.map((tab) {
+              final key = tab['key']!;
+              final label = tab['label']!;
+              final isSelected = _statusFilter == key;
+              final count = AppTranslations.formatDigits(_countForStatus(key), lang);
 
-            return InkWell(
-              onTap: () => setState(() {
-                _statusFilter = key;
-                _displayedLimit = 20;
-              }),
-              borderRadius: BorderRadius.circular(100),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF0284C7) : Colors.white,
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(
-                    color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0),
-                  ),
-                  boxShadow: isSelected
-                      ? const [BoxShadow(color: Color(0x200284C7), blurRadius: 4, offset: Offset(0, 2))]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.white : const Color(0xFF475569),
-                      ),
+              return InkWell(
+                onTap: () => setState(() {
+                  _statusFilter = key;
+                  _displayedLimit = 20;
+                }),
+                borderRadius: BorderRadius.circular(100),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.white.withOpacity(0.2) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: Text(
-                        '$count',
+                    boxShadow: isSelected
+                        ? const [BoxShadow(color: Color(0x200284C7), blurRadius: 4, offset: Offset(0, 2))]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : const Color(0xFF64748B),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : const Color(0xFF475569),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Text(
+                          count,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
+        const SizedBox(width: 12),
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
@@ -676,14 +813,14 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
             children: [
               _buildViewToggleButton(
                 icon: Icons.grid_view_rounded,
-                label: 'Grid',
+                label: AppTranslations.pick(lang, en: 'Grid', mr: 'ग्रिड', hi: 'ग्रिड'),
                 isActive: _viewMode == 'grid',
                 onTap: () => setState(() => _viewMode = 'grid'),
               ),
               const SizedBox(width: 4),
               _buildViewToggleButton(
                 icon: Icons.table_rows_rounded,
-                label: 'Table',
+                label: AppTranslations.pick(lang, en: 'Table', mr: 'तक्ता', hi: 'तालिका'),
                 isActive: _viewMode == 'table',
                 onTap: () => setState(() => _viewMode = 'table'),
               ),
@@ -694,7 +831,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     );
   }
 
-  Widget _buildCardGrid(List<ImprovementModel> items) {
+  Widget _buildCardGrid(List<ImprovementModel> items, String lang) {
     if (items.isEmpty) {
       return Container(
         width: double.infinity,
@@ -705,10 +842,18 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
-          children: const [
-            Icon(Icons.lightbulb_outline, size: 48, color: Color(0xFFCBD5E1)),
-            SizedBox(height: 12),
-            const Text('No improvements found', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          children: [
+            const Icon(Icons.lightbulb_outline, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No improvements found',
+                mr: 'कोणत्याही सुधारणा आढळल्या नाहीत',
+                hi: 'कोई सुधार नहीं मिला',
+              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );
@@ -730,6 +875,12 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
           ),
           itemBuilder: (context, index) {
             final item = items[index];
+            final areaLabel = item.area.isNotEmpty
+                ? AppTranslations.getAreaName(item.area, lang)
+                : '';
+            final locDisplay = areaLabel.isNotEmpty
+                ? '${item.location}, $areaLabel'
+                : item.location;
 
             return InkWell(
               onTap: () {
@@ -761,12 +912,12 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildStatusBadge(item.status),
+                            _buildStatusBadge(item.status, lang),
                             Row(
                               children: [
                                 const Icon(Icons.calendar_today_outlined, size: 12, color: Color(0xFF94A3B8)),
                                 const SizedBox(width: 4),
-                                Text(_formatDate(item.createdAt), style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                Text(_formatDate(item.createdAt, lang), style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                               ],
                             ),
                           ],
@@ -774,8 +925,9 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                         const SizedBox(height: 12),
 
                         // Title
-                        Text(
+                        AppTranslatedText(
                           item.title,
+                          targetLanguage: lang,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -789,8 +941,9 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
 
                         // Description
                         Expanded(
-                          child: Text(
+                          child: AppTranslatedText(
                             item.description,
+                            targetLanguage: lang,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -814,8 +967,10 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                                   const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
                                   const SizedBox(width: 4),
                                   Expanded(
-                                    child: Text(
-                                      '${item.location}${item.area.isNotEmpty ? ', ${item.area}' : ''}',
+                                    child: AppTranslatedText(
+                                      locDisplay,
+                                      targetLanguage: lang,
+                                      maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                     ),
@@ -832,7 +987,12 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                                         const Icon(Icons.group_outlined, size: 13, color: Color(0xFF0284C7)),
                                         const SizedBox(width: 4),
                                         Text(
-                                          '${item.peopleBenefited} Beneficiaries',
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: '${AppTranslations.formatDigits(item.peopleBenefited, lang)} Beneficiaries',
+                                            mr: '${AppTranslations.formatDigits(item.peopleBenefited, lang)} लाभार्थी',
+                                            hi: '${AppTranslations.formatDigits(item.peopleBenefited, lang)} लाभार्थी',
+                                          ),
                                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
                                         ),
                                       ],
@@ -844,22 +1004,25 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
                                   InkWell(
                                     onTap: () => _handleVote(item),
                                     borderRadius: BorderRadius.circular(6),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF8FAFC),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.thumb_up_alt_outlined, size: 13, color: Color(0xFF0284C7)),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            '${item.votes}',
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                          ),
-                                        ],
+                                    child: Tooltip(
+                                      message: AppTranslations.pick(lang, en: 'Upvote', mr: 'मत द्या', hi: 'वोट दें'),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF8FAFC),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.thumb_up_alt_outlined, size: 13, color: Color(0xFF0284C7)),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              AppTranslations.formatDigits(item.votes, lang),
+                                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -892,7 +1055,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     );
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(String status, String lang) {
     Color bg;
     Color text;
     Color border;
@@ -923,14 +1086,42 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
         border: Border.all(color: border),
       ),
       child: Text(
-        status,
+        _localizedStatus(status, lang),
         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: text),
       ),
     );
   }
 
-  Widget _buildReportTable(List<ImprovementModel> items) {
+  Widget _buildReportTable(List<ImprovementModel> items, String lang) {
+    if (items.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(48),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.lightbulb_outline, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No improvements found',
+                mr: 'कोणत्याही सुधारणा आढळल्या नाहीत',
+                hi: 'कोई सुधार नहीं मिला',
+              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -939,40 +1130,44 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-          columnSpacing: 24,
-          horizontalMargin: 20,
-          columns: const [
-            const DataColumn(label: Text('Sr No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Improvement Title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Location & Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Votes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-          ],
-          rows: List.generate(items.length, (index) {
-            final item = items[index];
-            return DataRow(
-              cells: [
-                DataCell(Text('${index + 1}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
-                DataCell(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
-                      Text(item.description, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                    ],
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+            columnSpacing: 24,
+            horizontalMargin: 20,
+            columns: [
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Sr No', mr: 'अ.क्र.', hi: 'क्र. सं.'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Improvement Title', mr: 'सुधारणेचे शीर्षक', hi: 'सुधार शीर्षक'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Location & Area', mr: 'ठिकाण आणि परिसर', hi: 'स्थान और क्षेत्र'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Date', mr: 'दिनांक', hi: 'दिनांक'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Votes', mr: 'मते', hi: 'वोट'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            ],
+            rows: List.generate(items.length, (index) {
+              final item = items[index];
+              final areaText = AppTranslations.getAreaName(item.area, lang);
+              return DataRow(
+                cells: [
+                  DataCell(Text(AppTranslations.formatDigits(index + 1, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                  DataCell(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AppTranslatedText(item.title, targetLanguage: lang, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                        AppTranslatedText(item.description, targetLanguage: lang, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      ],
+                    ),
                   ),
-                ),
-                DataCell(Text('${item.location} (${item.area})', style: const TextStyle(fontSize: 12, color: Color(0xFF334155)))),
-                DataCell(_buildStatusBadge(item.status)),
-                DataCell(Text(_formatDate(item.createdAt), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
-                DataCell(Text('${item.votes}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)))),
-              ],
-            );
-          }),
+                  DataCell(AppTranslatedText('${item.location} ($areaText)', targetLanguage: lang, style: const TextStyle(fontSize: 12, color: Color(0xFF334155)))),
+                  DataCell(_buildStatusBadge(item.status, lang)),
+                  DataCell(Text(_formatDate(item.createdAt, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                  DataCell(Text(AppTranslations.formatDigits(item.votes, lang), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)))),
+                ],
+              );
+            }),
+          ),
         ),
       ),
     );

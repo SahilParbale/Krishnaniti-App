@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../providers/language_provider.dart';
 
 /// Unified desktop modal dialog shell for input popups and forms
 class DesktopModalDialog extends StatelessWidget {
@@ -28,16 +31,26 @@ class DesktopModalDialog extends StatelessWidget {
     this.onClose,
   });
 
-  static Widget cancelButton(BuildContext context, {String text = 'Cancel', VoidCallback? onPressed}) {
-    return OutlinedButton(
-      onPressed: onPressed ?? () => Navigator.of(context).pop(),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.slate600,
-        side: const BorderSide(color: AppColors.slate300),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      ),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+  static Widget cancelButton(BuildContext context, {String? text, VoidCallback? onPressed}) {
+    return ValueListenableBuilder<String>(
+      valueListenable: appLanguageValueNotifier,
+      builder: (context, lang, _) {
+        final label = text ?? AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें');
+        return OutlinedButton(
+          onPressed: onPressed ?? () => Navigator.of(context).pop(),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.slate600,
+            side: const BorderSide(color: AppColors.slate300),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          ),
+          child: AppTranslatedText(
+            label,
+            targetLanguage: lang,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        );
+      },
     );
   }
 
@@ -48,33 +61,46 @@ class DesktopModalDialog extends StatelessWidget {
     IconData? icon,
     Color? backgroundColor,
   }) {
-    return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor ?? AppColors.brand600,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-      ),
-      child: isLoading
-          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, size: 16, color: Colors.white),
-                  const SizedBox(width: 6),
-                ],
-                Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-              ],
-            ),
+    return ValueListenableBuilder<String>(
+      valueListenable: appLanguageValueNotifier,
+      builder: (context, lang, _) {
+        return ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: backgroundColor ?? AppColors.brand600,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+          ),
+          child: isLoading
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 16, color: Colors.white),
+                      const SizedBox(width: 6),
+                    ],
+                    AppTranslatedText(
+                      text,
+                      targetLanguage: lang,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                    ),
+                  ],
+                ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return ValueListenableBuilder<String>(
+      valueListenable: appLanguageValueNotifier,
+      builder: (context, lang, _) {
+        final closeTooltip = AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें');
+        return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
@@ -134,8 +160,9 @@ class DesktopModalDialog extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppTranslatedText(
                             title,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -147,8 +174,9 @@ class DesktopModalDialog extends StatelessWidget {
                           ),
                           if (subtitle != null) ...[
                             const SizedBox(height: 3),
-                            Text(
+                            AppTranslatedText(
                               subtitle!,
+                              targetLanguage: lang,
                               style: const TextStyle(
                                 fontSize: 12.5,
                                 color: AppColors.slate500,
@@ -165,7 +193,7 @@ class DesktopModalDialog extends StatelessWidget {
                       icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.slate400),
                       hoverColor: AppColors.slate100,
                       splashRadius: 18,
-                      tooltip: 'Close',
+                      tooltip: closeTooltip,
                       onPressed: onClose ?? () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -199,6 +227,8 @@ class DesktopModalDialog extends StatelessWidget {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

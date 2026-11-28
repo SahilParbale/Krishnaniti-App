@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/social_post_model.dart';
+import '../../providers/language_provider.dart';
 
-class SocialPostDetailScreen extends StatefulWidget {
+class SocialPostDetailScreen extends ConsumerStatefulWidget {
   final SocialPostModel post;
   final VoidCallback? onPostUpdated;
 
@@ -14,12 +18,14 @@ class SocialPostDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<SocialPostDetailScreen> createState() => _SocialPostDetailScreenState();
+  ConsumerState<SocialPostDetailScreen> createState() =>
+      _SocialPostDetailScreenState();
 }
 
-class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
+class _SocialPostDetailScreenState
+    extends ConsumerState<SocialPostDetailScreen> {
   late SocialPostModel _currentPost;
-  bool _showMarathi = true;
+  bool _showOriginalEnglish = false;
 
   @override
   void initState() {
@@ -28,10 +34,20 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
   }
 
   Future<void> _openPostUrl() async {
+    final lang = ref.read(appLanguageProvider);
     final urlStr = _currentPost.postUrl;
     if (urlStr == null || urlStr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No external post URL attached to this entry.')),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'No external post URL attached to this entry.',
+              mr: 'या नोंदीसोबत बाह्य पोस्ट URL जोडलेले नाही.',
+              hi: 'इस प्रविष्टि के साथ कोई बाहरी पोस्ट URL संलग्न नहीं है।',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -42,31 +58,53 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Opening ${widget.post.platform} post: $urlStr')),
+            SnackBar(
+              content: Text(
+                '${AppTranslations.pick(lang, en: 'Opening post', mr: 'पोस्ट उघडत आहे', hi: 'पोस्ट खुल रहा है')} (${widget.post.platform}): $urlStr',
+              ),
+            ),
           );
         }
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Opening ${widget.post.platform} post: $urlStr')),
+          SnackBar(
+            content: Text(
+              '${AppTranslations.pick(lang, en: 'Opening post', mr: 'पोस्ट उघडत आहे', hi: 'पोस्ट खुल रहा है')} (${widget.post.platform}): $urlStr',
+            ),
+          ),
         );
       }
     }
   }
 
-  void _copyPostContent() {
-    final text = _showMarathi ? _currentPost.contentMarathi : _currentPost.content;
-    Clipboard.setData(ClipboardData(text: text));
+  Future<void> _copyPostContent() async {
+    final lang = ref.read(appLanguageProvider);
+    final rawText =
+        _showOriginalEnglish ? _currentPost.content : _currentPost.contentFor(lang);
+    final text = _showOriginalEnglish
+        ? rawText
+        : await DynamicTranslationService.translateOrRaw(rawText, lang);
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Post content copied to clipboard!'),
-        backgroundColor: Color(0xFF0284C7),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Post content copied to clipboard!',
+            mr: 'पोस्ट मजकूर क्लिपबोर्डवर कॉपी केला!',
+            hi: 'पोस्ट सामग्री क्लिपबोर्ड पर कॉपी की गई!',
+          ),
+        ),
+        backgroundColor: const Color(0xFF0284C7),
       ),
     );
   }
 
   void _showEditMetricsDialog() {
+    final lang = ref.read(appLanguageProvider);
     final likesCtrl = TextEditingController(text: _currentPost.likes.toString());
     final commentsCtrl = TextEditingController(text: _currentPost.comments.toString());
     final sharesCtrl = TextEditingController(text: _currentPost.shares.toString());
@@ -79,9 +117,19 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: [
-              Icon(Icons.edit_note_rounded, color: const Color(0xFF0284C7)),
+              const Icon(Icons.edit_note_rounded, color: Color(0xFF0284C7)),
               const SizedBox(width: 8),
-              const Text('Update Metrics', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Flexible(
+                child: Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Update Metrics',
+                    mr: 'आकडेवारी अद्यतनित करा',
+                    hi: 'आंकड़े अपडेट करें',
+                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
           content: SingleChildScrollView(
@@ -91,40 +139,40 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                 TextField(
                   controller: reachCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Total Reach',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: InputDecoration(
+                    labelText: AppTranslations.pick(lang, en: 'Total Reach', mr: 'एकूण पोहोच', hi: 'कुल पहुंच'),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: likesCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Likes',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: InputDecoration(
+                    labelText: AppTranslations.pick(lang, en: 'Likes', mr: 'पसंती', hi: 'पसंद'),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: commentsCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Comments',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: InputDecoration(
+                    labelText: AppTranslations.pick(lang, en: 'Comments', mr: 'टिप्पण्या', hi: 'टिप्पणियाँ'),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: sharesCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Shares',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: InputDecoration(
+                    labelText: AppTranslations.pick(lang, en: 'Shares', mr: 'शेअर्स', hi: 'शेयर'),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
               ],
@@ -133,7 +181,10 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: Text(
+                AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                style: const TextStyle(color: Colors.grey),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -142,10 +193,10 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () {
-                final newLikes = int.tryParse(likesCtrl.text) ?? _currentPost.likes;
-                final newComments = int.tryParse(commentsCtrl.text) ?? _currentPost.comments;
-                final newShares = int.tryParse(sharesCtrl.text) ?? _currentPost.shares;
-                final newReach = int.tryParse(reachCtrl.text) ?? _currentPost.reach;
+                final newLikes = int.tryParse(AppTranslations.normalizeAsciiDigits(likesCtrl.text)) ?? _currentPost.likes;
+                final newComments = int.tryParse(AppTranslations.normalizeAsciiDigits(commentsCtrl.text)) ?? _currentPost.comments;
+                final newShares = int.tryParse(AppTranslations.normalizeAsciiDigits(sharesCtrl.text)) ?? _currentPost.shares;
+                final newReach = int.tryParse(AppTranslations.normalizeAsciiDigits(reachCtrl.text)) ?? _currentPost.reach;
 
                 final updated = _currentPost.copyWith(
                   likes: newLikes,
@@ -158,10 +209,19 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                 widget.onPostUpdated?.call();
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Post metrics updated successfully!')),
+                  SnackBar(
+                    content: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Post metrics updated successfully!',
+                        mr: 'पोस्ट आकडेवारी यशस्वीरित्या अद्यतनित केली!',
+                        hi: 'पोस्ट आंकड़े सफलतापूर्वक अपडेट किए गए!',
+                      ),
+                    ),
+                  ),
                 );
               },
-              child: const Text('Save'),
+              child: Text(AppTranslations.pick(lang, en: 'Save', mr: 'जतन करा', hi: 'सहेजें')),
             ),
           ],
         );
@@ -171,6 +231,10 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
+    final postText = _showOriginalEnglish ? _currentPost.content : _currentPost.contentFor(lang);
+    final dateDisplay = AppTranslations.formatDigits(_currentPost.date, lang);
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Color(0xFF0284C7),
@@ -184,24 +248,30 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'वापस'),
             onPressed: () => Navigator.pop(context),
           ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Post Details & Analytics',
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Post Details & Analytics',
+                  mr: 'पोस्ट तपशील व विश्लेषण',
+                  hi: 'पोस्ट विवरण व विश्लेषण',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
               ),
               Text(
-                '${_currentPost.platform} • ${_currentPost.date}',
+                '${_currentPost.platform} • $dateDisplay',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -214,12 +284,12 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 20),
-              tooltip: 'Copy Content',
+              tooltip: AppTranslations.pick(lang, en: 'Copy Content', mr: 'मजकूर कॉपी करा', hi: 'सामग्री कॉपी करें'),
               onPressed: _copyPostContent,
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
-              tooltip: 'Edit Metrics',
+              tooltip: AppTranslations.pick(lang, en: 'Edit Metrics', mr: 'आकडेवारी संपादित करा', hi: 'आंकड़े संपादित करें'),
               onPressed: _showEditMetricsDialog,
             ),
           ],
@@ -265,7 +335,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                                     Icon(_currentPost.platformIcon, size: 48, color: Colors.grey.shade400),
                                     const SizedBox(height: 8),
                                     Text(
-                                      '${_currentPost.platform} Media Preview',
+                                      '${_currentPost.platform} ${AppTranslations.pick(lang, en: 'Media Preview', mr: 'मीडिया पूर्वावलोकन', hi: 'मीडिया पूर्वावलोकन')}',
                                       style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                                     ),
                                   ],
@@ -315,7 +385,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                _currentPost.date,
+                                dateDisplay,
                                 style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
                               ),
                             ),
@@ -341,17 +411,24 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    AppTranslatedText(
                                       _currentPost.author,
+                                      targetLanguage: lang,
+                                      isName: true,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13.5,
                                         color: Color(0xFF0F172A),
                                       ),
                                     ),
-                                    const Text(
-                                      'Official Public Update • Prabhag 12',
-                                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Official Public Update • Prabhag 12',
+                                        mr: 'अधिकृत सार्वजनिक अद्यतन • प्रभाग १२',
+                                        hi: 'आधिकारिक सार्वजनिक अपडेट • वार्ड १२',
+                                      ),
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                     ),
                                   ],
                                 ),
@@ -366,17 +443,22 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     GestureDetector(
-                                      onTap: () => setState(() => _showMarathi = true),
+                                      onTap: () => setState(() => _showOriginalEnglish = false),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: _showMarathi ? const Color(0xFF0284C7) : Colors.transparent,
+                                          color: !_showOriginalEnglish ? const Color(0xFF0284C7) : Colors.transparent,
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: Text(
-                                          'English',
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Translated',
+                                            mr: 'मराठी',
+                                            hi: 'हिंदी',
+                                          ),
                                           style: TextStyle(
-                                            color: _showMarathi ? Colors.white : const Color(0xFF64748B),
+                                            color: !_showOriginalEnglish ? Colors.white : const Color(0xFF64748B),
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -384,17 +466,22 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                                       ),
                                     ),
                                     GestureDetector(
-                                      onTap: () => setState(() => _showMarathi = false),
+                                      onTap: () => setState(() => _showOriginalEnglish = true),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: !_showMarathi ? const Color(0xFF0284C7) : Colors.transparent,
+                                          color: _showOriginalEnglish ? const Color(0xFF0284C7) : Colors.transparent,
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: Text(
-                                          'English',
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Original',
+                                            mr: 'इंग्रजी / मूळ',
+                                            hi: 'अंग्रेज़ी / मूल',
+                                          ),
                                           style: TextStyle(
-                                            color: !_showMarathi ? Colors.white : const Color(0xFF64748B),
+                                            color: _showOriginalEnglish ? Colors.white : const Color(0xFF64748B),
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -409,14 +496,24 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                           const SizedBox(height: 14),
 
                           // Text Content
-                          Text(
-                            _showMarathi ? _currentPost.contentMarathi : _currentPost.content,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.5,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
+                          _showOriginalEnglish
+                              ? Text(
+                                  postText,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    height: 1.5,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                )
+                              : AppTranslatedText(
+                                  postText,
+                                  targetLanguage: lang,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    height: 1.5,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
                           const SizedBox(height: 12),
 
                           // Tags
@@ -432,8 +529,9 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(color: const Color(0xFFBBF7D0), width: 0.5),
                                   ),
-                                  child: Text(
+                                  child: AppTranslatedText(
                                     tag,
+                                    targetLanguage: lang,
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
@@ -453,9 +551,14 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
               const SizedBox(height: 16),
 
               // KPI Stats Grid
-              const Text(
-                'Performance Metrics',
-                style: TextStyle(
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Performance Metrics',
+                  mr: 'कामगिरी आकडेवारी',
+                  hi: 'प्रदर्शन आंकड़े',
+                ),
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
@@ -467,9 +570,8 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                 children: [
                   Expanded(
                     child: _buildMetricTile(
-                      label: 'Total Reach',
-                      marathi: 'Total Reach',
-                      value: _currentPost.reach.toLocaleString(),
+                      label: AppTranslations.pick(lang, en: 'Total Reach', mr: 'एकूण पोहोच', hi: 'कुल पहुंच'),
+                      value: AppTranslations.formatDigits(_currentPost.reach.toLocaleString(), lang),
                       icon: Icons.remove_red_eye_outlined,
                       color: const Color(0xFF0284C7),
                       bgColor: const Color(0xFFF0F9FF),
@@ -478,9 +580,8 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildMetricTile(
-                      label: 'Likes',
-                      marathi: 'Likes',
-                      value: _currentPost.likes.toLocaleString(),
+                      label: AppTranslations.pick(lang, en: 'Likes', mr: 'पसंती', hi: 'पसंद'),
+                      value: AppTranslations.formatDigits(_currentPost.likes.toLocaleString(), lang),
                       icon: Icons.thumb_up_alt_outlined,
                       color: const Color(0xFFE11D48),
                       bgColor: const Color(0xFFFFF1F2),
@@ -493,9 +594,8 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                 children: [
                   Expanded(
                     child: _buildMetricTile(
-                      label: 'Comments',
-                      marathi: 'Comments',
-                      value: _currentPost.comments.toString(),
+                      label: AppTranslations.pick(lang, en: 'Comments', mr: 'टिप्पण्या', hi: 'टिप्पणियाँ'),
+                      value: AppTranslations.formatDigits(_currentPost.comments.toString(), lang),
                       icon: Icons.chat_bubble_outline_rounded,
                       color: const Color(0xFF9333EA),
                       bgColor: const Color(0xFFFAF5FF),
@@ -504,9 +604,8 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildMetricTile(
-                      label: 'Shares',
-                      marathi: 'Shares',
-                      value: _currentPost.shares.toString(),
+                      label: AppTranslations.pick(lang, en: 'Shares', mr: 'शेअर्स', hi: 'शेयर'),
+                      value: AppTranslations.formatDigits(_currentPost.shares.toString(), lang),
                       icon: Icons.share_outlined,
                       color: const Color(0xFF16A34A),
                       bgColor: const Color(0xFFF0FDF4),
@@ -541,9 +640,14 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Engagement Rate',
-                          style: TextStyle(
+                        Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Engagement Rate',
+                            mr: 'सहभाग प्रमाण',
+                            hi: 'सहभागिता दर',
+                          ),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -556,7 +660,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${_currentPost.engagementRate.toStringAsFixed(1)}%',
+                            '${AppTranslations.formatDigits(_currentPost.engagementRate.toStringAsFixed(1), lang)}%',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
@@ -578,7 +682,12 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Formula: ((Likes + Comments + Shares) / Reach) * 100 • Benchmark: > 5% is excellent',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Formula: ((Likes + Comments + Shares) / Reach) * 100 • Benchmark: > 5% is excellent',
+                        mr: 'सूत्र: ((पसंती + टिप्पण्या + शेअर्स) / पोहोच) * १०० • निकष: > ५% उत्तम आहे',
+                        hi: 'सूत्र: ((पसंद + टिप्पणियाँ + शेयर) / पहुंच) * १०० • मानक: > ५% उत्कृष्ट है',
+                      ),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 10.5,
@@ -603,7 +712,15 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                         elevation: 0,
                       ),
                       icon: Icon(_currentPost.platformIcon, size: 18),
-                      label: Text('Open on ${_currentPost.platform}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Open on ${_currentPost.platform}',
+                          mr: '${_currentPost.platform} वर उघडा',
+                          hi: '${_currentPost.platform} पर खोलें',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       onPressed: _openPostUrl,
                     ),
                   ),
@@ -616,7 +733,9 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.share_outlined, size: 18),
-                    label: const Text('Share Link'),
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'Share Link', mr: 'शेअर करा', hi: 'लिंक साझा करें'),
+                    ),
                     onPressed: _copyPostContent,
                   ),
                 ],
@@ -631,7 +750,6 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
 
   Widget _buildMetricTile({
     required String label,
-    required String marathi,
     required String value,
     required IconData icon,
     required Color color,
@@ -653,21 +771,13 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                   color: color,
                 ),
               ),
               Icon(icon, size: 16, color: color),
             ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            marathi,
-            style: TextStyle(
-              fontSize: 9.5,
-              color: color.withValues(alpha: 0.8),
-            ),
           ),
           const SizedBox(height: 6),
           Text(

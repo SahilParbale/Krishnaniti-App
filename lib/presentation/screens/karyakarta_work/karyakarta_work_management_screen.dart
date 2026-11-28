@@ -1,15 +1,14 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
 import '../../../data/models/karyakarta_work_model.dart';
 import '../../../data/repositories/karyakarta_work_repository.dart';
 import 'karyakarta_work_report_generator.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -111,11 +110,20 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   Future<void> _handleUpdateTaskStatus(String taskId, String currentStatus) async {
     final newStatus = currentStatus.toLowerCase() == 'pending' ? 'In Progress' : 'Completed';
     final repo = ref.read(karyakartaWorkRepoProvider);
+    final lang = ref.read(appLanguageProvider);
     await repo.updateTaskStatus(taskId, newStatus);
     if (mounted) {
+      final statusLabel = AppTranslations.getStatus(newStatus, lang);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Task status updated: $newStatus'),
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Task status updated: $statusLabel',
+              mr: 'कामाची स्थिती अद्यतनित केली: $statusLabel',
+              hi: 'कार्य स्थिति अपडेट की गई: $statusLabel',
+            ),
+          ),
           backgroundColor: const Color(0xFF047857),
           duration: const Duration(seconds: 2),
         ),
@@ -126,12 +134,20 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
 
   Future<void> _handleReassignTask(String taskId, String newStaffId) async {
     final repo = ref.read(karyakartaWorkRepoProvider);
+    final lang = ref.read(appLanguageProvider);
     await repo.reassignTask(taskId, newStaffId);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Task reassigned successfully!'),
-          backgroundColor: Color(0xFF0284C7),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Task reassigned successfully!',
+              mr: 'काम यशस्वीरित्या पुन्हा नेमले!',
+              hi: 'कार्य सफलतापूर्वक पुनः सौंपा गया!',
+            ),
+          ),
+          backgroundColor: const Color(0xFF0284C7),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -144,11 +160,20 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         ? 'InProgress'
         : 'Resolved';
     final repo = ref.read(karyakartaWorkRepoProvider);
+    final lang = ref.read(appLanguageProvider);
     await repo.updateComplaintStatus(complaintId, newStatus);
     if (mounted) {
+      final statusLabel = AppTranslations.getStatus(newStatus, lang);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Complaint status updated: $newStatus'),
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Complaint status updated: $statusLabel',
+              mr: 'तक्रारीची स्थिती अद्यतनित केली: $statusLabel',
+              hi: 'शिकायत स्थिति अपडेट की गई: $statusLabel',
+            ),
+          ),
           backgroundColor: const Color(0xFF047857),
           duration: const Duration(seconds: 2),
         ),
@@ -159,12 +184,20 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
 
   Future<void> _handleReassignComplaint(String complaintId, String newStaffId) async {
     final repo = ref.read(karyakartaWorkRepoProvider);
+    final lang = ref.read(appLanguageProvider);
     await repo.reassignComplaint(complaintId, newStaffId);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Complaint reassigned successfully!'),
-          backgroundColor: Color(0xFF0284C7),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Complaint reassigned successfully!',
+              mr: 'तक्रार यशस्वीरित्या पुन्हा नेमली!',
+              hi: 'शिकायत सफलतापूर्वक पुनः सौंपी गई!',
+            ),
+          ),
+          backgroundColor: const Color(0xFF0284C7),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -187,6 +220,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   }
 
   Future<void> _generatePdfReport() async {
+    final lang = ref.read(appLanguageProvider);
     final repo = ref.read(karyakartaWorkRepoProvider);
     final allTasks = await repo.getTasks();
     final allComplaints = await repo.getComplaints();
@@ -197,91 +231,134 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     if (_activeTab == 'Party') tabLabel = 'Party Cadre';
 
     await KaryakartaWorkReportGenerator.generateAndPrintReport(
+      context: mounted ? context : null,
       staffList: tabStaff,
       tasks: allTasks,
       complaints: allComplaints,
       activeTabLabel: tabLabel,
       categoryFilter: _activeTab,
+      lang: lang,
     );
   }
 
   void _showReportPreviewDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.description_outlined, color: Color(0xFF0284C7)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Workload Report — ${_getTabTitle(_activeTab)}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      builder: (ctx) => Consumer(
+        builder: (ctx, dialogRef, _) {
+          final lang = dialogRef.watch(appLanguageProvider);
+          final tabTitle = _getTabTitle(_activeTab, lang);
+          final generatedAt = AppTranslations.formatDateTime(DateTime.now(), lang);
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.description_outlined, color: Color(0xFF0284C7)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Workload Report — $tabTitle',
+                      mr: 'कार्यभार अहवाल — $tabTitle',
+                      hi: 'कार्यभार रिपोर्ट — $tabTitle',
+                    ),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Generated: $generatedAt',
+                      mr: 'तयार केले: $generatedAt',
+                      hi: 'निर्मित: $generatedAt',
+                    ),
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildPreviewRow(
+                          AppTranslations.pick(lang, en: 'Total Members:', mr: 'एकूण सदस्य:', hi: 'कुल सदस्य:'),
+                          AppTranslations.formatDigits(_workloads.length, lang),
+                        ),
+                        _buildPreviewRow(
+                          AppTranslations.pick(lang, en: 'Total Workload:', mr: 'एकूण कार्यभार:', hi: 'कुल कार्यभार:'),
+                          AppTranslations.pick(
+                            lang,
+                            en: '${_summary.totalLoad} (${_summary.totalTasks} Tasks + ${_summary.totalComplaints} Complaints)',
+                            mr: '${AppTranslations.formatDigits(_summary.totalLoad, lang)} (${AppTranslations.formatDigits(_summary.totalTasks, lang)} कामे + ${AppTranslations.formatDigits(_summary.totalComplaints, lang)} तक्रारी)',
+                            hi: '${AppTranslations.formatDigits(_summary.totalLoad, lang)} (${AppTranslations.formatDigits(_summary.totalTasks, lang)} कार्य + ${AppTranslations.formatDigits(_summary.totalComplaints, lang)} शिकायतें)',
+                          ),
+                        ),
+                        _buildPreviewRow(
+                          AppTranslations.pick(lang, en: 'Pending Load:', mr: 'प्रलंबित कार्यभार:', hi: 'लंबित कार्यभार:'),
+                          AppTranslations.formatDigits(_summary.pendingLoad, lang),
+                        ),
+                        _buildPreviewRow(
+                          AppTranslations.pick(lang, en: 'In Progress:', mr: 'सुरू असलेले:', hi: 'प्रगति में:'),
+                          AppTranslations.formatDigits(_summary.inProgressLoad, lang),
+                        ),
+                        _buildPreviewRow(
+                          AppTranslations.pick(lang, en: 'Completed:', mr: 'पूर्ण झालेले:', hi: 'पूर्ण:'),
+                          AppTranslations.formatDigits(_summary.completedLoad, lang),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'This report will be generated on official Ward 12 letterhead in A4 landscape format.',
+                      mr: 'हा अहवाल प्रभाग १२ च्या अधिकृत लेटरहेडवर A4 लँडस्केप स्वरूपात तयार केला जाईल.',
+                      hi: 'यह रिपोर्ट वार्ड १२ के आधिकारिक लेटरहेड पर A4 लैंडस्केप प्रारूप में तैयार की जाएगी।',
+                    ),
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Generated: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now())}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Column(
-                  children: [
-                    _buildPreviewRow('Total Members:', '${_workloads.length}'),
-                    _buildPreviewRow('Total Workload:', '${_summary.totalLoad} (${_summary.totalTasks} Tasks + ${_summary.totalComplaints} Complaints)'),
-                    _buildPreviewRow('Pending Load:', '${_summary.pendingLoad}'),
-                    _buildPreviewRow('In Progress:', '${_summary.inProgressLoad}'),
-                    _buildPreviewRow('Completed:', '${_summary.completedLoad}'),
-                  ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
+                  style: const TextStyle(color: Color(0xFF64748B)),
                 ),
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'This report will be generated on official Ward 12 letterhead in A4 landscape format.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _generatePdfReport();
+                },
+                icon: const Icon(Icons.print_outlined, size: 18),
+                label: Text(AppTranslations.getDownloadReport(lang)),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              ref.watch(appLanguageProvider) == 'mr'
-                  ? 'बंद करा'
-                  : (ref.watch(appLanguageProvider) == 'hi' ? 'बंद करें' : 'Close'),
-              style: const TextStyle(color: Color(0xFF64748B)),
-            ),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _generatePdfReport();
-            },
-            icon: const Icon(Icons.print_outlined, size: 18),
-            label: Text(AppTranslations.getDownloadReport(ref.watch(appLanguageProvider))),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -293,22 +370,28 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              textAlign: TextAlign.end,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  String _getTabTitle(String tab) {
+  String _getTabTitle(String tab, String lang) {
     switch (tab) {
       case 'Office':
-        return 'Office Team';
+        return AppTranslations.pick(lang, en: 'Office Team', mr: 'कार्यालय टीम', hi: 'कार्यालय टीम');
       case 'Cooperative':
-        return 'Government Work';
+        return AppTranslations.pick(lang, en: 'Government Work', mr: 'शासकीय कामे', hi: 'सरकारी कार्य');
       case 'Party':
-        return 'Party Cadre';
+        return AppTranslations.pick(lang, en: 'Party Cadre', mr: 'पक्ष संघटना', hi: 'पार्टी कार्यकर्ता');
       default:
-        return tab;
+        return AppTranslations.translateDirect(tab, lang: lang);
     }
   }
 
@@ -340,7 +423,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
 
   @override
   Widget build(BuildContext context) {
-    final isMarathi = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final tabColor = _getTabColor(_activeTab);
 
     return Scaffold(
@@ -353,7 +436,12 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -364,12 +452,17 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'Karyakarta Work Management',
+              AppTranslations.pick(
+                lang,
+                en: 'Karyakarta Work Management',
+                mr: 'कार्यकर्ता काम व्यवस्थापन',
+                hi: 'कार्यकर्ता कार्य प्रबंधन',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -377,10 +470,15 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               ),
             ),
             Text(
-              'Field tasks & team workload',
+              AppTranslations.pick(
+                lang,
+                en: 'Field tasks & team workload',
+                mr: 'क्षेत्रीय कामे आणि टीम कार्यभार',
+                hi: 'फील्ड कार्य और टीम कार्यभार',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -388,7 +486,12 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ),
           ],
         ),
-        actions: const [],
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: AppLanguageSegmentedSelector(isCompact: true),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -399,20 +502,20 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Team Tab Navigation
-              _buildCategoryTabBar(),
+              _buildCategoryTabBar(lang),
               const SizedBox(height: 12),
 
               // 2. Search & Area Filter Bar
-              _buildFilterBar(),
+              _buildFilterBar(lang),
               const SizedBox(height: 14),
 
               // 3. 4 KPI Dashboard Counters
-              _buildKpiDashboard(),
+              _buildKpiDashboard(lang),
               const SizedBox(height: 16),
 
               // 4. Drilldown Details Panel (if a member is selected)
               if (_selectedMemberWorkload != null) ...[
-                _buildMemberDrilldownPanel(_selectedMemberWorkload!),
+                _buildMemberDrilldownPanel(_selectedMemberWorkload!, lang),
                 const SizedBox(height: 16),
               ],
 
@@ -420,25 +523,41 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.bar_chart_rounded, size: 20, color: tabColor),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'Team Workload Monitor',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                    ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Icons.bar_chart_rounded, size: 20, color: tabColor),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Team Workload Monitor',
+                              mr: 'टीम कार्यभार निरीक्षण',
+                              hi: 'टीम कार्यभार निगरानी',
+                            ),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   AppPdfButton.outlined(
-                    label: 'Download Report',
+                    label: AppTranslations.getDownloadReport(lang),
                     onPressed: _generatePdfReport,
                   ),
                 ],
               ),
-              const Text(
-                'Tasks & complaints assigned to each member — click card to expand',
-                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Tasks & complaints assigned to each member — click card to expand',
+                  mr: 'प्रत्येक सदस्याला नेमलेली कामे व तक्रारी — तपशीलासाठी कार्डवर क्लिक करा',
+                  hi: 'प्रत्येक सदस्य को सौंपे गए कार्य और शिकायतें — विवरण देखने के लिए कार्ड पर क्लिक करें',
+                ),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 10),
 
@@ -446,7 +565,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               if (_isLoading)
                 const AppShimmerList(count: 4)
               else if (_workloads.isEmpty)
-                _buildEmptyState()
+                _buildEmptyState(lang)
               else ...[
                 ListView.separated(
                   shrinkWrap: true,
@@ -456,7 +575,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   itemBuilder: (ctx, index) {
                     final workload = _visibleWorkloads[index];
                     final isSelected = _selectedMemberWorkload?.staff.id == workload.staff.id;
-                    return _buildStaffWorkloadCard(workload, isSelected);
+                    return _buildStaffWorkloadCard(workload, isSelected, lang);
                   },
                 ),
                 AppLoadMoreFooter(
@@ -464,8 +583,13 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   totalCount: _workloads.length,
                   pageSize: 20,
                   onLoadMore: () => setState(() => _displayedLimit += 20),
-                  label: isMarathi ? 'कार्यकर्ते' : 'members',
-                  isMarathi: isMarathi,
+                  label: AppTranslations.pick(
+                    lang,
+                    en: 'members',
+                    mr: 'कार्यकर्ते',
+                    hi: 'कार्यकर्ता',
+                  ),
+                  isMarathi: lang == 'mr',
                 ),
               ],
 
@@ -473,7 +597,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
 
               // 7. Unassigned Work Pool Section
               if (_unassignedTasks.isNotEmpty || _unassignedComplaints.isNotEmpty) ...[
-                _buildUnassignedWorkPool(),
+                _buildUnassignedWorkPool(lang),
                 const SizedBox(height: 20),
               ],
             ],
@@ -486,11 +610,26 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   // ─────────────────────────────────────────────────────────────
   // UI Builder: Category Tabs
   // ─────────────────────────────────────────────────────────────
-  Widget _buildCategoryTabBar() {
+  Widget _buildCategoryTabBar(String lang) {
     final tabs = [
-      {'id': 'Office', 'title': 'Office Team', 'icon': Icons.apartment_outlined, 'color': const Color(0xFF6D28D9)},
-      {'id': 'Cooperative', 'title': 'Govt Work', 'icon': Icons.work_outline_rounded, 'color': const Color(0xFF0284C7)},
-      {'id': 'Party', 'title': 'Party Cadre', 'icon': Icons.flag_outlined, 'color': const Color(0xFFF97316)},
+      {
+        'id': 'Office',
+        'title': AppTranslations.pick(lang, en: 'Office Team', mr: 'कार्यालय टीम', hi: 'कार्यालय टीम'),
+        'icon': Icons.apartment_outlined,
+        'color': const Color(0xFF6D28D9),
+      },
+      {
+        'id': 'Cooperative',
+        'title': AppTranslations.pick(lang, en: 'Govt Work', mr: 'शासकीय कामे', hi: 'सरकारी कार्य'),
+        'icon': Icons.work_outline_rounded,
+        'color': const Color(0xFF0284C7),
+      },
+      {
+        'id': 'Party',
+        'title': AppTranslations.pick(lang, en: 'Party Cadre', mr: 'पक्ष संघटना', hi: 'पार्टी कार्यकर्ता'),
+        'icon': Icons.flag_outlined,
+        'color': const Color(0xFFF97316),
+      },
     ];
 
     return Container(
@@ -543,7 +682,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        '$staffCount',
+                        AppTranslations.formatDigits(staffCount, lang),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -564,7 +703,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   // ─────────────────────────────────────────────────────────────
   // UI Builder: Filter Bar
   // ─────────────────────────────────────────────────────────────
-  Widget _buildFilterBar() {
+  Widget _buildFilterBar(String lang) {
     return Row(
       children: [
         // Name / Mobile Search
@@ -580,13 +719,18 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             child: TextField(
               controller: _searchController,
               onChanged: (val) {
-                _searchQuery = val;
+                _searchQuery = AppTranslations.normalizeAsciiDigits(val);
                 setState(() => _displayedLimit = 20);
                 _loadData();
               },
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'Search name or mobile...',
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search name or mobile...',
+                  mr: 'नाव किंवा मोबाइल शोधा...',
+                  hi: 'नाम या मोबाइल खोजें...',
+                ),
                 hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                 prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -612,13 +756,20 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         Expanded(
           flex: 2,
           child: AppDropdown<String>(
-            title: 'Filter by Area',
+            title: AppTranslations.pick(
+              lang,
+              en: 'Filter by Area',
+              mr: 'परिसरानुसार निवडा',
+              hi: 'क्षेत्र के अनुसार फ़िल्टर करें',
+            ),
             value: _selectedArea,
             height: 42,
             isExpanded: true,
             items: [
-              const DropdownMenuItem(value: 'All', child: Text('All Areas')),
-              ..._areas.map((a) => DropdownMenuItem(value: a, child: Text(a))),
+              DropdownMenuItem(value: 'All', child: Text(AppTranslations.getAllAreas(lang))),
+              ..._areas.map(
+                (a) => DropdownMenuItem(value: a, child: Text(AppTranslations.getAreaName(a, lang))),
+              ),
             ],
             onChanged: (val) {
               if (val != null) {
@@ -633,7 +784,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
         ),
         const SizedBox(width: 8),
         AppPdfButton.outlined(
-          label: 'Reports',
+          label: AppTranslations.pick(lang, en: 'Reports', mr: 'अहवाल', hi: 'रिपोर्ट'),
           onPressed: _showReportPreviewDialog,
         ),
       ],
@@ -643,37 +794,42 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   // ─────────────────────────────────────────────────────────────
   // UI Builder: 4 KPI Cards
   // ─────────────────────────────────────────────────────────────
-  Widget _buildKpiDashboard() {
+  Widget _buildKpiDashboard(String lang) {
     return Row(
       children: [
         _buildMetricTile(
-          title: 'Total Workload',
-          value: '${_summary.totalLoad}',
-          subtitle: '${_summary.totalTasks} Tasks · ${_summary.totalComplaints} Complaints',
+          title: AppTranslations.pick(lang, en: 'Total Workload', mr: 'एकूण कार्यभार', hi: 'कुल कार्यभार'),
+          value: AppTranslations.formatDigits(_summary.totalLoad, lang),
+          subtitle: AppTranslations.pick(
+            lang,
+            en: '${_summary.totalTasks} Tasks · ${_summary.totalComplaints} Complaints',
+            mr: '${AppTranslations.formatDigits(_summary.totalTasks, lang)} कामे · ${AppTranslations.formatDigits(_summary.totalComplaints, lang)} तक्रारी',
+            hi: '${AppTranslations.formatDigits(_summary.totalTasks, lang)} कार्य · ${AppTranslations.formatDigits(_summary.totalComplaints, lang)} शिकायतें',
+          ),
           bg: const Color(0xFFF1F5F9),
           textColor: const Color(0xFF1E293B),
         ),
         const SizedBox(width: 8),
         _buildMetricTile(
-          title: 'Pending',
-          value: '${_summary.pendingLoad}',
-          subtitle: 'Needs Attention',
+          title: AppTranslations.pick(lang, en: 'Pending', mr: 'प्रलंबित', hi: 'लंबित'),
+          value: AppTranslations.formatDigits(_summary.pendingLoad, lang),
+          subtitle: AppTranslations.pick(lang, en: 'Needs Attention', mr: 'लक्ष आवश्यक', hi: 'ध्यान आवश्यक'),
           bg: const Color(0xFFFFFBEB),
           textColor: const Color(0xFFB45309),
         ),
         const SizedBox(width: 8),
         _buildMetricTile(
-          title: 'In Progress',
-          value: '${_summary.inProgressLoad}',
-          subtitle: 'Active Work',
+          title: AppTranslations.pick(lang, en: 'In Progress', mr: 'प्रगतीपथावर', hi: 'प्रगति में'),
+          value: AppTranslations.formatDigits(_summary.inProgressLoad, lang),
+          subtitle: AppTranslations.pick(lang, en: 'Active Work', mr: 'सक्रिय काम', hi: 'सक्रिय कार्य'),
           bg: const Color(0xFFEFF6FF),
           textColor: const Color(0xFF1D4ED8),
         ),
         const SizedBox(width: 8),
         _buildMetricTile(
-          title: 'Completed',
-          value: '${_summary.completedLoad}',
-          subtitle: 'Resolved & Closed',
+          title: AppTranslations.pick(lang, en: 'Completed', mr: 'पूर्ण', hi: 'पूर्ण'),
+          value: AppTranslations.formatDigits(_summary.completedLoad, lang),
+          subtitle: AppTranslations.pick(lang, en: 'Resolved & Closed', mr: 'निराकरण व बंद', hi: 'समाधान व बंद'),
           bg: const Color(0xFFECFDF5),
           textColor: const Color(0xFF047857),
         ),
@@ -731,9 +887,12 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   // ─────────────────────────────────────────────────────────────
   // UI Builder: Staff Workload Card
   // ─────────────────────────────────────────────────────────────
-  Widget _buildStaffWorkloadCard(KaryakartaStaffWorkload workload, bool isSelected) {
+  Widget _buildStaffWorkloadCard(KaryakartaStaffWorkload workload, bool isSelected, String lang) {
     final staff = workload.staff;
     final tabColor = _getTabColor(_activeTab);
+    final rawStaffName = (lang == 'en' && staff.name.trim().isNotEmpty)
+        ? staff.name
+        : staff.displayName;
 
     return InkWell(
       onTap: () {
@@ -792,13 +951,16 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        staff.displayName,
+                      AppTranslatedText(
+                        rawStaffName,
+                        isName: true,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        staff.role,
+                      AppTranslatedText(
+                        AppTranslations.getRoleName(staff.role, lang),
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
                       ),
                       if (staff.area != null && staff.area!.isNotEmpty) ...[
@@ -807,9 +969,13 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                           children: [
                             const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
                             const SizedBox(width: 2),
-                            Text(
-                              staff.area!,
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            Flexible(
+                              child: AppTranslatedText(
+                                AppTranslations.getAreaName(staff.area!, lang),
+                                targetLanguage: lang,
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -820,7 +986,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
 
                 // Mobile & Direct Call Action
                 InkWell(
-                  onTap: () => launchUrl(Uri.parse('tel:${staff.mobile}')),
+                  onTap: () => launchUrl(Uri.parse('tel:${AppTranslations.normalizeAsciiDigits(staff.mobile)}')),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -835,7 +1001,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                         const Icon(Icons.phone, size: 12, color: Color(0xFF0284C7)),
                         const SizedBox(width: 4),
                         Text(
-                          staff.mobile,
+                          AppTranslations.formatDigits(staff.mobile, lang),
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                         ),
                       ],
@@ -861,16 +1027,22 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   ),
                   child: Row(
                     children: [
-                      const Text('Tasks: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                       Text(
-                        '${workload.tasksPending}',
+                        AppTranslations.pick(lang, en: 'Tasks: ', mr: 'कामे: ', hi: 'कार्य: '),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                      Text(
+                        AppTranslations.formatDigits(workload.tasksPending, lang),
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.bold,
                           color: workload.tasksPending > 0 ? const Color(0xFFB45309) : const Color(0xFF64748B),
                         ),
                       ),
-                      Text(' / ${workload.tasksTotal}', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                      Text(
+                        ' / ${AppTranslations.formatDigits(workload.tasksTotal, lang)}',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                      ),
                     ],
                   ),
                 ),
@@ -885,16 +1057,22 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   ),
                   child: Row(
                     children: [
-                      const Text('Complaints: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                       Text(
-                        '${workload.complaintsPending}',
+                        AppTranslations.pick(lang, en: 'Complaints: ', mr: 'तक्रारी: ', hi: 'शिकायतें: '),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                      Text(
+                        AppTranslations.formatDigits(workload.complaintsPending, lang),
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.bold,
                           color: workload.complaintsPending > 0 ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
                         ),
                       ),
-                      Text(' / ${workload.complaintsTotal}', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                      Text(
+                        ' / ${AppTranslations.formatDigits(workload.complaintsTotal, lang)}',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                      ),
                     ],
                   ),
                 ),
@@ -910,9 +1088,12 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          const Text('Progress: ', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
                           Text(
-                            '${workload.progressPct}%',
+                            AppTranslations.pick(lang, en: 'Progress: ', mr: 'प्रगती: ', hi: 'प्रगति: '),
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                          ),
+                          Text(
+                            '${AppTranslations.formatDigits(workload.progressPct, lang)}%',
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
                           ),
                         ],
@@ -964,7 +1145,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF475569),
                   ),
                   label: Text(
-                    isSelected ? 'Hide' : 'View Details',
+                    isSelected
+                        ? AppTranslations.pick(lang, en: 'Hide', mr: 'लपवा', hi: 'छिपाएं')
+                        : AppTranslations.pick(lang, en: 'View Details', mr: 'तपशील पहा', hi: 'विवरण देखें'),
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.bold,
@@ -986,7 +1169,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   ),
                   onPressed: () => _openQuickTaskModal(staff),
                   icon: const Icon(Icons.add, size: 14),
-                  label: const Text('Assign', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  label: Text(
+                    AppTranslations.pick(lang, en: 'Assign', mr: 'नेमा', hi: 'सौंपें'),
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -999,8 +1185,11 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   // ─────────────────────────────────────────────────────────────
   // UI Builder: Member Drilldown Panel
   // ─────────────────────────────────────────────────────────────
-  Widget _buildMemberDrilldownPanel(KaryakartaStaffWorkload workload) {
+  Widget _buildMemberDrilldownPanel(KaryakartaStaffWorkload workload, String lang) {
     final staff = workload.staff;
+    final rawStaffName = (lang == 'en' && staff.name.trim().isNotEmpty)
+        ? staff.name
+        : staff.displayName;
 
     return Container(
       decoration: BoxDecoration(
@@ -1042,13 +1231,29 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        staff.displayName,
+                      AppTranslatedText(
+                        rawStaffName,
+                        isName: true,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
-                      Text(
-                        '${staff.role}${staff.area != null ? ' · ${staff.area}' : ''}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFFE0F2FE)),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          AppTranslatedText(
+                            AppTranslations.getRoleName(staff.role, lang),
+                            targetLanguage: lang,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFFE0F2FE)),
+                          ),
+                          if (staff.area != null && staff.area!.isNotEmpty) ...[
+                            const Text(' · ', style: TextStyle(fontSize: 12, color: Color(0xFFE0F2FE))),
+                            AppTranslatedText(
+                              AppTranslations.getAreaName(staff.area!, lang),
+                              targetLanguage: lang,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFFE0F2FE)),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -1063,11 +1268,15 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   ),
                   onPressed: () => _openQuickTaskModal(staff),
                   icon: const Icon(Icons.add, size: 14),
-                  label: const Text('Assign Task', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  label: Text(
+                    AppTranslations.pick(lang, en: 'Assign Task', mr: 'काम नेमा', hi: 'कार्य सौंपें'),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(width: 4),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.white),
+                  tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                   onPressed: () => setState(() => _selectedMemberWorkload = null),
                 ),
               ],
@@ -1083,10 +1292,26 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ),
             child: Row(
               children: [
-                _buildMiniStat('Total', '${workload.totalAssigned}', const Color(0xFF334155)),
-                _buildMiniStat('Pending', '${workload.totalPending}', const Color(0xFFD97706)),
-                _buildMiniStat('Done', '${workload.totalCompleted}', const Color(0xFF047857)),
-                _buildMiniStat('Progress', '${workload.progressPct}%', const Color(0xFF0284C7)),
+                _buildMiniStat(
+                  AppTranslations.pick(lang, en: 'Total', mr: 'एकूण', hi: 'कुल'),
+                  AppTranslations.formatDigits(workload.totalAssigned, lang),
+                  const Color(0xFF334155),
+                ),
+                _buildMiniStat(
+                  AppTranslations.pick(lang, en: 'Pending', mr: 'प्रलंबित', hi: 'लंबित'),
+                  AppTranslations.formatDigits(workload.totalPending, lang),
+                  const Color(0xFFD97706),
+                ),
+                _buildMiniStat(
+                  AppTranslations.pick(lang, en: 'Done', mr: 'पूर्ण', hi: 'पूर्ण'),
+                  AppTranslations.formatDigits(workload.totalCompleted, lang),
+                  const Color(0xFF047857),
+                ),
+                _buildMiniStat(
+                  AppTranslations.pick(lang, en: 'Progress', mr: 'प्रगती', hi: 'प्रगति'),
+                  '${AppTranslations.formatDigits(workload.progressPct, lang)}%',
+                  const Color(0xFF0284C7),
+                ),
               ],
             ),
           ),
@@ -1099,9 +1324,19 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ),
             child: Row(
               children: [
-                _buildSubTabButton('tasks', 'Tasks', workload.tasksTotal),
+                _buildSubTabButton(
+                  'tasks',
+                  AppTranslations.pick(lang, en: 'Tasks', mr: 'कामे', hi: 'कार्य'),
+                  workload.tasksTotal,
+                  lang,
+                ),
                 const SizedBox(width: 8),
-                _buildSubTabButton('complaints', 'Complaints', workload.complaintsTotal),
+                _buildSubTabButton(
+                  'complaints',
+                  AppTranslations.pick(lang, en: 'Complaints', mr: 'तक्रारी', hi: 'शिकायतें'),
+                  workload.complaintsTotal,
+                  lang,
+                ),
               ],
             ),
           ),
@@ -1114,9 +1349,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               padding: const EdgeInsets.all(12),
               children: [
                 if (_drilldownTab == 'tasks')
-                  ..._buildTasksList(workload.tasks)
+                  ..._buildTasksList(workload.tasks, lang)
                 else
-                  ..._buildComplaintsList(workload.complaints),
+                  ..._buildComplaintsList(workload.complaints, lang),
               ],
             ),
           ),
@@ -1136,7 +1371,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     );
   }
 
-  Widget _buildSubTabButton(String tabId, String title, int count) {
+  Widget _buildSubTabButton(String tabId, String title, int count, String lang) {
     final isSelected = _drilldownTab == tabId;
     return GestureDetector(
       onTap: () => setState(() => _drilldownTab = tabId),
@@ -1168,7 +1403,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                '$count',
+                AppTranslations.formatDigits(count, lang),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
@@ -1182,17 +1417,25 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     );
   }
 
-  List<Widget> _buildTasksList(List<KaryakartaWorkTask> tasks) {
+  List<Widget> _buildTasksList(List<KaryakartaWorkTask> tasks, String lang) {
     if (tasks.isEmpty) {
       return [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 30),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30),
           child: Center(
             child: Column(
               children: [
-                Icon(Icons.check_circle_outline, size: 36, color: Color(0xFFCBD5E1)),
-                SizedBox(height: 6),
-                Text('No tasks assigned yet.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                const Icon(Icons.check_circle_outline, size: 36, color: Color(0xFFCBD5E1)),
+                const SizedBox(height: 6),
+                Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'No tasks assigned yet.',
+                    mr: 'अद्याप कोणतेही काम नेमलेले नाही.',
+                    hi: 'अभी तक कोई कार्य नहीं सौंपा गया है।',
+                  ),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                ),
               ],
             ),
           ),
@@ -1239,16 +1482,18 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
+                  child: AppTranslatedText(
                     task.title,
+                    targetLanguage: lang,
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ),
+                const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(6)),
                   child: Text(
-                    task.status,
+                    AppTranslations.getStatus(task.status, lang),
                     style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
                   ),
                 ),
@@ -1256,8 +1501,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             ),
             if (task.description != null && task.description!.isNotEmpty) ...[
               const SizedBox(height: 3),
-              Text(
+              AppTranslatedText(
                 task.description!,
+                targetLanguage: lang,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1270,7 +1516,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                   decoration: BoxDecoration(color: priorityBg, borderRadius: BorderRadius.circular(4)),
                   child: Text(
-                    task.priority,
+                    AppTranslations.getPriority(task.priority, lang),
                     style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: priorityColor),
                   ),
                 ),
@@ -1280,7 +1526,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     children: [
                       const Icon(Icons.calendar_today, size: 10, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 3),
-                      Text(task.formattedDueDate, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      Text(
+                        AppTranslations.formatDate(task.dueDate!, lang),
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                      ),
                     ],
                   ),
                 ],
@@ -1292,8 +1541,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                         const Icon(Icons.location_on_outlined, size: 10, color: Color(0xFF94A3B8)),
                         const SizedBox(width: 2),
                         Flexible(
-                          child: Text(
+                          child: AppTranslatedText(
                             task.address!,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1310,15 +1560,25 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               children: [
                 // Reassign dropdown
                 AppDropdown<String>(
-                  title: 'Assign Task To',
+                  title: AppTranslations.pick(lang, en: 'Assign Task To', mr: 'काम कोणाला नेमायचे', hi: 'कार्य किसे सौंपें'),
                   value: task.assignedStaffId ?? '',
                   height: 30,
                   isExpanded: false,
-                  hintText: 'Assign...',
+                  hintText: AppTranslations.pick(lang, en: 'Assign...', mr: 'नेमा...', hi: 'सौंपें...'),
                   items: [
-                    const DropdownMenuItem(value: '', child: Text('Unassigned')),
+                    DropdownMenuItem(
+                      value: '',
+                      child: Text(AppTranslations.pick(lang, en: 'Unassigned', mr: 'न नेमलेले', hi: 'असाइन नहीं')),
+                    ),
                     ..._allStaff.map(
-                      (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
+                      (s) => DropdownMenuItem(
+                        value: s.id,
+                        child: AppTranslatedText(
+                          lang == 'en' && s.name.trim().isNotEmpty ? s.name : s.displayName,
+                          isName: true,
+                          targetLanguage: lang,
+                        ),
+                      ),
                     ),
                   ],
                   onChanged: (val) {
@@ -1342,7 +1602,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     onPressed: () => _handleUpdateTaskStatus(task.id, task.status),
                     icon: const Icon(Icons.bolt, size: 12),
                     label: Text(
-                      task.isPending ? 'Start' : 'Complete',
+                      task.isPending
+                          ? AppTranslations.pick(lang, en: 'Start', mr: 'सुरू करा', hi: 'शुरू करें')
+                          : AppTranslations.pick(lang, en: 'Complete', mr: 'पूर्ण करा', hi: 'पूर्ण करें'),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -1354,17 +1616,25 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     }).toList();
   }
 
-  List<Widget> _buildComplaintsList(List<KaryakartaWorkComplaint> complaints) {
+  List<Widget> _buildComplaintsList(List<KaryakartaWorkComplaint> complaints, String lang) {
     if (complaints.isEmpty) {
       return [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 30),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30),
           child: Center(
             child: Column(
               children: [
-                Icon(Icons.assignment_turned_in_outlined, size: 36, color: Color(0xFFCBD5E1)),
-                SizedBox(height: 6),
-                Text('No complaints assigned.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                const Icon(Icons.assignment_turned_in_outlined, size: 36, color: Color(0xFFCBD5E1)),
+                const SizedBox(height: 6),
+                Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'No complaints assigned.',
+                    mr: 'कोणत्याही तक्रारी नेमलेल्या नाहीत.',
+                    hi: 'कोई शिकायत असाइन नहीं की गई है।',
+                  ),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                ),
               ],
             ),
           ),
@@ -1401,32 +1671,53 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
+                  child: AppTranslatedText(
                     complaint.title,
+                    targetLanguage: lang,
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ),
+                const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(6)),
                   child: Text(
-                    complaint.status,
+                    AppTranslations.getStatus(complaint.status, lang),
                     style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
                   ),
                 ),
               ],
             ),
-            if (complaint.voterName != null) ...[
+            if (complaint.voterName != null && complaint.voterName!.isNotEmpty) ...[
               const SizedBox(height: 2),
-              Text(
-                'From: ${complaint.voterName} ${complaint.voterMobile != null ? '(${complaint.voterMobile})' : ''}',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w500),
+              Row(
+                children: [
+                  Text(
+                    AppTranslations.pick(lang, en: 'From: ', mr: 'कडून: ', hi: 'प्रेषक: '),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w500),
+                  ),
+                  Flexible(
+                    child: AppTranslatedText(
+                      complaint.voterName!,
+                      isName: true,
+                      targetLanguage: lang,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (complaint.voterMobile != null && complaint.voterMobile!.isNotEmpty)
+                    Text(
+                      ' (${AppTranslations.formatDigits(complaint.voterMobile!, lang)})',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w500),
+                    ),
+                ],
               ),
             ],
             if (complaint.description != null && complaint.description!.isNotEmpty) ...[
               const SizedBox(height: 3),
-              Text(
+              AppTranslatedText(
                 complaint.description!,
+                targetLanguage: lang,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1443,18 +1734,27 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      complaint.type!,
+                      AppTranslations.getComplaintType(complaint.type!, lang),
                       style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                     ),
                   ),
-                if (complaint.area != null) ...[
+                if (complaint.area != null && complaint.area!.isNotEmpty) ...[
                   const SizedBox(width: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 10, color: Color(0xFF94A3B8)),
-                      const SizedBox(width: 2),
-                      Text(complaint.area!, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                    ],
+                  Flexible(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, size: 10, color: Color(0xFF94A3B8)),
+                        const SizedBox(width: 2),
+                        Flexible(
+                          child: AppTranslatedText(
+                            AppTranslations.getAreaName(complaint.area!, lang),
+                            targetLanguage: lang,
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],
@@ -1465,15 +1765,25 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
               children: [
                 // Reassign dropdown
                 AppDropdown<String>(
-                  title: 'Assign Complaint To',
+                  title: AppTranslations.pick(lang, en: 'Assign Complaint To', mr: 'तक्रार कोणाला नेमायची', hi: 'शिकायत किसे सौंपें'),
                   value: complaint.assignedTo ?? '',
                   height: 30,
                   isExpanded: false,
-                  hintText: 'Assign...',
+                  hintText: AppTranslations.pick(lang, en: 'Assign...', mr: 'नेमा...', hi: 'सौंपें...'),
                   items: [
-                    const DropdownMenuItem(value: '', child: Text('Unassigned')),
+                    DropdownMenuItem(
+                      value: '',
+                      child: Text(AppTranslations.pick(lang, en: 'Unassigned', mr: 'न नेमलेले', hi: 'असाइन नहीं')),
+                    ),
                     ..._allStaff.map(
-                      (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
+                      (s) => DropdownMenuItem(
+                        value: s.id,
+                        child: AppTranslatedText(
+                          lang == 'en' && s.name.trim().isNotEmpty ? s.name : s.displayName,
+                          isName: true,
+                          targetLanguage: lang,
+                        ),
+                      ),
                     ),
                   ],
                   onChanged: (val) {
@@ -1497,7 +1807,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     onPressed: () => _handleUpdateComplaintStatus(complaint.id, complaint.status),
                     icon: const Icon(Icons.bolt, size: 12),
                     label: Text(
-                      complaint.isPending ? 'Start' : 'Resolve',
+                      complaint.isPending
+                          ? AppTranslations.pick(lang, en: 'Start', mr: 'सुरू करा', hi: 'शुरू करें')
+                          : AppTranslations.pick(lang, en: 'Resolve', mr: 'निराकरण करा', hi: 'समाधान करें'),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -1512,7 +1824,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
   // ─────────────────────────────────────────────────────────────
   // UI Builder: Unassigned Work Pool
   // ─────────────────────────────────────────────────────────────
-  Widget _buildUnassignedWorkPool() {
+  Widget _buildUnassignedWorkPool(String lang) {
+    final tasksLen = AppTranslations.formatDigits(_unassignedTasks.length, lang);
+    final complaintsLen = AppTranslations.formatDigits(_unassignedComplaints.length, lang);
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBEB),
@@ -1534,12 +1849,22 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Unassigned Work Pool',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Unassigned Work Pool',
+                          mr: 'न नेमलेल्या कामांचा विभाग',
+                          hi: 'असाइन न किए गए कार्य',
+                        ),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
                       ),
                       Text(
-                        '${_unassignedTasks.length} tasks and ${_unassignedComplaints.length} complaints pending assignment',
+                        AppTranslations.pick(
+                          lang,
+                          en: '$tasksLen tasks and $complaintsLen complaints pending assignment',
+                          mr: '$tasksLen कामे आणि $complaintsLen तक्रारी नेमण्यासाठी प्रलंबित',
+                          hi: '$tasksLen कार्य और $complaintsLen शिकायतें असाइन करने के लिए लंबित',
+                        ),
                         style: const TextStyle(fontSize: 11, color: Color(0xFFB45309)),
                       ),
                     ],
@@ -1555,11 +1880,16 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
               child: Text(
-                'Unassigned Tasks (${_unassignedTasks.length}):',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Unassigned Tasks ($tasksLen):',
+                  mr: 'न नेमलेली कामे ($tasksLen):',
+                  hi: 'असाइन न किए गए कार्य ($tasksLen):',
+                ),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
               ),
             ),
-            ..._unassignedTasks.map((t) => _buildUnassignedTaskRow(t)),
+            ..._unassignedTasks.map((t) => _buildUnassignedTaskRow(t, lang)),
           ],
 
           // Unassigned Complaints
@@ -1567,11 +1897,16 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
               child: Text(
-                'Unassigned Complaints (${_unassignedComplaints.length}):',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Unassigned Complaints ($complaintsLen):',
+                  mr: 'न नेमलेल्या तक्रारी ($complaintsLen):',
+                  hi: 'असाइन न की गई शिकायतें ($complaintsLen):',
+                ),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
               ),
             ),
-            ..._unassignedComplaints.map((c) => _buildUnassignedComplaintRow(c)),
+            ..._unassignedComplaints.map((c) => _buildUnassignedComplaintRow(c, lang)),
           ],
 
           const SizedBox(height: 10),
@@ -1580,7 +1915,8 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     );
   }
 
-  Widget _buildUnassignedTaskRow(KaryakartaWorkTask task) {
+  Widget _buildUnassignedTaskRow(KaryakartaWorkTask task, String lang) {
+    final assignLabel = AppTranslations.pick(lang, en: '— Assign —', mr: '— नेमा —', hi: '— सौंपें —');
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       padding: const EdgeInsets.all(10),
@@ -1595,8 +1931,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppTranslatedText(
                   task.title,
+                  targetLanguage: lang,
                   style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 2),
@@ -1609,7 +1946,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        task.priority,
+                        AppTranslations.getPriority(task.priority, lang),
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
@@ -1619,7 +1956,10 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                     ),
                     if (task.dueDate != null) ...[
                       const SizedBox(width: 6),
-                      Text(task.formattedDueDate, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      Text(
+                        AppTranslations.formatDate(task.dueDate!, lang),
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                      ),
                     ],
                   ],
                 ),
@@ -1628,17 +1968,33 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
           ),
           const SizedBox(width: 8),
           AppDropdown<String>(
-            title: 'Assign Task',
+            title: AppTranslations.pick(lang, en: 'Assign Task', mr: 'काम नेमा', hi: 'कार्य सौंपें'),
             value: '',
             height: 32,
             isExpanded: false,
             backgroundColor: const Color(0xFFF0FDF4),
             borderColor: const Color(0xFF86EFAC),
-            hintText: '— Assign —',
+            hintText: assignLabel,
             items: [
-              const DropdownMenuItem(value: '', child: Text('— Assign —', style: TextStyle(color: Color(0xFF94A3B8)))),
+              DropdownMenuItem(value: '', child: Text(assignLabel, style: const TextStyle(color: Color(0xFF94A3B8)))),
               ..._allStaff.map(
-                (s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.category})')),
+                (s) => DropdownMenuItem(
+                  value: s.id,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: AppTranslatedText(
+                          lang == 'en' && s.name.trim().isNotEmpty ? s.name : s.displayName,
+                          isName: true,
+                          targetLanguage: lang,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(' (${_getTabTitle(s.category, lang)})'),
+                    ],
+                  ),
+                ),
               ),
             ],
             onChanged: (val) {
@@ -1652,7 +2008,8 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     );
   }
 
-  Widget _buildUnassignedComplaintRow(KaryakartaWorkComplaint complaint) {
+  Widget _buildUnassignedComplaintRow(KaryakartaWorkComplaint complaint, String lang) {
+    final assignLabel = AppTranslations.pick(lang, en: '— Assign —', mr: '— नेमा —', hi: '— सौंपें —');
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       padding: const EdgeInsets.all(10),
@@ -1667,8 +2024,9 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppTranslatedText(
                   complaint.title,
+                  targetLanguage: lang,
                   style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 2),
@@ -1680,7 +2038,7 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      complaint.type!,
+                      AppTranslations.getComplaintType(complaint.type!, lang),
                       style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                     ),
                   ),
@@ -1689,17 +2047,33 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
           ),
           const SizedBox(width: 8),
           AppDropdown<String>(
-            title: 'Assign Complaint',
+            title: AppTranslations.pick(lang, en: 'Assign Complaint', mr: 'तक्रार नेमा', hi: 'शिकायत सौंपें'),
             value: '',
             height: 32,
             isExpanded: false,
             backgroundColor: const Color(0xFFF0FDF4),
             borderColor: const Color(0xFF86EFAC),
-            hintText: '— Assign —',
+            hintText: assignLabel,
             items: [
-              const DropdownMenuItem(value: '', child: Text('— Assign —', style: TextStyle(color: Color(0xFF94A3B8)))),
+              DropdownMenuItem(value: '', child: Text(assignLabel, style: const TextStyle(color: Color(0xFF94A3B8)))),
               ..._allStaff.map(
-                (s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.category})')),
+                (s) => DropdownMenuItem(
+                  value: s.id,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: AppTranslatedText(
+                          lang == 'en' && s.name.trim().isNotEmpty ? s.name : s.displayName,
+                          isName: true,
+                          targetLanguage: lang,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(' (${_getTabTitle(s.category, lang)})'),
+                    ],
+                  ),
+                ),
               ),
             ],
             onChanged: (val) {
@@ -1713,7 +2087,8 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String lang) {
+    final tabTitle = _getTabTitle(_activeTab, lang);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       alignment: Alignment.center,
@@ -1727,14 +2102,24 @@ class _KaryakartaWorkManagementScreenState extends ConsumerState<KaryakartaWorkM
           const Icon(Icons.people_outline, size: 48, color: Color(0xFF94A3B8)),
           const SizedBox(height: 10),
           Text(
-            'No members found in ${_getTabTitle(_activeTab)}.',
+            AppTranslations.pick(
+              lang,
+              en: 'No members found in $tabTitle.',
+              mr: '$tabTitle मध्ये कोणतेही सदस्य सापडले नाहीत.',
+              hi: '$tabTitle में कोई सदस्य नहीं मिला।',
+            ),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Change search filters or add members from staff management.',
-            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+          Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Change search filters or add members from staff management.',
+              mr: 'शोध फिल्टर बदला किंवा कर्मचारी व्यवस्थापनातून सदस्य जोडा.',
+              hi: 'खोज फ़िल्टर बदलें या स्टाफ़ प्रबंधन से सदस्य जोड़ें।',
+            ),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1790,6 +2175,10 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
 
     final messenger = ScaffoldMessenger.of(context);
     final repo = ref.read(karyakartaWorkRepoProvider);
+    final lang = ref.read(appLanguageProvider);
+    final rawName = (lang == 'en' && widget.staff.name.trim().isNotEmpty)
+        ? widget.staff.name
+        : widget.staff.displayName;
 
     try {
       await repo.assignTask(
@@ -1802,12 +2191,25 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
         address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
       );
 
+      final localizedStaffName = await DynamicTranslationService.translateOrRaw(
+        rawName,
+        lang,
+        isName: true,
+      );
+
       if (mounted) {
         Navigator.pop(context);
         widget.onTaskAssigned();
         messenger.showSnackBar(
           SnackBar(
-            content: Text('Task assigned to ${widget.staff.name} successfully!'),
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Task assigned to $localizedStaffName successfully!',
+                mr: '$localizedStaffName यांना काम यशस्वीरित्या नेमले!',
+                hi: '$localizedStaffName को कार्य सफलतापूर्वक सौंपा गया!',
+              ),
+            ),
             backgroundColor: const Color(0xFF047857),
           ),
         );
@@ -1816,9 +2218,16 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
       if (mounted) {
         setState(() => _isSaving = false);
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Error assigning task. Please try again.'),
-            backgroundColor: Color(0xFFDC2626),
+          SnackBar(
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Error assigning task. Please try again.',
+                mr: 'काम नेमताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.',
+                hi: 'कार्य सौंपने में त्रुटि। कृपया पुनः प्रयास करें।',
+              ),
+            ),
+            backgroundColor: const Color(0xFFDC2626),
           ),
         );
       }
@@ -1827,6 +2236,11 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
+    final rawStaffName = (lang == 'en' && widget.staff.name.trim().isNotEmpty)
+        ? widget.staff.name
+        : widget.staff.displayName;
+
     InputDecoration inputDec({String? hint, String? prefixText}) {
       return InputDecoration(
         hintText: hint,
@@ -1866,11 +2280,21 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
         ),
         child: Column(
           children: [
-            AppModalHeader(
-              icon: Icons.assignment_add,
-              title: 'Assign New Task',
-              subtitle: 'To: ${widget.staff.displayName}',
-              onClose: () => Navigator.pop(context),
+            AppTranslatedText(
+              rawStaffName,
+              isName: true,
+              targetLanguage: lang,
+              builder: (_, translatedName) => AppModalHeader(
+                icon: Icons.assignment_add,
+                title: AppTranslations.pick(lang, en: 'Assign New Task', mr: 'नवीन काम नेमा', hi: 'नया कार्य सौंपें'),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'To: $translatedName',
+                  mr: 'प्रति: $translatedName',
+                  hi: 'को: $translatedName',
+                ),
+                onClose: () => Navigator.pop(context),
+              ),
             ),
 
             // Form Body
@@ -1884,14 +2308,28 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                     children: [
                       // Task Title
                       AppFieldLabel(
-                        label: 'Task Title',
+                        label: AppTranslations.pick(lang, en: 'Task Title', mr: 'कामाचे शीर्षक', hi: 'कार्य शीर्षक'),
                         isRequired: true,
                       ),
                       TextFormField(
                         controller: _titleController,
                         style: const TextStyle(fontSize: 13),
-                        decoration: inputDec(hint: 'e.g. Ward 12 road pothole repairs'),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter task title' : null,
+                        decoration: inputDec(
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. Ward 12 road pothole repairs',
+                            mr: 'उदा. प्रभाग १२ मधील रस्त्यावरील खड्डे दुरुस्ती',
+                            hi: 'उदा. वार्ड १२ सड़क गड्ढा मरम्मत',
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? AppTranslations.pick(
+                                lang,
+                                en: 'Please enter task title',
+                                mr: 'कृपया कामाचे शीर्षक टाका',
+                                hi: 'कृपया कार्य शीर्षक दर्ज करें',
+                              )
+                            : null,
                       ),
                       const SizedBox(height: 12),
 
@@ -1905,12 +2343,12 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<String>(
-                                  label: 'Priority',
+                                  label: AppTranslations.pick(lang, en: 'Priority', mr: 'प्राधान्य', hi: 'प्राथमिकता'),
                                   value: _priority,
-                                  items: const [
-                                    DropdownMenuItem(value: 'Low', child: Text('Low')),
-                                    DropdownMenuItem(value: 'Medium', child: Text('Medium')),
-                                    DropdownMenuItem(value: 'High', child: Text('High')),
+                                  items: [
+                                    DropdownMenuItem(value: 'Low', child: Text(AppTranslations.getPriority('Low', lang))),
+                                    DropdownMenuItem(value: 'Medium', child: Text(AppTranslations.getPriority('Medium', lang))),
+                                    DropdownMenuItem(value: 'High', child: Text(AppTranslations.getPriority('High', lang))),
                                   ],
                                   onChanged: (v) => setState(() => _priority = v ?? 'Medium'),
                                 ),
@@ -1924,7 +2362,9 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppFieldLabel(label: 'Due Date'),
+                                AppFieldLabel(
+                                  label: AppTranslations.pick(lang, en: 'Due Date', mr: 'अंतिम तारीख', hi: 'नियत तिथि'),
+                                ),
                                 InkWell(
                                   onTap: () async {
                                     final picked = await showThemedDatePicker(
@@ -1946,9 +2386,14 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                                       children: [
                                         const Icon(Icons.calendar_today, size: 14, color: Color(0xFF64748B)),
                                         const SizedBox(width: 6),
-                                        Text(
-                                          _dueDate != null ? DateFormat('dd/MM/yyyy').format(_dueDate!) : 'Select Date',
-                                          style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+                                        Flexible(
+                                          child: Text(
+                                            _dueDate != null
+                                                ? AppTranslations.formatDate(_dueDate!, lang, pattern: 'dd/MM/yyyy')
+                                                : AppTranslations.pick(lang, en: 'Select Date', mr: 'तारीख निवडा', hi: 'तिथि चुनें'),
+                                            style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1962,21 +2407,39 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                       const SizedBox(height: 12),
 
                       // Address / Location
-                      AppFieldLabel(label: 'Location / Address'),
+                      AppFieldLabel(
+                        label: AppTranslations.pick(lang, en: 'Location / Address', mr: 'ठिकाण / पत्ता', hi: 'स्थान / पता'),
+                      ),
                       TextFormField(
                         controller: _addressController,
                         style: const TextStyle(fontSize: 13),
-                        decoration: inputDec(hint: 'e.g. Opposite Ganpati Temple, Shaniwar Peth'),
+                        decoration: inputDec(
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. Opposite Ganpati Temple, Shaniwar Peth',
+                            mr: 'उदा. गणपती मंदिरासमोर, शनिवार पेठ',
+                            hi: 'उदा. गणपति मंदिर के सामने, शनिवार पेठ',
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 12),
 
                       // Description
-                      AppFieldLabel(label: 'Details / Instructions'),
+                      AppFieldLabel(
+                        label: AppTranslations.pick(lang, en: 'Details / Instructions', mr: 'तपशील / सूचना', hi: 'विवरण / निर्देश'),
+                      ),
                       TextFormField(
                         controller: _descController,
                         maxLines: 3,
                         style: const TextStyle(fontSize: 13),
-                        decoration: inputDec(hint: 'Enter more details and instructions about this task...'),
+                        decoration: inputDec(
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'Enter more details and instructions about this task...',
+                            mr: 'या कामाबद्दल अधिक तपशील आणि सूचना लिहा...',
+                            hi: 'इस कार्य के बारे में अधिक विवरण और निर्देश दर्ज करें...',
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
 
@@ -1994,7 +2457,10 @@ class _QuickTaskAssignmentSheetState extends ConsumerState<_QuickTaskAssignmentS
                           onPressed: _isSaving ? null : _submit,
                           child: _isSaving
                               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : const Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                              : Text(
+                                  AppTranslations.pick(lang, en: 'Assign Task', mr: 'काम नेमा', hi: 'कार्य सौंपें'),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 10),

@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/localization/app_translations.dart';
 
 const String _kLanguagePrefKey = 'ns_app_language';
+
+/// Global ValueNotifier kept in sync with [appLanguageProvider] so even
+/// non-Consumer widgets or tests without a ProviderScope stay safe and reactive.
+final ValueNotifier<String> appLanguageValueNotifier = ValueNotifier<String>('en');
 
 class AppLanguageNotifier extends Notifier<String> {
   @override
   String build() {
+    appLanguageValueNotifier.value = 'en';
     _loadPersistedLanguage();
     return 'en';
   }
@@ -17,6 +23,7 @@ class AppLanguageNotifier extends Notifier<String> {
       final saved = prefs.getString(_kLanguagePrefKey);
       if (saved != null && (saved == 'en' || saved == 'mr' || saved == 'hi')) {
         state = saved;
+        appLanguageValueNotifier.value = saved;
       }
     } catch (_) {}
   }
@@ -24,6 +31,7 @@ class AppLanguageNotifier extends Notifier<String> {
   Future<void> setLanguage(String lang) async {
     if (lang != 'en' && lang != 'mr' && lang != 'hi') return;
     state = lang;
+    appLanguageValueNotifier.value = lang;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kLanguagePrefKey, lang);
@@ -68,6 +76,17 @@ extension LanguageProviderX on WidgetRef {
   bool get isMarathi => lang == 'mr';
   bool get isHindi => lang == 'hi';
   bool get isEnglish => lang == 'en';
+
+  String tr3(String en, String mr, String hi) =>
+      AppTranslations.pick(lang, en: en, mr: mr, hi: hi);
+
+  String tKey(String key, {Map<String, dynamic>? params}) =>
+      AppTranslations.t(key, lang: lang, params: params);
+
+  String fmtNum(dynamic value) => AppTranslations.formatDigits(value, lang);
+
+  String fmtDate(DateTime dt, {String pattern = 'dd MMM yyyy'}) =>
+      AppTranslations.formatDate(dt, lang, pattern: pattern);
 }
 
 /// Language Selector Segmented Widget for Desktop & Mobile

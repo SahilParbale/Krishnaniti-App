@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/gb_register_entry_model.dart';
 import '../../../data/repositories/gb_register_repository.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_dropdown.dart';
@@ -28,16 +30,42 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
     _currentEntry = widget.entry;
   }
 
+  String _meetingTypeLabel(String type, String lang) {
+    switch (type.trim()) {
+      case 'GB':
+        return AppTranslations.pick(lang, en: 'General Body (GB)', mr: 'सर्वसाधारण सभा (GB)', hi: 'साधारण सभा (GB)');
+      case 'Standing Committee':
+        return AppTranslations.pick(lang, en: 'Standing Committee', mr: 'स्थायी समिती', hi: 'स्थायी समिति');
+      case 'Ward Committee':
+        return AppTranslations.pick(lang, en: 'Ward Committee', mr: 'प्रभाग समिती', hi: 'वार्ड समिति');
+      case 'Special GB':
+        return AppTranslations.pick(lang, en: 'Special GB', mr: 'विशेष सर्वसाधारण सभा', hi: 'विशेष साधारण सभा');
+      case 'Other':
+        return AppTranslations.pick(lang, en: 'Other', mr: 'इतर', hi: 'अन्य');
+      default:
+        return AppTranslations.translateDirect(type, lang: lang);
+    }
+  }
+
   Future<void> _handleQuickStatusChange(String newStatus) async {
     if (_currentEntry.status == newStatus) return;
+    final lang = ref.read(appLanguageProvider);
     final updated = _currentEntry.copyWith(status: newStatus);
     final repo = ref.read(gbRegisterRepoProvider);
     await repo.updateEntry(updated);
     if (mounted) {
       setState(() => _currentEntry = updated);
+      final locSt = AppTranslations.getStatus(newStatus, lang);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Motion status updated to $newStatus'),
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Motion status updated to $locSt',
+              mr: 'ठराव स्थिती अद्यतनित केली: $locSt',
+              hi: 'प्रस्ताव स्थिति अपडेट की गई: $locSt',
+            ),
+          ),
           backgroundColor: const Color(0xFF0284C7),
           duration: const Duration(seconds: 2),
         ),
@@ -46,25 +74,38 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
   }
 
   void _showDeleteConfirmation() {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Delete Motion Entry'),
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.red),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(lang, en: 'Delete Motion Entry', mr: 'सभेचा ठराव हटवायचा का?', hi: 'प्रस्ताव प्रविष्टि हटाएँ?'),
+              ),
+            ),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to remove this assembly record from the GB Register? This action cannot be undone.',
-          style: TextStyle(fontSize: 14, color: Color(0xFF475569)),
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to remove this assembly record from the GB Register? This action cannot be undone.',
+            mr: 'तुम्हाला ही सभेची नोंद जीबी नोंदवहीतून काढायची आहे का? ही कृती पूर्ववत करता येणार नाही.',
+            hi: 'क्या आप वाकई इस सभा रिकॉर्ड को जीबी रजिस्टर से हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।',
+          ),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -79,15 +120,22 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
               await repo.deleteEntry(_currentEntry.id);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('GB Register record deleted successfully'),
+                  SnackBar(
+                    content: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'GB Register record deleted successfully',
+                        mr: 'जीबी नोंद यशस्वीरित्या हटवली',
+                        hi: 'जीबी रजिस्टर रिकॉर्ड सफलतापूर्वक हटाया गया',
+                      ),
+                    ),
                     backgroundColor: Colors.red,
                   ),
                 );
                 Navigator.pop(context, true);
               }
             },
-            child: const Text('Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ')),
           ),
         ],
       ),
@@ -95,7 +143,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
   }
 
   void _showEditModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final subjectCtrl = TextEditingController(text: _currentEntry.subject);
     final descCtrl = TextEditingController(text: _currentEntry.description);
     final deptCtrl = TextEditingController(text: _currentEntry.department);
@@ -153,8 +201,8 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                 children: [
                   AppModalHeader(
                     icon: Icons.edit_note_rounded,
-                    title: isMr ? 'GB नोंद संपादित करा' : 'Edit GB Register Entry',
-                    subtitle: isMr ? 'नोंद तपशील व सद्यस्थिती अद्यतनित करा' : 'Update entry details and status',
+                    title: AppTranslations.pick(lang, en: 'Edit GB Register Entry', mr: 'GB नोंद संपादित करा', hi: 'जीबी प्रविष्टि संपादित करें'),
+                    subtitle: AppTranslations.pick(lang, en: 'Update entry details and status', mr: 'नोंद तपशील व सद्यस्थिती अद्यतनित करा', hi: 'प्रविष्टि विवरण और स्थिति अपडेट करें'),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
                   Flexible(
@@ -169,7 +217,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(label: isMr ? 'बैठक तारीख' : 'Meeting Date', isRequired: true),
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'Meeting Date', mr: 'बैठक तारीख', hi: 'बैठक तिथि'), isRequired: true),
                                   TextField(
                                     controller: dateCtrl,
                                     readOnly: true,
@@ -188,11 +236,16 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppDropdownFormField<String>(
-                                    label: isMr ? 'बैठक प्रकार' : 'Meeting Type',
+                                    label: AppTranslations.pick(lang, en: 'Meeting Type', mr: 'बैठक प्रकार', hi: 'बैठक प्रकार'),
                                     isRequired: true,
                                     value: meetingTypes.contains(selectedMeetingType) ? selectedMeetingType : 'GB',
-                                    hintText: 'Select Type',
-                                    items: meetingTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                                    hintText: AppTranslations.pick(lang, en: 'Select Type', mr: 'प्रकार निवडा', hi: 'प्रकार चुनें'),
+                                    items: meetingTypes
+                                        .map((t) => DropdownMenuItem(
+                                              value: t,
+                                              child: Text(_meetingTypeLabel(t, lang), style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
+                                            ))
+                                        .toList(),
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => selectedMeetingType = val);
                                     },
@@ -205,23 +258,36 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                         const SizedBox(height: 14),
 
                         // 2. Subject / Issue (Full Width)
-                        AppFieldLabel(label: isMr ? 'विषय / मुद्दा' : 'Subject / Issue', isRequired: true),
+                        AppFieldLabel(label: AppTranslations.pick(lang, en: 'Subject / Issue', mr: 'विषय / मुद्दा', hi: 'विषय / मुद्दा'), isRequired: true),
                         TextField(
                           controller: subjectCtrl,
                           decoration: appInputDecoration(
-                            hint: isMr ? 'उदा. प्रभाग १२ मध्ये पाण्याची टंचाई' : 'e.g. Water shortage in Ward 12',
+                            hint: AppTranslations.formatDigits(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'e.g. Water shortage in Ward 12',
+                                mr: 'उदा. प्रभाग 12 मध्ये पाण्याची टंचाई',
+                                hi: 'उदा. वार्ड 12 में पानी की समस्या',
+                              ),
+                              lang,
+                            ),
                             prefixIcon: const Icon(Icons.title_rounded, size: 18, color: Color(0xFF64748B)),
                           ),
                         ),
                         const SizedBox(height: 14),
 
                         // 3. Description (Full Width)
-                        AppFieldLabel(label: isMr ? 'वर्णन' : 'Description'),
+                        AppFieldLabel(label: AppTranslations.pick(lang, en: 'Description', mr: 'वर्णन', hi: 'विवरण')),
                         TextField(
                           controller: descCtrl,
                           maxLines: 3,
                           decoration: appInputDecoration(
-                            hint: isMr ? 'मंडलेल्या मुद्द्याचे सविस्तर वर्णन...' : 'Detailed description of the issue raised...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Detailed description of the issue raised...',
+                              mr: 'मांडलेल्या मुद्द्याचे सविस्तर वर्णन...',
+                              hi: 'उठाए गए मुद्दे का विस्तृत विवरण...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -233,11 +299,14 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(label: isMr ? 'क्षेत्र / भाग' : 'Area'),
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'Area', mr: 'क्षेत्र / भाग', hi: 'क्षेत्र / वार्ड')),
                                   TextField(
                                     controller: areaCtrl,
                                     decoration: appInputDecoration(
-                                      hint: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
+                                      hint: AppTranslations.formatDigits(
+                                        AppTranslations.pick(lang, en: 'e.g. Ward 12', mr: 'उदा. प्रभाग 12', hi: 'उदा. वार्ड 12'),
+                                        lang,
+                                      ),
                                       prefixIcon: const Icon(Icons.map_outlined, size: 18, color: Color(0xFF64748B)),
                                     ),
                                   ),
@@ -249,11 +318,14 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(label: isMr ? 'लाभार्थी' : 'People Benefited'),
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'People Benefited', mr: 'लाभार्थी', hi: 'लाभान्वित नागरिक')),
                                   TextField(
                                     controller: benCtrl,
                                     decoration: appInputDecoration(
-                                      hint: isMr ? 'उदा. ५००+ नागरिक' : 'e.g. 500+ residents',
+                                      hint: AppTranslations.formatDigits(
+                                        AppTranslations.pick(lang, en: 'e.g. 500+ residents', mr: 'उदा. 500+ नागरिक', hi: 'उदा. 500+ निवासी'),
+                                        lang,
+                                      ),
                                       prefixIcon: const Icon(Icons.people_outline_rounded, size: 18, color: Color(0xFF64748B)),
                                     ),
                                   ),
@@ -271,11 +343,11 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppFieldLabel(label: isMr ? 'विभाग' : 'Department'),
+                                  AppFieldLabel(label: AppTranslations.pick(lang, en: 'Department', mr: 'विभाग', hi: 'विभाग')),
                                   TextField(
                                     controller: deptCtrl,
                                     decoration: appInputDecoration(
-                                      hint: isMr ? 'उदा. पाणी पुरवठा' : 'e.g. Water Supply',
+                                      hint: AppTranslations.pick(lang, en: 'e.g. Water Supply', mr: 'उदा. पाणी पुरवठा', hi: 'उदा. जल आपूर्ति'),
                                       prefixIcon: const Icon(Icons.business_outlined, size: 18, color: Color(0xFF64748B)),
                                     ),
                                   ),
@@ -288,11 +360,16 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppDropdownFormField<String>(
-                                    label: isMr ? 'निकाल / स्थिती' : 'Outcome / Status',
+                                    label: AppTranslations.pick(lang, en: 'Outcome / Status', mr: 'निकाल / स्थिती', hi: 'परिणाम / स्थिति'),
                                     isRequired: true,
                                     value: statusList.contains(selectedStatus) ? selectedStatus : 'Raised',
-                                    hintText: 'Select Status',
-                                    items: statusList.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis))).toList(),
+                                    hintText: AppTranslations.pick(lang, en: 'Select Status', mr: 'स्थिती निवडा', hi: 'स्थिति चुनें'),
+                                    items: statusList
+                                        .map((s) => DropdownMenuItem(
+                                              value: s,
+                                              child: Text(AppTranslations.getStatus(s, lang), style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
+                                            ))
+                                        .toList(),
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => selectedStatus = val);
                                     },
@@ -305,12 +382,17 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                         const SizedBox(height: 14),
 
                         // 6. Administrative Response (Full Width)
-                        AppFieldLabel(label: isMr ? 'प्रशासकीय उत्तर' : 'Administrative Response'),
+                        AppFieldLabel(label: AppTranslations.pick(lang, en: 'Administrative Response', mr: 'प्रशासकीय उत्तर', hi: 'प्रशासनिक उत्तर')),
                         TextField(
                           controller: respCtrl,
                           maxLines: 2,
                           decoration: appInputDecoration(
-                            hint: isMr ? 'प्रशासनाकडून मिळालेले उत्तर...' : 'Response received from administration...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Response received from administration...',
+                              mr: 'प्रशासनाकडून मिळालेले उत्तर...',
+                              hi: 'प्रशासन से प्राप्त उत्तर...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -329,7 +411,11 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                             onPressed: () async {
                               if (subjectCtrl.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(isMr ? 'कृपया विषय प्रविष्ट करा' : 'Subject is required')),
+                                  SnackBar(
+                                    content: Text(
+                                      AppTranslations.pick(lang, en: 'Subject is required', mr: 'कृपया विषय प्रविष्ट करा', hi: 'विषय आवश्यक है'),
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
@@ -353,7 +439,14 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                                 setState(() => _currentEntry = updated);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(isMr ? 'नोंद यशस्वीरित्या अद्यतनित केली!' : 'GB Register entry updated successfully'),
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'GB Register entry updated successfully',
+                                        mr: 'नोंद यशस्वीरित्या अद्यतनित केली!',
+                                        hi: 'जीबी प्रविष्टि सफलतापूर्वक अपडेट की गई!',
+                                      ),
+                                    ),
                                     backgroundColor: const Color(0xFF16A34A),
                                     behavior: SnackBarBehavior.floating,
                                   ),
@@ -361,7 +454,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               }
                             },
                             label: Text(
-                              isMr ? 'बदल जतन करा' : 'Save Changes',
+                              AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल जतन करा', hi: 'परिवर्तन सहेजें'),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                           ),
@@ -381,14 +474,14 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final entry = _currentEntry;
 
     final statusTabs = [
-      {'key': 'Raised', 'label': isMr ? 'मांडलेला' : 'Raised'},
-      {'key': 'In Discussion', 'label': isMr ? 'चर्चेत' : 'In Discussion'},
-      {'key': 'Action Taken', 'label': isMr ? 'कार्यवाही झाली' : 'Action Taken'},
-      {'key': 'Rejected', 'label': isMr ? 'नाकारले' : 'Rejected'},
+      {'key': 'Raised', 'label': AppTranslations.getStatus('Raised', lang)},
+      {'key': 'In Discussion', 'label': AppTranslations.getStatus('In Discussion', lang)},
+      {'key': 'Action Taken', 'label': AppTranslations.getStatus('Action Taken', lang)},
+      {'key': 'Rejected', 'label': AppTranslations.getStatus('Rejected', lang)},
     ];
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -407,7 +500,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
           scrolledUnderElevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
-            tooltip: 'Back',
+            tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'पीछे'),
             onPressed: () => Navigator.pop(context),
           ),
           titleSpacing: 0,
@@ -416,7 +509,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'महासभा ठराव तपशील' : 'GB Motion Details',
+                AppTranslations.pick(lang, en: 'GB Motion Details', mr: 'महासभा ठराव तपशील', hi: 'महासभा प्रस्ताव विवरण'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -427,7 +520,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                 ),
               ),
               Text(
-                '${entry.meetingType} • ${entry.area}',
+                AppTranslations.formatDigits('${_meetingTypeLabel(entry.meetingType, lang)} • ${AppTranslations.getAreaName(entry.area, lang)}', lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -441,12 +534,12 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
           actions: [
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.white),
-              tooltip: 'Edit Entry',
+              tooltip: AppTranslations.pick(lang, en: 'Edit Entry', mr: 'नोंद संपादित करा', hi: 'प्रविष्टि संपादित करें'),
               onPressed: _showEditModal,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-              tooltip: 'Delete Entry',
+              tooltip: AppTranslations.pick(lang, en: 'Delete Entry', mr: 'नोंद हटवा', hi: 'प्रविष्टि हटाएँ'),
               onPressed: _showDeleteConfirmation,
             ),
           ],
@@ -489,7 +582,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                                   border: Border.all(color: entry.meetingTypeColor.withValues(alpha: 0.3)),
                                 ),
                                 child: Text(
-                                  isMr ? entry.meetingTypeDisplayMr : entry.meetingTypeDisplayEn,
+                                  lang == 'mr' ? entry.meetingTypeDisplayMr : _meetingTypeLabel(entry.meetingType, lang),
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
@@ -507,7 +600,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                                   border: Border.all(color: entry.statusBorderColor),
                                 ),
                                 child: Text(
-                                  isMr ? entry.statusDisplayMr : entry.statusDisplayEn,
+                                  AppTranslations.getStatus(entry.status, lang),
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
@@ -518,8 +611,9 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                             ],
                           ),
                           const SizedBox(height: 14),
-                          Text(
+                          AppTranslatedText(
                             entry.subject,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -533,7 +627,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               const Icon(Icons.event_outlined, size: 16, color: Color(0xFF64748B)),
                               const SizedBox(width: 6),
                               Text(
-                                '${isMr ? "सभेचा दिनांक" : "Meeting Date"}: ${_formatDate(entry.meetingDate)}',
+                                '${AppTranslations.pick(lang, en: "Meeting Date", mr: "सभेचा दिनांक", hi: "बैठक तिथि")}: ${_formatDate(entry.meetingDate, lang)}',
                                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                               ),
                               if (entry.resolutionNo != null) ...[
@@ -541,7 +635,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                                 const Icon(Icons.bookmark_border_rounded, size: 16, color: Color(0xFF0284C7)),
                                 const SizedBox(width: 4),
                                 Text(
-                                  entry.resolutionNo!,
+                                  AppTranslations.formatDigits(entry.resolutionNo!, lang),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                                 ),
                               ],
@@ -554,7 +648,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
 
                     // Quick status change selector
                     Text(
-                      isMr ? 'सभेची स्थिती बदला' : 'Update Motion Status',
+                      AppTranslations.pick(lang, en: 'Update Motion Status', mr: 'सभेची स्थिती बदला', hi: 'प्रस्ताव स्थिति बदलें'),
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 8),
@@ -609,23 +703,38 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                             children: [
                               const Icon(Icons.description_outlined, size: 20, color: Color(0xFF0284C7)),
                               const SizedBox(width: 8),
-                              Text(
-                                isMr ? 'सभेत मांडलेला तपशील' : 'Motion Details & Public Demands',
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              Flexible(
+                                child: Text(
+                                  AppTranslations.pick(lang, en: 'Motion Details & Public Demands', mr: 'सभेत मांडलेला तपशील', hi: 'प्रस्ताव विवरण और जन मांगें'),
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                ),
                               ),
                             ],
                           ),
                           const Divider(height: 20),
-                          Text(
-                            entry.description.isNotEmpty
-                                ? entry.description
-                                : (isMr ? 'या सभेच्या विषयाबाबत विस्तृत नोंद उपलब्ध नाही.' : 'No detailed motion description recorded.'),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF334155),
-                              height: 1.5,
-                            ),
-                          ),
+                          entry.description.isNotEmpty
+                              ? AppTranslatedText(
+                                  entry.description,
+                                  targetLanguage: lang,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF334155),
+                                    height: 1.5,
+                                  ),
+                                )
+                              : Text(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'No detailed motion description recorded.',
+                                    mr: 'या सभेच्या विषयाबाबत विस्तृत नोंद उपलब्ध नाही.',
+                                    hi: 'इस सभा विषय का विस्तृत विवरण दर्ज नहीं है।',
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF334155),
+                                    height: 1.5,
+                                  ),
+                                ),
                         ],
                       ),
                     ),
@@ -653,20 +762,28 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                                 color: entry.response != null ? const Color(0xFF16A34A) : const Color(0xFFCA8A04),
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                isMr ? 'प्रशासकीय अभिप्राय / कार्यवाही उत्तर' : 'Official Administration Reply',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: entry.response != null ? const Color(0xFF14532D) : const Color(0xFF713F12),
+                              Flexible(
+                                child: Text(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Official Administration Reply',
+                                    mr: 'प्रशासकीय अभिप्राय / कार्यवाही उत्तर',
+                                    hi: 'आधिकारिक प्रशासनिक उत्तर',
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: entry.response != null ? const Color(0xFF14532D) : const Color(0xFF713F12),
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                           const Divider(height: 20),
                           if (entry.response != null) ...[
-                            Text(
+                            AppTranslatedText(
                               entry.response!,
+                              targetLanguage: lang,
                               style: const TextStyle(
                                 fontSize: 13.5,
                                 color: Color(0xFF166534),
@@ -677,15 +794,21 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                             if (entry.resolutionNo != null) ...[
                               const SizedBox(height: 8),
                               Text(
-                                '${isMr ? "ठराव संदर्भ" : "Resolution Ref"}: ${entry.resolutionNo}',
+                                AppTranslations.formatDigits(
+                                  '${AppTranslations.pick(lang, en: "Resolution Ref", mr: "ठराव संदर्भ", hi: "प्रस्ताव संदर्भ")}: ${entry.resolutionNo}',
+                                  lang,
+                                ),
                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
                               ),
                             ],
                           ] else ...[
                             Text(
-                              isMr
-                                  ? 'या प्रश्नावर अजून मनपा प्रशासनाकडून औपचारिक उत्तर आलेले नाही.'
-                                  : 'Awaiting formal reply on the assembly floor from Municipal Administration.',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Awaiting formal reply on the assembly floor from Municipal Administration.',
+                                mr: 'या प्रश्नावर अजून मनपा प्रशासनाकडून औपचारिक उत्तर आलेले नाही.',
+                                hi: 'नगर निगम प्रशासन से औपचारिक उत्तर की प्रतीक्षा है।',
+                              ),
                               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
                             ),
                           ],
@@ -707,34 +830,43 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isMr ? 'विभागीय आणि स्थानिक माहिती' : 'Administrative Context',
+                            AppTranslations.pick(lang, en: 'Administrative Context', mr: 'विभागीय आणि स्थानिक माहिती', hi: 'विभागीय एवं स्थानीय जानकारी'),
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                           const Divider(height: 20),
                           _infoRow(
                             icon: Icons.business_rounded,
-                            label: isMr ? 'खाते / विभाग' : 'Department',
+                            label: AppTranslations.pick(lang, en: 'Department', mr: 'खाते / विभाग', hi: 'विभाग'),
                             value: entry.department,
+                            lang: lang,
+                            translate: true,
                           ),
                           const SizedBox(height: 12),
                           _infoRow(
                             icon: Icons.location_on_outlined,
-                            label: isMr ? 'परिसर / प्रभाग' : 'Area / Prabhag',
-                            value: entry.area.isNotEmpty ? entry.area : (isMr ? 'सर्व प्रभाग' : 'Entire Prabhag'),
+                            label: AppTranslations.pick(lang, en: 'Area / Prabhag', mr: 'परिसर / प्रभाग', hi: 'क्षेत्र / वार्ड'),
+                            value: entry.area.isNotEmpty
+                                ? entry.area
+                                : AppTranslations.pick(lang, en: 'Entire Prabhag', mr: 'सर्व प्रभाग', hi: 'संपूर्ण वार्ड'),
+                            lang: lang,
+                            translate: entry.area.isNotEmpty,
                           ),
                           if (entry.beneficiaries != null) ...[
                             const SizedBox(height: 12),
                             _infoRow(
                               icon: Icons.people_outline_rounded,
-                              label: isMr ? 'प्रभावित लाभार्थी' : 'Beneficiaries Impacted',
+                              label: AppTranslations.pick(lang, en: 'Beneficiaries Impacted', mr: 'प्रभावित लाभार्थी', hi: 'लाभान्वित नागरिक'),
                               value: entry.beneficiaries!,
+                              lang: lang,
+                              translate: true,
                             ),
                           ],
                           const SizedBox(height: 12),
                           _infoRow(
                             icon: Icons.access_time_rounded,
-                            label: isMr ? 'नोंदणी तारीख' : 'Recorded At',
-                            value: _formatDate(entry.createdAt.isNotEmpty ? entry.createdAt : entry.meetingDate),
+                            label: AppTranslations.pick(lang, en: 'Recorded At', mr: 'नोंदणी तारीख', hi: 'दर्ज तिथि'),
+                            value: _formatDate(entry.createdAt.isNotEmpty ? entry.createdAt : entry.meetingDate, lang),
+                            lang: lang,
                           ),
                         ],
                       ),
@@ -744,7 +876,7 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                     // Tags
                     if (entry.tags.isNotEmpty) ...[
                       Text(
-                        isMr ? 'विषय टॅग्ज (Tags)' : 'Tags',
+                        AppTranslations.pick(lang, en: 'Tags', mr: 'विषय टॅग्ज', hi: 'विषय टैग'),
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       const SizedBox(height: 8),
@@ -759,8 +891,9 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
-                            child: Text(
+                            child: AppTranslatedText(
                               '#$t',
+                              targetLanguage: lang,
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                             ),
                           );
@@ -775,7 +908,13 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
     );
   }
 
-  Widget _infoRow({required IconData icon, required String label, required String value}) {
+  Widget _infoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required String lang,
+    bool translate = false,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -789,21 +928,27 @@ class _GbRegisterDetailScreenState extends ConsumerState<GbRegisterDetailScreen>
           ),
         ),
         Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A), fontWeight: FontWeight.w600),
-          ),
+          child: translate
+              ? AppTranslatedText(
+                  value,
+                  targetLanguage: lang,
+                  style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A), fontWeight: FontWeight.w600),
+                )
+              : Text(
+                  value,
+                  style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A), fontWeight: FontWeight.w600),
+                ),
         ),
       ],
     );
   }
 
-  static String _formatDate(String dateStr) {
+  static String _formatDate(String dateStr, String lang) {
     try {
       final dt = DateTime.parse(dateStr);
-      return DateFormat('dd MMM yyyy').format(dt);
+      return AppTranslations.formatDate(dt, lang, pattern: 'dd MMM yyyy');
     } catch (_) {
-      return dateStr;
+      return AppTranslations.formatDigits(dateStr, lang);
     }
   }
 }

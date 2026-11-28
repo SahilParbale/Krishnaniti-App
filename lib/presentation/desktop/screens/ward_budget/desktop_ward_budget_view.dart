@@ -71,16 +71,17 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
   double get _totalRemaining => (_totalAllocated - _totalUtilized).clamp(0.0, double.infinity);
   double get _utilizationRate => _totalAllocated > 0 ? (_totalUtilized / _totalAllocated) * 100 : 0.0;
 
-  String _formatCurrency(double amount) {
+  String _formatCurrency(double amount, String lang) {
     final format = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
-    return format.format(amount);
+    return AppTranslations.formatDigits(format.format(amount), lang);
   }
 
   List<WardBudgetModel> get _filteredBudgets {
+    final q = AppTranslations.normalizeAsciiDigits(_searchTerm.trim()).toLowerCase();
     return _budgets.where((b) {
-      final matchesSearch = _searchTerm.isEmpty ||
-          b.category.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          b.area.toLowerCase().contains(_searchTerm.toLowerCase());
+      final matchesSearch = q.isEmpty ||
+          AppTranslations.normalizeAsciiDigits(b.category).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(b.area).toLowerCase().contains(q);
 
       final matchesArea = _selectedArea == 'All' ||
           b.area.toLowerCase().trim() == _selectedArea.toLowerCase().trim();
@@ -98,102 +99,164 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => DesktopModalDialog(
-        title: 'Add New Budget Provision',
-        subtitle: 'Sanction and track municipal budget allocations across ward sectors',
-        icon: Icons.account_balance_wallet_rounded,
-        width: 540,
-        onClose: () => Navigator.pop(ctx),
-        actions: [
-          DesktopModalDialog.cancelButton(ctx),
-          const SizedBox(width: 12),
-          DesktopModalDialog.primaryButton(
-            text: 'Save Provision',
-            onPressed: () async {
-              if (catController.text.trim().isEmpty) return;
-              final newBudget = WardBudgetModel(
-                id: 'budget-${DateTime.now().millisecondsSinceEpoch}',
-                financialYear: _year,
-                category: catController.text.trim(),
-                totalAllocation: double.tryParse(totalController.text.trim()) ?? 0,
-                utilizedAmount: double.tryParse(utilizedController.text.trim()) ?? 0,
-                area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
-                createdAt: DateTime.now().toIso8601String(),
-                updatedAt: DateTime.now().toIso8601String(),
-              );
-
-              final repo = ref.read(wardBudgetRepoProvider);
-              await repo.addBudget(newBudget);
-              if (ctx.mounted) Navigator.pop(ctx);
-              _loadBudgets();
-            },
-          ),
-        ],
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Category / Work Title *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-            const SizedBox(height: 6),
-            TextField(
-              controller: catController,
-              decoration: desktopInputDecoration(hintText: 'e.g. Road maintenance, Park development'),
+      builder: (ctx) => Consumer(
+        builder: (ctx, modalRef, _) {
+          final lang = modalRef.watch(desktopLanguageProvider);
+          return DesktopModalDialog(
+            title: AppTranslations.pick(
+              lang,
+              en: 'Add New Budget Provision',
+              mr: 'नवीन बजेट तरतूद जोडा',
+              hi: 'नया बजट प्रावधान जोड़ें',
             ),
-            const SizedBox(height: 16),
-            Row(
+            subtitle: AppTranslations.pick(
+              lang,
+              en: 'Sanction and track municipal budget allocations across ward sectors',
+              mr: 'प्रभाग क्षेत्रांमधील महापालिका बजेट वाटप मंजूर करा आणि ट्रॅक करा',
+              hi: 'वार्ड क्षेत्रों में नगर निगम बजट आवंटन स्वीकृत और ट्रैक करें',
+            ),
+            icon: Icons.account_balance_wallet_rounded,
+            width: 540,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: AppTranslations.pick(
+                  lang,
+                  en: 'Save Provision',
+                  mr: 'तरतूद जतन करा',
+                  hi: 'प्रावधान सहेजें',
+                ),
+                onPressed: () async {
+                  if (catController.text.trim().isEmpty) return;
+                  final newBudget = WardBudgetModel(
+                    id: 'budget-${DateTime.now().millisecondsSinceEpoch}',
+                    financialYear: _year,
+                    category: catController.text.trim(),
+                    totalAllocation: double.tryParse(
+                          AppTranslations.normalizeAsciiDigits(totalController.text.trim()),
+                        ) ??
+                        0,
+                    utilizedAmount: double.tryParse(
+                          AppTranslations.normalizeAsciiDigits(utilizedController.text.trim()),
+                        ) ??
+                        0,
+                    area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
+                    createdAt: DateTime.now().toIso8601String(),
+                    updatedAt: DateTime.now().toIso8601String(),
+                  );
+
+                  final repo = ref.read(wardBudgetRepoProvider);
+                  await repo.addBudget(newBudget);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _loadBudgets();
+                },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Sanctioned Allocation (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: totalController,
-                        keyboardType: TextInputType.number,
-                        decoration: desktopInputDecoration(
-                          hintText: '1000000',
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.only(left: 14, right: 6),
-                            child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                          ),
-                        ),
-                      ),
-                    ],
+                Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Category / Work Title *',
+                    mr: 'वर्गवारी / कामाचे शीर्षक *',
+                    hi: 'श्रेणी / कार्य शीर्षक *',
+                  ),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: catController,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'e.g. Road maintenance, Park development',
+                      mr: 'उदा. रस्ते देखभाल, उद्यान विकास',
+                      hi: 'उदा. सड़क रखरखाव, उद्यान विकास',
+                    ),
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Ward / Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: areaController,
-                        decoration: desktopInputDecoration(hintText: 'Ward 12'),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Sanctioned Allocation (₹) *',
+                              mr: 'मंजूर तरतूद (₹) *',
+                              hi: 'स्वीकृत आवंटन (₹) *',
+                            ),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: totalController,
+                            keyboardType: TextInputType.number,
+                            decoration: desktopInputDecoration(
+                              hintText: AppTranslations.formatDigits('1000000', lang),
+                              prefixIcon: const Padding(
+                                padding: EdgeInsets.only(left: 14, right: 6),
+                                child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppTranslations.pick(lang, en: 'Ward / Area', mr: 'प्रभाग / परिसर', hi: 'वार्ड / क्षेत्र'),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: areaController,
+                            decoration: desktopInputDecoration(
+                              hintText: AppTranslations.pick(lang, en: 'Ward 12', mr: 'प्रभाग १२', hi: 'वार्ड १२'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Initial Utilized Amount (₹)',
+                    mr: 'प्रारंभिक खर्च रक्कम (₹)',
+                    hi: 'प्रारंभिक उपयोग की गई राशि (₹)',
+                  ),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: utilizedController,
+                  keyboardType: TextInputType.number,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.formatDigits('0', lang),
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.only(left: 14, right: 6),
+                      child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            const Text('Initial Utilized Amount (₹)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-            const SizedBox(height: 6),
-            TextField(
-              controller: utilizedController,
-              keyboardType: TextInputType.number,
-              decoration: desktopInputDecoration(
-                hintText: '0',
-                prefixIcon: const Padding(
-                  padding: EdgeInsets.only(left: 14, right: 6),
-                  child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                ),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -204,60 +267,92 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => DesktopModalDialog(
-        title: 'Update Utilized Expenditure',
-        subtitle: item.category,
-        icon: Icons.edit_note_rounded,
-        width: 480,
-        onClose: () => Navigator.pop(ctx),
-        actions: [
-          DesktopModalDialog.cancelButton(ctx),
-          const SizedBox(width: 12),
-          DesktopModalDialog.primaryButton(
-            text: 'Save Update',
-            onPressed: () async {
-              final val = double.tryParse(controller.text.trim()) ?? item.utilizedAmount;
-              final repo = ref.read(wardBudgetRepoProvider);
-              await repo.updateUtilization(item.id, val);
-              if (ctx.mounted) Navigator.pop(ctx);
-              _loadBudgets();
-            },
-          ),
-        ],
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Total Sanctioned:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                  Text(_formatCurrency(item.totalAllocation), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                ],
-              ),
+      builder: (ctx) => Consumer(
+        builder: (ctx, modalRef, _) {
+          final lang = modalRef.watch(desktopLanguageProvider);
+          return DesktopModalDialog(
+            title: AppTranslations.pick(
+              lang,
+              en: 'Update Utilized Expenditure',
+              mr: 'खर्च अद्ययावत करा',
+              hi: 'उपयोग किया गया व्यय अपडेट करें',
             ),
-            const SizedBox(height: 16),
-            const Text('New Utilized Amount (₹) *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-            const SizedBox(height: 6),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: desktopInputDecoration(
-                hintText: 'Enter new amount',
-                prefixIcon: const Padding(
-                  padding: EdgeInsets.only(left: 14, right: 6),
-                  child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+            subtitle: item.category,
+            icon: Icons.edit_note_rounded,
+            width: 480,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: AppTranslations.pick(lang, en: 'Save Update', mr: 'बदल जतन करा', hi: 'अपडेट सहेजें'),
+                onPressed: () async {
+                  final val = double.tryParse(
+                        AppTranslations.normalizeAsciiDigits(controller.text.trim()),
+                      ) ??
+                      item.utilizedAmount;
+                  final repo = ref.read(wardBudgetRepoProvider);
+                  await repo.updateUtilization(item.id, val);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _loadBudgets();
+                },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        AppTranslations.pick(lang, en: 'Total Sanctioned:', mr: 'एकूण मंजूर:', hi: 'कुल स्वीकृत:'),
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                      ),
+                      Text(
+                        _formatCurrency(item.totalAllocation, lang),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'New Utilized Amount (₹) *',
+                    mr: 'नवीन खर्च रक्कम (₹) *',
+                    hi: 'नई उपयोग की गई राशि (₹) *',
+                  ),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Enter new amount',
+                      mr: 'नवीन रक्कम प्रविष्ट करा',
+                      hi: 'नई राशि दर्ज करें',
+                    ),
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.only(left: 14, right: 6),
+                      child: Text('₹ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -266,30 +361,67 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Budget Provision'),
-        content: Text('Are you sure you want to delete "${item.category}"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final repo = ref.read(wardBudgetRepoProvider);
-              await repo.deleteBudget(item.id);
-              if (ctx.mounted) Navigator.pop(ctx);
-              _loadBudgets();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+      builder: (ctx) => Consumer(
+        builder: (ctx, modalRef, _) {
+          final lang = modalRef.watch(desktopLanguageProvider);
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Delete Budget Provision',
+                mr: 'बजेट तरतूद हटवा',
+                hi: 'बजेट प्रावधान हटाएं',
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Are you sure you want to delete this budget provision?',
+                    mr: 'तुम्हाला ही बजेट तरतूद नक्की हटवायची आहे का?',
+                    hi: 'क्या आप वाकई इस बजट प्रावधान को हटाना चाहते हैं?',
+                  ),
+                ),
+                const SizedBox(height: 6),
+                AppTranslatedText(
+                  '"${item.category}"',
+                  targetLanguage: lang,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(AppTranslations.getCommon('cancel', lang)),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final repo = ref.read(wardBudgetRepoProvider);
+                  await repo.deleteBudget(item.id);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _loadBudgets();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+                child: Text(
+                  AppTranslations.getCommon('delete', lang),
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(appLanguageProvider);
+    final lang = ref.watch(desktopLanguageProvider);
     final filtered = _filteredBudgets;
     final visible = _visibleBudgets;
 
@@ -324,7 +456,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
               onLoadMore: () {
                 setState(() => _displayedLimit += 20);
               },
-              label: lang == 'mr' ? 'तरतुदी' : (lang == 'hi' ? 'प्रावधान' : 'provisions'),
+              label: AppTranslations.pick(lang, en: 'provisions', mr: 'तरतुदी', hi: 'प्रावधान'),
               isMarathi: lang == 'mr',
             ),
         ],
@@ -336,29 +468,33 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppTranslations.getNavTitle('budget', lang),
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.5,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppTranslations.getNavTitle('budget', lang),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              lang == 'mr'
-                  ? 'प्रभाग विकास निधी वाटप, खर्च आणि शिल्लक निधी व्यवस्थापन'
-                  : (lang == 'hi'
-                      ? 'वार्ड विकास निधि आवंटन, व्यय और शेष निधि प्रबंधन'
-                      : 'Municipal budget allocation, expenditure and remaining fund tracking'),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Municipal budget allocation, expenditure and remaining fund tracking',
+                  mr: 'प्रभाग विकास निधी वाटप, खर्च आणि शिल्लक निधी व्यवस्थापन',
+                  hi: 'वार्ड विकास निधि आवंटन, व्यय और शेष निधि प्रबंधन',
+                ),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 16),
 
         // Actions
         Row(
@@ -367,17 +503,40 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             AppDropdown<String>(
               value: _year,
               height: 40,
-              width: 160,
+              width: 175,
               prefixIcon: const Icon(Icons.calendar_today_outlined, size: 15, color: Color(0xFF94A3B8)),
               backgroundColor: Colors.white,
               borderColor: const Color(0xFFE2E8F0),
-              items: const [
-                DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
-                DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
+              items: [
+                DropdownMenuItem(
+                  value: '2024-2025',
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'FY 2024-2025',
+                      mr: 'आर्थिक वर्ष २०२४-२०२५',
+                      hi: 'वित्त वर्ष २०२४-२०२५',
+                    ),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: '2023-2024',
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'FY 2023-2024',
+                      mr: 'आर्थिक वर्ष २०२३-२०२४',
+                      hi: 'वित्त वर्ष २०२३-२०२४',
+                    ),
+                  ),
+                ),
               ],
               onChanged: (val) {
                 if (val != null) {
-                  setState(() => _year = val);
+                  setState(() {
+                    _year = val;
+                    _displayedLimit = 20;
+                  });
                   _loadBudgets();
                 }
               },
@@ -389,14 +548,15 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
               onPressed: () {
                 WardBudgetReportGenerator.generateAndPrintBudgetReport(
                   context: context,
-                  budgets: _budgets,
+                  budgets: _filteredBudgets,
                   year: _year,
+                  areaFilter: _selectedArea,
                   lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -424,7 +584,12 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                   const Icon(Icons.add, size: 16, color: Colors.white),
                   const SizedBox(width: 8),
                   Text(
-                    lang == 'mr' ? 'नवीन तरतूद जोडा' : (lang == 'hi' ? 'नई निधि जोड़ें' : 'Add Budget Provision'),
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Add Budget Provision',
+                      mr: 'नवीन तरतूद जोडा',
+                      hi: 'नई निधि जोड़ें',
+                    ),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -457,8 +622,8 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             // Card 1: Total Allocated
             _statCard(
               title: AppTranslations.t('budget.allocated', lang: lang),
-              amount: _formatCurrency(_totalAllocated),
-              subtitle: lang == 'mr' ? 'प्रभाग क्र. १२' : (lang == 'hi' ? 'वार्ड नं. १२' : 'Ward No 12'),
+              amount: _formatCurrency(_totalAllocated, lang),
+              subtitle: AppTranslations.pick(lang, en: 'Ward No 12', mr: 'प्रभाग क्र. १२', hi: 'वार्ड नं. १२'),
               icon: Icons.account_balance_wallet_outlined,
               iconColor: const Color(0xFF0284C7),
               iconBgColor: const Color(0xFFF0F9FF),
@@ -467,8 +632,13 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             // Card 2: Total Utilized
             _statCard(
               title: AppTranslations.t('budget.utilized', lang: lang),
-              amount: _formatCurrency(_totalUtilized),
-              subtitle: lang == 'mr' ? 'प्रगतीपथावर आणि पूर्ण झालेली कामे' : (lang == 'hi' ? 'जारी और पूर्ण हुए कार्य' : 'Ongoing and completed works'),
+              amount: _formatCurrency(_totalUtilized, lang),
+              subtitle: AppTranslations.pick(
+                lang,
+                en: 'Ongoing and completed works',
+                mr: 'प्रगतीपथावर आणि पूर्ण झालेली कामे',
+                hi: 'जारी और पूर्ण हुए कार्य',
+              ),
               icon: Icons.trending_up,
               iconColor: const Color(0xFF16A34A),
               iconBgColor: const Color(0xFFF0FDF4),
@@ -477,8 +647,13 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             // Card 3: Remaining Balance
             _statCard(
               title: AppTranslations.t('budget.remaining', lang: lang),
-              amount: _formatCurrency(_totalRemaining),
-              subtitle: lang == 'mr' ? 'नियोजित कामांसाठी उपलब्ध' : (lang == 'hi' ? 'योजनाबद्ध कार्यों के लिए उपलब्ध' : 'Available for planned works'),
+              amount: _formatCurrency(_totalRemaining, lang),
+              subtitle: AppTranslations.pick(
+                lang,
+                en: 'Available for planned works',
+                mr: 'नियोजित कामांसाठी उपलब्ध',
+                hi: 'योजनाबद्ध कार्यों के लिए उपलब्ध',
+              ),
               icon: Icons.currency_rupee,
               iconColor: const Color(0xFFD97706),
               iconBgColor: const Color(0xFFFFFBEB),
@@ -500,9 +675,13 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        lang == 'mr' ? 'वापर दर' : (lang == 'hi' ? 'उपयोग दर' : 'Utilization Rate'),
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                      Expanded(
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Utilization Rate', mr: 'वापर दर', hi: 'उपयोग दर'),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.all(6),
@@ -512,7 +691,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                     ],
                   ),
                   Text(
-                    '${_utilizationRate.toStringAsFixed(1)}%',
+                    AppTranslations.formatDigits('${_utilizationRate.toStringAsFixed(1)}%', lang),
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
                   ),
                   ClipRRect(
@@ -558,7 +737,14 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(8)),
@@ -567,7 +753,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             ],
           ),
           Text(amount, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5)),
-          Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+          Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
@@ -613,8 +799,8 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueAreas.map((area) {
               final label = area == 'All'
-                  ? (lang == 'mr' ? 'सर्व क्षेत्रे' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                  : area;
+                  ? AppTranslations.getAllAreas(lang)
+                  : AppTranslations.getAreaName(area, lang);
               return DropdownMenuItem(
                 value: area,
                 child: Text(label, overflow: TextOverflow.ellipsis),
@@ -649,9 +835,12 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
             const Icon(Icons.account_balance_outlined, size: 48, color: Color(0xFFCBD5E1)),
             const SizedBox(height: 12),
             Text(
-              lang == 'mr'
-                  ? 'कोणतीही तरतूद सापडली नाही'
-                  : (lang == 'hi' ? 'कोई बजट आवंटन नहीं मिला' : 'No budget allocations found'),
+              AppTranslations.pick(
+                lang,
+                en: 'No budget allocations found',
+                mr: 'कोणतीही तरतूद सापडली नाही',
+                hi: 'कोई बजट आवंटन नहीं मिला',
+              ),
               style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
             ),
           ],
@@ -693,17 +882,20 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: AppTranslatedText(item.category,
+                        child: AppTranslatedText(
+                          item.category,
                           targetLanguage: lang,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                        child: AppTranslatedText(item.area,
+                        child: AppTranslatedText(
+                          AppTranslations.getAreaName(item.area, lang),
                           targetLanguage: lang,
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                         ),
@@ -721,7 +913,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                         children: [
                           Text(AppTranslations.t('budget.allocated', lang: lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                           const SizedBox(height: 2),
-                          Text(_formatCurrency(item.totalAllocation), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                          Text(_formatCurrency(item.totalAllocation, lang), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                         ],
                       ),
                       Column(
@@ -729,7 +921,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                         children: [
                           Text(AppTranslations.t('budget.utilized', lang: lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                           const SizedBox(height: 2),
-                          Text(_formatCurrency(item.utilizedAmount), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                          Text(_formatCurrency(item.utilizedAmount, lang), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
                         ],
                       ),
                       Column(
@@ -737,7 +929,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                         children: [
                           Text(AppTranslations.t('budget.remaining', lang: lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                           const SizedBox(height: 2),
-                          Text(_formatCurrency(item.remainingAmount), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
+                          Text(_formatCurrency(item.remainingAmount, lang), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
                         ],
                       ),
                     ],
@@ -749,10 +941,13 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        lang == 'mr' ? 'वापर' : (lang == 'hi' ? 'उपयोग' : 'Usage'),
+                        AppTranslations.pick(lang, en: 'Usage', mr: 'वापर', hi: 'उपयोग'),
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                       ),
-                      Text('${pct.toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.progressColor)),
+                      Text(
+                        AppTranslations.formatDigits('${pct.toStringAsFixed(1)}%', lang),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.progressColor),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -780,7 +975,12 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
                           onPressed: () => _showUpdateUtilizationModal(item),
                           icon: const Icon(Icons.edit_outlined, size: 14, color: Color(0xFF0284C7)),
                           label: Text(
-                            lang == 'mr' ? 'खर्च अद्ययावत करा' : (lang == 'hi' ? 'व्यय अपडेट करें' : 'Update Utilized'),
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Update Utilized',
+                              mr: 'खर्च अद्ययावत करा',
+                              hi: 'व्यय अपडेट करें',
+                            ),
                             style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
                           ),
                           style: OutlinedButton.styleFrom(

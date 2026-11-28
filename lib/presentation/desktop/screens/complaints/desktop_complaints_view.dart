@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/data/models/complaint_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/complaints_repository.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_detail_screen.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/complaint_report_generator.dart';
@@ -81,7 +80,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   List<String> get _uniqueDates {
     final dates = <String>{};
     for (final c in _complaints) {
-      dates.add(DateFormat('MMM d, yyyy').format(c.createdAt));
+      dates.add(DateFormat('yyyy-MM-dd').format(c.createdAt));
     }
     final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
     return ['All', ...sorted];
@@ -116,19 +115,20 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
 
       // Date filter matching ComplaintList.tsx:371
       if (_selectedDate != 'All') {
-        final formattedDate = DateFormat('MMM d, yyyy').format(c.createdAt);
-        if (!formattedDate.toLowerCase().contains(_selectedDate.toLowerCase())) {
+        final formattedDate = DateFormat('yyyy-MM-dd').format(c.createdAt);
+        if (formattedDate != _selectedDate) {
           return false;
         }
       }
 
       // Search query
       if (_searchQuery.trim().isNotEmpty) {
-        final q = _searchQuery.toLowerCase().trim();
+        final q = AppTranslations.normalizeAsciiDigits(_searchQuery).toLowerCase().trim();
         final matchTitle = c.title.toLowerCase().contains(q);
         final matchDesc = c.description.toLowerCase().contains(q);
         final matchCitizen = (c.citizenName ?? '').toLowerCase().contains(q);
-        if (!matchTitle && !matchDesc && !matchCitizen) return false;
+        final matchMobile = AppTranslations.normalizeAsciiDigits(c.citizenMobile ?? '').contains(q);
+        if (!matchTitle && !matchDesc && !matchCitizen && !matchMobile) return false;
       }
 
       return true;
@@ -432,6 +432,32 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     );
   }
 
+  Widget _buildLocalizedAreaText(
+    String raw,
+    String lang, {
+    TextStyle? style,
+    int? maxLines,
+    TextOverflow? overflow,
+  }) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || trimmed == '-') {
+      return Text(raw, style: style, maxLines: maxLines, overflow: overflow);
+    }
+    final mapped = AppTranslations.getAreaName(trimmed, lang);
+    final changed = mapped.trim().toLowerCase() != trimmed.toLowerCase() &&
+        mapped != AppTranslations.formatDigits(trimmed, lang);
+    if (changed || (lang == 'en' && !DynamicTranslationService.containsDevanagari(trimmed))) {
+      return Text(mapped, style: style, maxLines: maxLines, overflow: overflow);
+    }
+    return AppTranslatedText(
+      trimmed,
+      targetLanguage: lang,
+      style: style,
+      maxLines: maxLines,
+      overflow: overflow,
+    );
+  }
+
   Widget _buildComplaintTable(List<ComplaintModel> items, String lang) {
     return Container(
       width: double.infinity,
@@ -445,15 +471,15 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
         child: DataTable(
           columns: [
             DataColumn(label: Text(AppTranslations.getReportColumn('title', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text(AppTranslations.getReportColumn('citizen', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.pick(lang, en: 'Citizen', mr: 'नागरिक', hi: 'नागरिक'), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('category', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('area', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text(lang == 'mr' ? 'कृती' : (lang == 'hi' ? 'कार्रवाई' : 'Actions'), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.pick(lang, en: 'Actions', mr: 'कृती', hi: 'कार्रवाई'), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.map((c) {
-            final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(c.createdAt);
+            final dateStr = AppTranslations.formatDateTime(c.createdAt, lang);
             return DataRow(
               cells: [
                 DataCell(
@@ -461,6 +487,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                     constraints: const BoxConstraints(maxWidth: 240),
                     child: AppTranslatedText(
                       c.title,
+                      targetLanguage: lang,
                       style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -468,17 +495,26 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                 ),
                 DataCell(
                   c.citizenName != null && c.citizenName!.isNotEmpty
-                      ? AppTranslatedText(c.citizenName!, isName: true)
+                      ? AppTranslatedText(c.citizenName!, isName: true, targetLanguage: lang)
                       : const Text('-', style: TextStyle(color: Color(0xFF94A3B8))),
                 ),
                 DataCell(_buildCategoryBadge(c.category, lang)),
-                DataCell(Text(AppTranslations.getAreaName(c.area ?? '-', lang))),
+                DataCell(
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 160),
+                    child: _buildLocalizedAreaText(
+                      c.area ?? c.location ?? '-',
+                      lang,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
                 DataCell(_buildStatusBadge(c.status, lang)),
-                DataCell(Text(AppTranslations.formatDigits(dateStr, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                DataCell(Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
                 DataCell(
                   IconButton(
                     icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
-                    tooltip: lang == 'mr' ? 'तपशील पहा' : (lang == 'hi' ? 'विवरण देखें' : 'View Details'),
+                    tooltip: AppTranslations.pick(lang, en: 'View Details', mr: 'तपशील पहा', hi: 'विवरण देखें'),
                     onPressed: () => _openComplaintDetail(c),
                   ),
                 ),
@@ -614,12 +650,19 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                   backgroundColor: const Color(0xFFF8FAFC),
                   borderColor: const Color(0xFFE2E8F0),
                   items: _uniqueDates.map((date) {
+                    String label;
+                    if (date == 'All') {
+                      label = AppTranslations.pick(lang, en: 'All Dates', mr: 'सर्व तारखा', hi: 'सभी तिथियां');
+                    } else {
+                      final parsed = DateTime.tryParse(date);
+                      label = parsed != null
+                          ? AppTranslations.formatDate(parsed, lang, pattern: 'MMM d, yyyy')
+                          : AppTranslations.formatDigits(date, lang);
+                    }
                     return DropdownMenuItem(
                       value: date,
                       child: Text(
-                        date == 'All'
-                            ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                            : AppTranslations.formatDigits(date, lang),
+                        label,
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -728,7 +771,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
       borderColor = const Color(0xFFFCA5A5); // red-300
     }
 
-    final dateStr = DateFormat('MMM d, h:mm a').format(complaint.createdAt);
+    final dateStr = AppTranslations.formatDateTime(complaint.createdAt, lang, datePattern: 'd MMM');
 
     return InkWell(
       onTap: () => _openComplaintDetail(complaint),
@@ -783,6 +826,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                             child: AppTranslatedText(
                               complaint.citizenName!,
                               isName: true,
+                              targetLanguage: lang,
                               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -816,13 +860,14 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                     const Icon(Icons.badge_outlined, size: 12, color: Color(0xFF0284C7)),
                     const SizedBox(width: 4),
                     Text(
-                      lang == "mr" ? "नियुक्त: " : (lang == "hi" ? "नियुक्त: " : "Assigned: "),
+                      AppTranslations.pick(lang, en: 'Assigned: ', mr: 'नियुक्त: ', hi: 'नियुक्त: '),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                     ),
                     Flexible(
                       child: AppTranslatedText(
                         complaint.assignedStaffName!,
                         isName: true,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -836,6 +881,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             // Complaint Title with on-the-fly dynamic translation
             AppTranslatedText(
               complaint.title,
+              targetLanguage: lang,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -851,6 +897,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
             Expanded(
               child: AppTranslatedText(
                 complaint.description,
+                targetLanguage: lang,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -875,7 +922,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                       const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 4),
                       Text(
-                        AppTranslations.formatDigits(dateStr, lang),
+                        dateStr,
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -887,9 +934,11 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
                         const SizedBox(width: 4),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 120),
-                          child: Text(
-                            AppTranslations.getAreaName(complaint.area ?? complaint.location ?? '', lang),
+                          child: _buildLocalizedAreaText(
+                            complaint.area ?? complaint.location ?? '',
+                            lang,
                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -945,6 +994,9 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   }
 
   Widget _buildCategoryBadge(String category, [String lang = 'en']) {
+    final mapped = AppTranslations.getComplaintType(category, lang);
+    final changed = mapped.trim().toLowerCase() != category.trim().toLowerCase() &&
+        mapped != AppTranslations.formatDigits(category, lang);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -952,10 +1004,16 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Text(
-        AppTranslations.getComplaintType(category, lang),
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
-      ),
+      child: (changed || (lang == 'en' && !DynamicTranslationService.containsDevanagari(category)))
+          ? Text(
+              mapped,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+            )
+          : AppTranslatedText(
+              category,
+              targetLanguage: lang,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+            ),
     );
   }
 

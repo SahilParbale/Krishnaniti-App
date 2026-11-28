@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/data/models/letter_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/letters_repository.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/new_letter_bottom_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_type_manager_sheet.dart';
 import 'package:nagarsevak_mobile/presentation/screens/letters/letter_report_generator.dart';
@@ -31,7 +30,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   String _searchQuery = '';
   String _selectedArea = 'All';
   String _selectedDate = 'All';
-  String _previewLang = 'mr'; // 'mr' | 'en'
+  String _previewLang = 'mr'; // 'mr' | 'hi' | 'en'
 
   bool _loading = true;
   List<LetterModel> _outgoingLetters = [];
@@ -88,7 +87,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   List<String> get _uniqueDates {
     final dates = <String>{};
     for (final l in _currentList) {
-      dates.add(DateFormat('MMM d, yyyy').format(l.createdAt));
+      dates.add(DateFormat('yyyy-MM-dd').format(l.createdAt));
     }
     final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
     return ['All', ...sorted];
@@ -100,17 +99,18 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         return false;
       }
       if (_selectedDate != 'All') {
-        final formattedDate = DateFormat('MMM d, yyyy').format(l.createdAt);
-        if (!formattedDate.toLowerCase().contains(_selectedDate.toLowerCase())) {
+        final formattedDate = DateFormat('yyyy-MM-dd').format(l.createdAt);
+        if (formattedDate != _selectedDate) {
           return false;
         }
       }
       if (_searchQuery.trim().isNotEmpty) {
-        final q = _searchQuery.toLowerCase().trim();
+        final q = AppTranslations.normalizeAsciiDigits(_searchQuery).toLowerCase().trim();
         final matchTitle = l.title.toLowerCase().contains(q);
         final matchCitizen = l.citizenName.toLowerCase().contains(q);
         final matchSubject = l.subject.toLowerCase().contains(q);
-        if (!matchTitle && !matchCitizen && !matchSubject) return false;
+        final matchMobile = AppTranslations.normalizeAsciiDigits(l.mobile).contains(q);
+        if (!matchTitle && !matchCitizen && !matchSubject && !matchMobile) return false;
       }
       return true;
     }).toList();
@@ -155,7 +155,6 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
     final items = _filteredLetters;
     final visibleItems = _visibleLetters;
 
@@ -199,7 +198,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   setState(() => _displayedLimit += 20);
                 },
                 label: lang == 'mr' ? 'पत्रे' : (lang == 'hi' ? 'पत्र' : 'letters'),
-                isMarathi: isMr,
+                isMarathi: lang == 'mr',
               ),
           ],
         ),
@@ -319,7 +318,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                     const Icon(Icons.add, size: 16, color: Colors.white),
                     const SizedBox(width: 8),
                     Text(
-                      AppTranslations.t('letters.new_request', lang: lang),
+                      AppTranslations.pick(
+                        lang,
+                        en: 'New Request',
+                        mr: 'नवीन विनंती',
+                        hi: 'नया अनुरोध',
+                      ),
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.1),
                     ),
                   ],
@@ -366,7 +370,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           Row(
             children: [
               _buildTabButton(
-                title: '${AppTranslations.t("letters.outward_register", lang: lang)} (${_outgoingLetters.length})',
+                title: '${AppTranslations.pick(lang, en: 'Outward Register', mr: 'जावक नोंदवही', hi: 'जावक रजिस्टर')} (${AppTranslations.formatDigits(_outgoingLetters.length, lang)})',
                 isActive: _activeTab == 'outgoing',
                 onTap: () {
                   setState(() {
@@ -378,7 +382,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               ),
               const SizedBox(width: 24),
               _buildTabButton(
-                title: '${AppTranslations.t("letters.inward_register", lang: lang)} (${_incomingLetters.length})',
+                title: '${AppTranslations.pick(lang, en: 'Inward Register', mr: 'आवक नोंदवही', hi: 'आवक रजिस्टर')} (${AppTranslations.formatDigits(_incomingLetters.length, lang)})',
                 isActive: _activeTab == 'incoming',
                 onTap: () {
                   setState(() {
@@ -419,6 +423,32 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     );
   }
 
+  Widget _buildLocalizedAreaText(
+    String raw,
+    String lang, {
+    TextStyle? style,
+    int? maxLines,
+    TextOverflow? overflow,
+  }) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || trimmed == '-') {
+      return Text(raw, style: style, maxLines: maxLines, overflow: overflow);
+    }
+    final mapped = AppTranslations.getAreaName(trimmed, lang);
+    final changed = mapped.trim().toLowerCase() != trimmed.toLowerCase() &&
+        mapped != AppTranslations.formatDigits(trimmed, lang);
+    if (changed || (lang == 'en' && !DynamicTranslationService.containsDevanagari(trimmed))) {
+      return Text(mapped, style: style, maxLines: maxLines, overflow: overflow);
+    }
+    return AppTranslatedText(
+      trimmed,
+      targetLanguage: lang,
+      style: style,
+      maxLines: maxLines,
+      overflow: overflow,
+    );
+  }
+
   Widget _buildLettersTable(List<LetterModel> items, String lang) {
     return Container(
       width: double.infinity,
@@ -431,31 +461,43 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         scrollDirection: Axis.horizontal,
         child: DataTable(
           columns: [
-            DataColumn(label: Text(lang == 'mr' ? 'संदर्भ / जावक क्र.' : (lang == 'hi' ? 'संदर्भ / जावक क्र.' : 'Ref / Outward No.'), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.pick(lang, en: 'Ref / Outward No.', mr: 'संदर्भ / जावक क्र.', hi: 'संदर्भ / जावक क्र.'), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('subject', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text(AppTranslations.getReportColumn('citizen', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.pick(lang, en: 'Citizen', mr: 'नागरिक', hi: 'नागरिक'), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('category', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text(lang == 'mr' ? 'कृती' : (lang == 'hi' ? 'कार्रवाई' : 'Actions'), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(label: Text(AppTranslations.pick(lang, en: 'Actions', mr: 'कृती', hi: 'कार्रवाई'), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.map((l) {
-            final dateStr = DateFormat('dd MMM yyyy').format(l.createdAt);
+            final dateStr = AppTranslations.formatDate(l.createdAt, lang);
+            final categoryRaw = l.letterType ?? l.department ?? '-';
             return DataRow(
               cells: [
-                DataCell(Text(l.id, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0369A1)))),
+                DataCell(Text(AppTranslations.formatDigits(l.id, lang), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0369A1)))),
                 DataCell(
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 240),
                     child: AppTranslatedText(
                       l.subject,
+                      targetLanguage: lang,
                       style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                DataCell(Text(l.recipient ?? l.citizenName)),
-                DataCell(Text(l.letterType ?? l.department ?? '-')),
+                DataCell(
+                  AppTranslatedText(
+                    l.recipient ?? l.citizenName,
+                    isName: true,
+                    targetLanguage: lang,
+                  ),
+                ),
+                DataCell(
+                  categoryRaw == '-'
+                      ? const Text('-')
+                      : AppTranslatedText(categoryRaw, targetLanguage: lang),
+                ),
                 DataCell(Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
                 DataCell(
                   Container(
@@ -474,7 +516,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                 DataCell(
                   IconButton(
                     icon: const Icon(Icons.remove_red_eye_outlined, size: 16, color: Color(0xFF0284C7)),
-                    tooltip: 'Preview Letter',
+                    tooltip: AppTranslations.pick(lang, en: 'Preview Letter', mr: 'पत्राचे पूर्वावलोकन', hi: 'पत्र पूर्वावलोकन'),
                     onPressed: () {
                       setState(() {
                         _selectedLetter = l;
@@ -637,9 +679,15 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueDates.map((date) {
-              final label = date == 'All'
-                  ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                  : AppTranslations.formatDigits(date, lang);
+              String label;
+              if (date == 'All') {
+                label = AppTranslations.pick(lang, en: 'All Dates', mr: 'सर्व तारखा', hi: 'सभी तिथियां');
+              } else {
+                final parsed = DateTime.tryParse(date);
+                label = parsed != null
+                    ? AppTranslations.formatDate(parsed, lang, pattern: 'MMM d, yyyy')
+                    : AppTranslations.formatDigits(date, lang);
+              }
               return DropdownMenuItem(
                 value: date,
                 child: Text(
@@ -712,8 +760,8 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         Expanded(
           flex: 2,
           child: _selectedLetter != null
-              ? _buildPreviewPane(_selectedLetter!, lang == 'mr')
-              : _buildSelectLetterPlaceholder(lang == 'mr'),
+              ? _buildPreviewPane(_selectedLetter!, lang)
+              : _buildSelectLetterPlaceholder(lang),
         ),
       ],
     );
@@ -733,7 +781,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
       borderLeftColor = const Color(0xFFF59E0B); // yellow-500
     }
 
-    final dateStr = DateFormat('MMM d, h:mm a').format(letter.createdAt);
+    final dateStr = AppTranslations.formatDateTime(letter.createdAt, lang, datePattern: 'd MMM');
 
     return InkWell(
       onTap: () => setState(() => _selectedLetter = letter),
@@ -754,6 +802,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                 Expanded(
                   child: AppTranslatedText(
                     letter.letterType ?? letter.title,
+                    targetLanguage: lang,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -766,14 +815,19 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               ],
             ),
             const SizedBox(height: 4),
-            Text(
+            AppTranslatedText(
               letter.citizenName,
+              isName: true,
+              targetLanguage: lang,
               style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             if (letter.subject.isNotEmpty && letter.subject != letter.title) ...[
               const SizedBox(height: 2),
               AppTranslatedText(
                 letter.subject,
+                targetLanguage: lang,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -784,10 +838,18 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(dateStr, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                if (letter.area != null)
-                  Text(
-                    letter.area!,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                if (letter.area != null && letter.area!.trim().isNotEmpty)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: _buildLocalizedAreaText(
+                        letter.area!,
+                        lang,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -799,9 +861,8 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
 
   // Incoming List Item (matching LetterDashboard.tsx lines 950-980)
   Widget _buildIncomingListItem(LetterModel letter, bool isSelected, String lang) {
-    final dateStr = letter.receivedDate != null
-        ? DateFormat('dd/MM/yyyy').format(letter.receivedDate!)
-        : DateFormat('dd/MM/yyyy').format(letter.createdAt);
+    final targetDate = letter.receivedDate ?? letter.createdAt;
+    final dateStr = AppTranslations.formatDate(targetDate, lang, pattern: 'dd/MM/yyyy');
 
     return InkWell(
       onTap: () => setState(() => _selectedLetter = letter),
@@ -822,6 +883,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                 Expanded(
                   child: AppTranslatedText(
                     letter.title,
+                    targetLanguage: lang,
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -833,7 +895,9 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    (letter.fileType ?? '').contains('pdf') ? 'PDF' : 'Image',
+                    (letter.fileType ?? '').contains('pdf')
+                        ? AppTranslations.pick(lang, en: 'PDF', mr: 'PDF', hi: 'PDF')
+                        : AppTranslations.pick(lang, en: 'Image', mr: 'फोटो', hi: 'छवि'),
                     style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF0369A1)),
                   ),
                 ),
@@ -843,6 +907,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               const SizedBox(height: 4),
               AppTranslatedText(
                 letter.description!,
+                targetLanguage: lang,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
@@ -853,10 +918,18 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(dateStr, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                if (letter.area != null)
-                  Text(
-                    letter.area!,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                if (letter.area != null && letter.area!.trim().isNotEmpty)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: _buildLocalizedAreaText(
+                        letter.area!,
+                        lang,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -867,8 +940,8 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
   }
 
   // --- Right Live Letterhead Preview Pane (matching LetterDashboard.tsx lines 1020-1120) ---
-  Widget _buildPreviewPane(LetterModel letter, bool isMr) {
-    final dateStr = DateFormat('dd/MM/yyyy').format(letter.createdAt);
+  Widget _buildPreviewPane(LetterModel letter, String lang) {
+    final dateStr = AppTranslations.formatDate(letter.createdAt, _previewLang, pattern: 'dd/MM/yyyy');
 
     return Container(
       decoration: BoxDecoration(
@@ -892,22 +965,43 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      letter.letterType ?? letter.title,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Request From: ${letter.citizenName}',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppTranslatedText(
+                        letter.letterType ?? letter.title,
+                        targetLanguage: lang,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Text(
+                            AppTranslations.pick(lang, en: 'Request From: ', mr: 'अर्जदार: ', hi: 'अनुरोधकर्ता: '),
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                          Flexible(
+                            child: AppTranslatedText(
+                              letter.citizenName,
+                              isName: true,
+                              targetLanguage: lang,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
 
-                // Language toggle (Marathi | English)
+                const SizedBox(width: 12),
+
+                // Language toggle (Marathi | Hindi | English)
                 Container(
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
@@ -916,8 +1010,9 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   ),
                   child: Row(
                     children: [
-                      _buildPreviewLangButton('mr', 'Marathi'),
-                      _buildPreviewLangButton('en', 'English'),
+                      _buildPreviewLangButton('mr', AppTranslations.pick(lang, en: 'Marathi', mr: 'मराठी', hi: 'मराठी')),
+                      _buildPreviewLangButton('hi', AppTranslations.pick(lang, en: 'Hindi', mr: 'हिंदी', hi: 'हिंदी')),
+                      _buildPreviewLangButton('en', AppTranslations.pick(lang, en: 'English', mr: 'इंग्रजी', hi: 'अंग्रेजी')),
                     ],
                   ),
                 ),
@@ -955,19 +1050,26 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppTranslatedText(
                             'Rajesh Sharma',
+                            isName: true,
+                            targetLanguage: _previewLang,
                             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Nagar Sevak - Ward 12',
+                            AppTranslations.pick(
+                              _previewLang,
+                              en: 'Nagar Sevak - Ward 12',
+                              mr: 'नगरसेवक - प्रभाग १२',
+                              hi: 'नगरसेवक - वार्ड १२',
+                            ),
                             style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
                           ),
                         ],
                       ),
                       Text(
-                        'Date: $dateStr',
+                        '${AppTranslations.pick(_previewLang, en: 'Date', mr: 'दिनांक', hi: 'दिनांक')}: $dateStr',
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
                       ),
                     ],
@@ -977,30 +1079,30 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   const Divider(color: Color(0xFFCBD5E1), thickness: 1),
                   const SizedBox(height: 24),
 
-                  // 2. Letter Title (TO WHOMSOEVER IT MAY CONCERN in English)
-                  if (_previewLang == 'en') ...[
-                    const Center(
-                      child: Text(
-                        'TO WHOMSOEVER IT MAY CONCERN',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          decoration: TextDecoration.underline,
-                          letterSpacing: 0.5,
-                        ),
+                  // 2. Letter Title
+                  Center(
+                    child: Text(
+                      AppTranslations.pick(
+                        _previewLang,
+                        en: 'TO WHOMSOEVER IT MAY CONCERN',
+                        mr: 'संबंधित सर्व अधिकारी / कार्यालयांस सविनय निवेदन',
+                        hi: 'सर्व संबंधितों के सूचनार्थ (प्रमाणपत्र)',
                       ),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        decoration: TextDecoration.underline,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
-                  ],
+                  ),
+                  const SizedBox(height: 24),
 
-                  // 3. Hydrated Letter Body
-                  Text(
-                    _getHydratedLetterBody(letter, _previewLang),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      height: 1.7,
-                      color: Color(0xFF1E293B),
-                    ),
+                  // 3. Hydrated Letter Body (dynamically translated across EN/MR/HI)
+                  _TranslatedLetterBody(
+                    letter: letter,
+                    previewLang: _previewLang,
                   ),
 
                   const SizedBox(height: 48),
@@ -1012,16 +1114,18 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'Regards,',
+                          AppTranslations.pick(_previewLang, en: 'Regards,', mr: 'आपला नम्र,', hi: 'भवदीय,'),
                           style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 36), // Signature gap
-                        Text(
+                        AppTranslatedText(
                           'Rajesh Sharma',
+                          isName: true,
+                          targetLanguage: _previewLang,
                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                         ),
                         Text(
-                          '(Nagar Sevak)',
+                          AppTranslations.pick(_previewLang, en: '(Nagar Sevak)', mr: '(नगरसेवक)', hi: '(नगरसेवक)'),
                           style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                         ),
                       ],
@@ -1034,9 +1138,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                   // 5. Letterhead Footer
                   Center(
                     child: Text(
-                      _previewLang == 'mr'
-                          ? 'Office: Ward Office, Main Street | Contact: 98XXXXXXXX'
-                          : 'Office: Ward Office, Main Road | Contact: 98XXXXXXXX',
+                      AppTranslations.pick(
+                        _previewLang,
+                        en: 'Office: Ward Office, Main Road | Contact: 98XXXXXXXX',
+                        mr: 'कार्यालय: प्रभाग कार्यालय, मुख्य रस्ता | संपर्क: ९८XXXXXXXX',
+                        hi: 'कार्यालय: वार्ड कार्यालय, मुख्य मार्ग | संपर्क: ९८XXXXXXXX',
+                      ),
                       style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                     ),
                   ),
@@ -1061,7 +1168,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                     OutlinedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.print_outlined, size: 16),
-                      label: const Text('Print'),
+                      label: Text(AppTranslations.pick(lang, en: 'Print', mr: 'प्रिंट करा', hi: 'प्रिंट करें')),
                       style: OutlinedButton.styleFrom(
                         backgroundColor: Colors.white,
                         side: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -1075,11 +1182,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                         LetterReportGenerator.generateAndPrintSingleLetter(
                           context: context,
                           letter: letter,
+                          lang: lang,
                         );
                       },
                       icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                       label: Text(
-                        AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                        AppTranslations.getDownloadReport(lang),
                         style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -1102,7 +1210,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                           _loadLetters();
                         },
                         icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                        label: const Text('Approve'),
+                        label: Text(AppTranslations.pick(lang, en: 'Approve', mr: 'मंजूर करा', hi: 'स्वीकृत करें')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF16A34A),
                           foregroundColor: Colors.white,
@@ -1117,7 +1225,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
                           _loadLetters();
                         },
                         icon: const Icon(Icons.cancel_outlined, size: 16),
-                        label: const Text('Reject'),
+                        label: Text(AppTranslations.pick(lang, en: 'Reject', mr: 'नाकारा', hi: 'अस्वीकार करें')),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFFDC2626),
                           side: const BorderSide(color: Color(0xFFFCA5A5)),
@@ -1134,18 +1242,6 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
         ],
       ),
     );
-  }
-
-  String _getHydratedLetterBody(LetterModel letter, String lang) {
-    final name = letter.citizenName;
-    final address = letter.address.isNotEmpty ? letter.address : 'Ward 12';
-    final purpose = letter.purpose.isNotEmpty ? letter.purpose : letter.letterType ?? letter.title;
-
-    if (lang == 'mr') {
-      return 'This is to certify that Mr./Ms. $name, residing at $address, is a bonafide resident of Ward 12 to the best of my knowledge.\n\nThis letter is issued upon their request for $purpose.\nI wish them all the best in their future endeavors.';
-    } else {
-      return 'This is to certify that Mr./Ms. $name, residing at $address, is a resident of Ward 12 to the best of my knowledge.\n\nThis letter is issued upon their request for the purpose of $purpose.\nI wish them all the best for their future endeavors.';
-    }
   }
 
   Widget _buildPreviewLangButton(String key, String label) {
@@ -1198,7 +1294,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
     );
   }
 
-  Widget _buildSelectLetterPlaceholder(bool isMr) {
+  Widget _buildSelectLetterPlaceholder(String lang) {
     return Container(
       height: 480,
       alignment: Alignment.center,
@@ -1213,7 +1309,12 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           const Icon(Icons.article_outlined, size: 48, color: Color(0xFFCBD5E1)),
           const SizedBox(height: 12),
           Text(
-            'Select a letter to preview',
+            AppTranslations.pick(
+              lang,
+              en: 'Select a letter to preview',
+              mr: 'पूर्वावलोकनासाठी पत्र निवडा',
+              hi: 'पूर्वावलोकन के लिए एक पत्र चुनें',
+            ),
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
           ),
         ],
@@ -1253,6 +1354,105 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
             style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TranslatedLetterBody extends StatefulWidget {
+  final LetterModel letter;
+  final String previewLang;
+
+  const _TranslatedLetterBody({
+    required this.letter,
+    required this.previewLang,
+  });
+
+  @override
+  State<_TranslatedLetterBody> createState() => _TranslatedLetterBodyState();
+}
+
+class _TranslatedLetterBodyState extends State<_TranslatedLetterBody> {
+  late String _name;
+  late String _address;
+  late String _purpose;
+  int _token = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TranslatedLetterBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.letter.id != widget.letter.id ||
+        oldWidget.letter.citizenName != widget.letter.citizenName ||
+        oldWidget.letter.address != widget.letter.address ||
+        oldWidget.letter.purpose != widget.letter.purpose ||
+        oldWidget.previewLang != widget.previewLang) {
+      _resolve();
+    }
+  }
+
+  void _resolve() {
+    final lang = widget.previewLang;
+    final rawName = widget.letter.citizenName;
+    final rawAddress = widget.letter.address.isNotEmpty ? widget.letter.address : 'Ward 12';
+    final rawPurpose = widget.letter.purpose.isNotEmpty
+        ? widget.letter.purpose
+        : (widget.letter.letterType ?? widget.letter.title);
+
+    _name = DynamicTranslationService.getCachedTranslation(rawName, lang, isName: true) ??
+        AppTranslations.formatDigits(rawName, lang);
+    final areaHit = AppTranslations.getAreaName(rawAddress, lang);
+    final addrChanged = areaHit.trim().toLowerCase() != rawAddress.trim().toLowerCase() &&
+        areaHit != AppTranslations.formatDigits(rawAddress, lang);
+    _address = addrChanged
+        ? areaHit
+        : (DynamicTranslationService.getCachedTranslation(rawAddress, lang) ??
+            AppTranslations.formatDigits(rawAddress, lang));
+    _purpose = DynamicTranslationService.getCachedTranslation(rawPurpose, lang) ??
+        AppTranslations.formatDigits(rawPurpose, lang);
+
+    final needName = DynamicTranslationService.getCachedTranslation(rawName, lang, isName: true) == null;
+    final needAddr = !addrChanged && DynamicTranslationService.getCachedTranslation(rawAddress, lang) == null;
+    final needPurpose = DynamicTranslationService.getCachedTranslation(rawPurpose, lang) == null;
+
+    if (!needName && !needAddr && !needPurpose) return;
+
+    final reqToken = ++_token;
+    Future.wait([
+      needName ? DynamicTranslationService.transliterateName(rawName, lang) : Future.value(_name),
+      needAddr ? DynamicTranslationService.translateText(rawAddress, lang) : Future.value(_address),
+      needPurpose ? DynamicTranslationService.translateText(rawPurpose, lang) : Future.value(_purpose),
+    ]).then((vals) {
+      if (mounted && reqToken == _token) {
+        setState(() {
+          _name = vals[0];
+          _address = vals[1];
+          _purpose = vals[2];
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = widget.previewLang;
+    final body = AppTranslations.pick(
+      lang,
+      en: 'This is to certify that Mr./Ms. $_name, residing at $_address, is a resident of Ward 12 to the best of my knowledge.\n\nThis letter is issued upon their request for the purpose of $_purpose.\nI wish them all the best for their future endeavors.',
+      mr: 'याद्वारे प्रमाणित करण्यात येते की, श्री./सौ. $_name, राहणार $_address, हे माझ्या माहितीनुसार प्रभाग १२ चे रहिवासी आहेत.\n\nहे शिफारस पत्र त्यांच्या $_purpose या कारणास्तव केलेल्या विनंतीनुसार देण्यात येत आहे.\nत्यांच्या पुढील वाटचालीस मनःपूर्वक शुभेच्छा.',
+      hi: 'एतद्द्वारा प्रमाणित किया जाता है कि श्री/श्रीमती $_name, निवासी $_address, मेरी जानकारी के अनुसार वार्ड १२ के स्थायी निवासी हैं।\n\nयह पत्र उनके $_purpose के अनुरोध पर जारी किया जा रहा है।\nमैं उनके उज्ज्वल भविष्य की कामना करता हूँ।',
+    );
+    return Text(
+      body,
+      style: const TextStyle(
+        fontSize: 14,
+        height: 1.7,
+        color: Color(0xFF1E293B),
       ),
     );
   }

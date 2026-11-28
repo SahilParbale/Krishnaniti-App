@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../common/desktop_modal_dialog.dart';
 import '../../../../data/models/voter_model.dart';
@@ -70,10 +70,13 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
     });
     try {
       final repo = ref.read(whatsAppRepoProvider);
+      final normalizedName = AppTranslations.normalizeAsciiDigits(_nameController.text.trim());
+      final normalizedAddress = AppTranslations.normalizeAsciiDigits(_addressController.text.trim());
+      final normalizedHouseNo = AppTranslations.normalizeAsciiDigits(_houseNoController.text.trim());
       final voters = await repo.getVotersWithMobile(
-        name: _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
-        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-        houseNo: _houseNoController.text.trim().isEmpty ? null : _houseNoController.text.trim(),
+        name: normalizedName.isEmpty ? null : normalizedName,
+        address: normalizedAddress.isEmpty ? null : normalizedAddress,
+        houseNo: normalizedHouseNo.isEmpty ? null : normalizedHouseNo,
         gender: _selectedGender.isEmpty ? null : _selectedGender,
         caste: _casteController.text.trim().isEmpty ? null : _casteController.text.trim(),
       );
@@ -119,16 +122,34 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
     });
   }
 
-  void _confirmAndSend(bool isMr) {
+  void _confirmAndSend(String lang) {
     if (_selectedVoterIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one voter')),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please select at least one voter',
+              mr: 'कृपया किमान एक मतदार निवडा',
+              hi: 'कृपया कम से कम एक मतदाता चुनें',
+            ),
+          ),
+        ),
       );
       return;
     }
     if (_messageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter message content')),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please enter message content',
+              mr: 'कृपया संदेशाचा मजकूर लिहा',
+              hi: 'कृपया संदेश लिखें',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -136,77 +157,131 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => DesktopModalDialog(
-        title: 'Confirm WhatsApp Broadcast',
-        subtitle: 'Review and confirm broadcast details before dispatching',
-        icon: Icons.chat_rounded,
-        width: 520,
-        onClose: () => Navigator.pop(ctx),
-        actions: [
-          DesktopModalDialog.cancelButton(ctx),
-          const SizedBox(width: 12),
-          DesktopModalDialog.primaryButton(
-            text: 'Send Broadcast',
-            icon: Icons.send_rounded,
-            onPressed: () async {
-              Navigator.pop(ctx);
-              setState(() => _isSending = true);
-              try {
-                final repo = ref.read(whatsAppRepoProvider);
-                final selectedVoters = _voters.where((v) => _selectedVoterIds.contains(v.id)).toList();
-                await repo.sendBulkWhatsApp(
-                  title: 'WhatsApp Broadcast ${DateFormat('dd MMM hh:mm a').format(DateTime.now())}',
-                  recipients: selectedVoters,
-                  message: _messageController.text,
-                );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('WhatsApp broadcast sent successfully!'), backgroundColor: AppColors.brand600),
-                  );
-                  _messageController.clear();
-                  _selectedVoterIds.clear();
-                  _loadHistory();
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                  );
-                }
-              } finally {
-                if (mounted) setState(() => _isSending = false);
-              }
-            },
-          ),
-        ],
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to broadcast this WhatsApp message to ${_selectedVoterIds.length} recipients?',
-              style: const TextStyle(fontSize: 14, color: AppColors.slate700),
+      builder: (ctx) => Consumer(
+        builder: (ctx, dialogRef, _) {
+          final dLang = dialogRef.watch(desktopLanguageProvider);
+          final selectedCount = AppTranslations.formatDigits(_selectedVoterIds.length, dLang);
+          return DesktopModalDialog(
+            title: AppTranslations.pick(
+              dLang,
+              en: 'Confirm WhatsApp Broadcast',
+              mr: 'WhatsApp प्रसारण निश्चित करा',
+              hi: 'WhatsApp प्रसारण की पुष्टि करें',
             ),
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.brand50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.brand200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Message Preview:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.brand700)),
-                  const SizedBox(height: 6),
-                  Text(_messageController.text, style: const TextStyle(fontSize: 13, color: AppColors.slate800)),
-                ],
-              ),
+            subtitle: AppTranslations.pick(
+              dLang,
+              en: 'Review and confirm broadcast details before dispatching',
+              mr: 'पाठवण्यापूर्वी प्रसारणाचा तपशील तपासा आणि निश्चित करा',
+              hi: 'भेजने से पहले प्रसारण विवरण जांचें और पुष्टि करें',
             ),
-          ],
-        ),
+            icon: Icons.chat_rounded,
+            width: 520,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(
+                ctx,
+                text: AppTranslations.pick(dLang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              ),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: AppTranslations.pick(dLang, en: 'Send Broadcast', mr: 'प्रसारण पाठवा', hi: 'प्रसारण भेजें'),
+                icon: Icons.send_rounded,
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  setState(() => _isSending = true);
+                  try {
+                    final repo = ref.read(whatsAppRepoProvider);
+                    final selectedVoters = _voters.where((v) => _selectedVoterIds.contains(v.id)).toList();
+                    await repo.sendBulkWhatsApp(
+                      title: 'WhatsApp Broadcast ${AppTranslations.formatDateTime(DateTime.now(), 'en')}',
+                      recipients: selectedVoters,
+                      message: _messageController.text,
+                    );
+                    if (mounted) {
+                      final activeLang = ref.read(desktopLanguageProvider);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppTranslations.pick(
+                              activeLang,
+                              en: 'WhatsApp broadcast sent successfully!',
+                              mr: 'WhatsApp प्रसारण यशस्वीरित्या पाठवले गेले!',
+                              hi: 'WhatsApp प्रसारण सफलतापूर्वक भेजा गया!',
+                            ),
+                          ),
+                          backgroundColor: AppColors.brand600,
+                        ),
+                      );
+                      _messageController.clear();
+                      _selectedVoterIds.clear();
+                      _loadHistory();
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      final activeLang = ref.read(desktopLanguageProvider);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppTranslations.pick(
+                              activeLang,
+                              en: 'Error: $e',
+                              mr: 'त्रुटी: $e',
+                              hi: 'त्रुटि: $e',
+                            ),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isSending = false);
+                  }
+                },
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppTranslations.pick(
+                    dLang,
+                    en: 'Are you sure you want to broadcast this WhatsApp message to $selectedCount recipients?',
+                    mr: 'तुम्हाला हा WhatsApp संदेश $selectedCount प्राप्तकर्त्यांना पाठवायचा आहे का?',
+                    hi: 'क्या आप वाकई यह WhatsApp संदेश $selectedCount प्राप्तकर्ताओं को भेजना चाहते हैं?',
+                  ),
+                  style: const TextStyle(fontSize: 14, color: AppColors.slate700),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.brand50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.brand200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppTranslations.pick(
+                          dLang,
+                          en: 'Message Preview:',
+                          mr: 'संदेश पूर्वावलोकन:',
+                          hi: 'संदेश पूर्वावलोकन:',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.brand700),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(_messageController.text, style: const TextStyle(fontSize: 13, color: AppColors.slate800)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -214,7 +289,6 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -227,37 +301,56 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.brand50,
-                        borderRadius: BorderRadius.circular(20),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.brand50,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.chat_bubble_rounded, color: AppColors.brand600, size: 28),
                       ),
-                      child: const Icon(Icons.chat_bubble_rounded, color: AppColors.brand600, size: 28),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'WhatsApp Communication',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'WhatsApp Communication',
+                                mr: 'WhatsApp संवाद',
+                                hi: 'WhatsApp संवाद',
+                              ),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Send targeted official WhatsApp updates and monitor delivery history',
+                                mr: 'निवडक मतदारांना अधिकृत WhatsApp अद्यतने पाठवा आणि वितरण इतिहास पहा',
+                                hi: 'चयनित मतदाताओं को आधिकारिक WhatsApp अपडेट भेजें और वितरण इतिहास देखें',
+                              ),
+                              style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Send targeted official WhatsApp updates and monitor delivery history',
-                          style: const TextStyle(fontSize: 13, color: AppColors.slate500),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
                 Row(
                   children: [
                     Tooltip(
-                      message: 'Click to manage WhatsApp Bot connection & QR code',
+                      message: AppTranslations.pick(
+                        lang,
+                        en: 'Click to manage WhatsApp Bot connection & QR code',
+                        mr: 'WhatsApp बॉट कनेक्शन आणि QR कोड व्यवस्थापित करण्यासाठी क्लिक करा',
+                        hi: 'WhatsApp बॉट कनेक्शन और QR कोड प्रबंधित करने के लिए क्लिक करें',
+                      ),
                       child: InkWell(
                         onTap: () {
                           ref.read(desktopSettingsTabProvider.notifier).setTab('bot');
@@ -284,8 +377,8 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                               const SizedBox(width: 6),
                               Text(
                                 _isBotConnected
-                                    ? ('Bot Active')
-                                    : ('Bot Inactive'),
+                                    ? AppTranslations.pick(lang, en: 'Bot Active', mr: 'बॉट सक्रिय', hi: 'बॉट सक्रिय')
+                                    : AppTranslations.pick(lang, en: 'Bot Inactive', mr: 'बॉट निष्क्रिय', hi: 'बॉट निष्क्रिय'),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -304,11 +397,12 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                         WhatsAppHistoryReportGenerator.generateAndPrintReport(
                           context: context,
                           broadcasts: _broadcastHistory,
+                          lang: lang,
                         );
                       },
                       icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                       label: Text(
-                        AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                        AppTranslations.getDownloadReport(lang),
                         style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -335,8 +429,16 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTabButton('send', 'Send Message', Icons.send_rounded),
-                  _buildTabButton('history', 'Broadcast History', Icons.history_rounded),
+                  _buildTabButton(
+                    'send',
+                    AppTranslations.pick(lang, en: 'Send Message', mr: 'संदेश पाठवा', hi: 'संदेश भेजें'),
+                    Icons.send_rounded,
+                  ),
+                  _buildTabButton(
+                    'history',
+                    AppTranslations.pick(lang, en: 'Broadcast History', mr: 'प्रसारण इतिहास', hi: 'प्रसारण इतिहास'),
+                    Icons.history_rounded,
+                  ),
                 ],
               ),
             ),
@@ -357,7 +459,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                       child: TextField(
                         controller: _nameController,
                         decoration: InputDecoration(
-                          hintText: 'Search Name...',
+                          hintText: AppTranslations.pick(lang, en: 'Search Name...', mr: 'नाव शोधा...', hi: 'नाम खोजें...'),
                           prefixIcon: const Icon(Icons.search, size: 18),
                           isDense: true,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -370,7 +472,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                       child: TextField(
                         controller: _addressController,
                         decoration: InputDecoration(
-                          hintText: 'Search Address...',
+                          hintText: AppTranslations.pick(lang, en: 'Search Address...', mr: 'पत्ता शोधा...', hi: 'पता खोजें...'),
                           prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
                           isDense: true,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -383,7 +485,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                       child: TextField(
                         controller: _houseNoController,
                         decoration: InputDecoration(
-                          hintText: 'House No.',
+                          hintText: AppTranslations.pick(lang, en: 'House No.', mr: 'घर क्र.', hi: 'मकान नं.'),
                           prefixIcon: const Icon(Icons.home_outlined, size: 18),
                           isDense: true,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -393,17 +495,39 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                     ),
                     const SizedBox(width: 12),
                     SizedBox(
-                      width: 140,
+                      width: 145,
                       child: AppDropdown<String>(
                         value: _selectedGender,
                         height: 40,
                         prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
                         backgroundColor: Colors.white,
                         borderColor: const Color(0xFFE2E8F0),
-                        items: const [
-                          DropdownMenuItem(value: '', child: Text('All Genders')),
-                          DropdownMenuItem(value: 'M', child: Text('Male')),
-                          DropdownMenuItem(value: 'F', child: Text('Female')),
+                        items: [
+                          DropdownMenuItem(
+                            value: '',
+                            child: Padding(
+                              padding: EdgeInsets.zero,
+                              child: Text(
+                                AppTranslations.pick(lang, en: 'All Genders', mr: 'सर्व लिंग', hi: 'सभी लिंग'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'M',
+                            child: Padding(
+                              padding: EdgeInsets.zero,
+                              child: Text(AppTranslations.getGender('M', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'F',
+                            child: Padding(
+                              padding: EdgeInsets.zero,
+                              child: Text(AppTranslations.getGender('F', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
                         ],
                         onChanged: (v) {
                           setState(() => _selectedGender = v ?? '');
@@ -416,7 +540,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                       child: TextField(
                         controller: _casteController,
                         decoration: InputDecoration(
-                          hintText: 'Caste...',
+                          hintText: AppTranslations.pick(lang, en: 'Caste...', mr: 'जात...', hi: 'जाति...'),
                           prefixIcon: const Icon(Icons.group_outlined, size: 18),
                           isDense: true,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -449,7 +573,12 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Select All Visible (${_voters.length})',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Select All Visible (${AppTranslations.formatDigits(_voters.length, lang)})',
+                              mr: 'दिसणारे सर्व निवडा (${AppTranslations.formatDigits(_voters.length, lang)})',
+                              hi: 'दिखने वाले सभी चुनें (${AppTranslations.formatDigits(_voters.length, lang)})',
+                            ),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.slate700),
                           ),
                         ],
@@ -464,7 +593,12 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                       border: Border.all(color: AppColors.brand200),
                     ),
                     child: Text(
-                      '${_selectedVoterIds.length} Selected',
+                      AppTranslations.pick(
+                        lang,
+                        en: '${AppTranslations.formatDigits(_selectedVoterIds.length, lang)} Selected',
+                        mr: '${AppTranslations.formatDigits(_selectedVoterIds.length, lang)} निवडले',
+                        hi: '${AppTranslations.formatDigits(_selectedVoterIds.length, lang)} चयनित',
+                      ),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.brand700),
                     ),
                   ),
@@ -491,7 +625,12 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                           : _voters.isEmpty
                               ? Center(
                                   child: Text(
-                                    'No voters found with mobile number',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'No voters found with mobile number',
+                                      mr: 'मोबाईल नंबर असलेले मतदार आढळले नाहीत',
+                                      hi: 'मोबाइल नंबर वाले कोई मतदाता नहीं मिले',
+                                    ),
                                     style: const TextStyle(color: AppColors.slate400),
                                   ),
                                 )
@@ -501,7 +640,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                                       child: ListView.separated(
                                         padding: const EdgeInsets.all(12),
                                         itemCount: _visibleVoters.length,
-                                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                        separatorBuilder: (_, _) => const SizedBox(height: 8),
                                         itemBuilder: (ctx, i) {
                                           final v = _visibleVoters[i];
                                           final isSelected = _selectedVoterIds.contains(v.id);
@@ -530,22 +669,36 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                                                     child: Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: [
-                                                        Text(
-                                                          isMr && v.nameMarathi.isNotEmpty
-                                                              ? v.nameMarathi
-                                                              : v.nameEnglish,
+                                                        AppTranslatedText(
+                                                          v.displayNameFor(lang),
+                                                          isName: true,
+                                                          targetLanguage: lang,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
                                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
                                                         ),
                                                         const SizedBox(height: 2),
-                                                        Text(
-                                                          '${v.mobile ?? '-'}  •  ${v.address}',
-                                                          style: const TextStyle(fontSize: 12, color: AppColors.slate500),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              '${AppTranslations.formatDigits(v.mobile ?? '-', lang)}  •  ',
+                                                              style: const TextStyle(fontSize: 12, color: AppColors.slate500),
+                                                            ),
+                                                            Expanded(
+                                                              child: AppTranslatedText(
+                                                                v.address,
+                                                                targetLanguage: lang,
+                                                                maxLines: 1,
+                                                                overflow: TextOverflow.ellipsis,
+                                                                style: const TextStyle(fontSize: 12, color: AppColors.slate500),
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
                                                       ],
                                                     ),
                                                   ),
+                                                  const SizedBox(width: 8),
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                                     decoration: BoxDecoration(
@@ -553,7 +706,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                                                       borderRadius: BorderRadius.circular(6),
                                                     ),
                                                     child: Text(
-                                                      '${v.gender} / ${v.age}',
+                                                      '${v.genderLabel(lang)} / ${AppTranslations.formatDigits(v.age, lang)}',
                                                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.slate600),
                                                     ),
                                                   ),
@@ -571,8 +724,8 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                                       onLoadMore: () {
                                         setState(() => _displayedLimit += 20);
                                       },
-                                      label: 'मतदार',
-                                      isMarathi: isMr,
+                                      label: 'voters',
+                                      isMarathi: lang == 'mr',
                                     ),
                                   ],
                                 ),
@@ -598,7 +751,7 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                               const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.brand600, size: 22),
                               const SizedBox(width: 8),
                               Text(
-                                'Compose WhatsApp',
+                                AppTranslations.pick(lang, en: 'Compose WhatsApp', mr: 'WhatsApp संदेश लिहा', hi: 'WhatsApp संदेश लिखें'),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                               ),
                             ],
@@ -608,7 +761,12 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                             controller: _messageController,
                             maxLines: 10,
                             decoration: InputDecoration(
-                              hintText: 'Type WhatsApp message...\nUse *text* for bold, _text_ for italics',
+                              hintText: AppTranslations.pick(
+                                lang,
+                                en: 'Type WhatsApp message...\nUse *text* for bold, _text_ for italics',
+                                mr: 'WhatsApp संदेश लिहा...\nठळक करण्यासाठी *मजकूर*, तिरकस करण्यासाठी _मजकूर_ वापरा',
+                                hi: 'WhatsApp संदेश लिखें...\nबोल्ड के लिए *टेक्स्ट*, इटैलिक के लिए _टेक्स्ट_ का उपयोग करें',
+                              ),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
                               fillColor: const Color(0xFFF8FAFC),
                               filled: true,
@@ -625,12 +783,19 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              onPressed: _isSending ? null : () => _confirmAndSend(isMr),
+                              onPressed: _isSending ? null : () => _confirmAndSend(lang),
                               icon: _isSending
                                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                   : const Icon(Icons.send_rounded, size: 18),
                               label: Text(
-                                _isSending ? ('Sending...') : ('Broadcast via WhatsApp'),
+                                _isSending
+                                    ? AppTranslations.pick(lang, en: 'Sending...', mr: 'पाठवत आहे...', hi: 'भेजा जा रहा है...')
+                                    : AppTranslations.pick(
+                                        lang,
+                                        en: 'Broadcast via WhatsApp',
+                                        mr: 'WhatsApp द्वारे प्रसारित करा',
+                                        hi: 'WhatsApp द्वारा प्रसारित करें',
+                                      ),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ),
@@ -657,7 +822,12 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'WhatsApp Broadcast History',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'WhatsApp Broadcast History',
+                            mr: 'WhatsApp प्रसारण इतिहास',
+                            hi: 'WhatsApp प्रसारण इतिहास',
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                         ),
                       ],
@@ -668,7 +838,12 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                         padding: const EdgeInsets.symmetric(vertical: 40),
                         child: Center(
                           child: Text(
-                            'No WhatsApp broadcast history found',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'No WhatsApp broadcast history found',
+                              mr: 'WhatsApp प्रसारण इतिहास आढळला नाही',
+                              hi: 'कोई WhatsApp प्रसारण इतिहास नहीं मिला',
+                            ),
                             style: const TextStyle(color: AppColors.slate400),
                           ),
                         ),
@@ -678,9 +853,10 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: _visibleHistory.length,
-                        separatorBuilder: (_, __) => const Divider(color: AppColors.slate100),
+                        separatorBuilder: (_, _) => const Divider(color: AppColors.slate100),
                         itemBuilder: (ctx, i) {
                           final item = _visibleHistory[i];
+                          final recipientCount = AppTranslations.formatDigits(item.recipients, lang);
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Row(
@@ -698,10 +874,14 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800)),
+                                      AppTranslatedText(
+                                        item.title,
+                                        targetLanguage: lang,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
+                                      ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt),
+                                        AppTranslations.formatDateTime(item.sentAt, lang),
                                         style: const TextStyle(fontSize: 12, color: AppColors.slate500),
                                       ),
                                     ],
@@ -714,13 +894,18 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    item.status.toUpperCase(),
+                                    AppTranslations.getStatus(item.status, lang).toUpperCase(),
                                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.brand600),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Text(
-                                  '${item.recipients} recipients',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: '$recipientCount recipients',
+                                    mr: '$recipientCount प्राप्तकर्ते',
+                                    hi: '$recipientCount प्राप्तकर्ता',
+                                  ),
                                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.slate700),
                                 ),
                               ],
@@ -735,8 +920,8 @@ class _DesktopWhatsappViewState extends ConsumerState<DesktopWhatsappView> {
                         onLoadMore: () {
                           setState(() => _historyLimit += 20);
                         },
-                        label: 'मोहिमा',
-                        isMarathi: isMr,
+                        label: AppTranslations.pick(lang, en: 'campaigns', mr: 'मोहिमा', hi: 'अभियान'),
+                        isMarathi: lang == 'mr',
                       ),
                     ],
                   ],

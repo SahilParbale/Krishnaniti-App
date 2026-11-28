@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/ai_content_model.dart';
 import '../../../data/repositories/ai_content_repository.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'ai_content_report_generator.dart';
 
@@ -34,13 +37,24 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
   }
 
   void _handleCopy() {
-    Clipboard.setData(ClipboardData(text: _item.generatedContent));
+    final lang = ref.read(appLanguageProvider);
+    final translatedContent =
+        DynamicTranslationService.getCachedTranslation(_item.generatedContent, lang) ??
+            _item.generatedContent;
+    Clipboard.setData(ClipboardData(text: translatedContent));
     setState(() => _copied = true);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Content copied to clipboard!'),
-        backgroundColor: Color(0xFF059669),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Content copied to clipboard!',
+            mr: 'मजकूर क्लिपबोर्डवर कॉपी केला!',
+            hi: 'सामग्री क्लिपबोर्ड पर कॉपी की गई!',
+          ),
+        ),
+        backgroundColor: const Color(0xFF059669),
+        duration: const Duration(seconds: 2),
       ),
     );
     Future.delayed(const Duration(seconds: 2), () {
@@ -49,9 +63,28 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
   }
 
   Future<void> _handleShare() async {
-    final text = '${_item.title}\n\n${_item.generatedContent}\n\n— Nagarsevak Amit Chougale (Ward 12)';
+    final lang = ref.read(appLanguageProvider);
+    final title =
+        DynamicTranslationService.getCachedTranslation(_item.title, lang) ??
+            _item.title;
+    final content =
+        DynamicTranslationService.getCachedTranslation(_item.generatedContent, lang) ??
+            _item.generatedContent;
+    final footer = AppTranslations.pick(
+      lang,
+      en: '— Nagarsevak Amit Chougale (Ward 12)',
+      mr: '— नगरसेवक अमित चौगुले (प्रभाग १२)',
+      hi: '— नगरसेवक अमित चौगुले (वार्ड १२)',
+    );
+    final text = '$title\n\n$content\n\n$footer';
     final encoded = Uri.encodeComponent(text);
     final uri = Uri.parse('https://wa.me/?text=$encoded');
+    final copiedMsg = AppTranslations.pick(
+      lang,
+      en: 'Content copied to clipboard!',
+      mr: 'मजकूर क्लिपबोर्डवर कॉपी केला!',
+      hi: 'सामग्री क्लिपबोर्ड पर कॉपी की गई!',
+    );
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -59,7 +92,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
         Clipboard.setData(ClipboardData(text: text));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Content copied to clipboard!')),
+            SnackBar(content: Text(copiedMsg)),
           );
         }
       }
@@ -67,7 +100,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
       Clipboard.setData(ClipboardData(text: text));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Content copied to clipboard!')),
+          SnackBar(content: Text(copiedMsg)),
         );
       }
     }
@@ -84,11 +117,13 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
   }
 
   Future<void> _handlePrintPdf() async {
-    await AiContentReportGenerator.printDocument(_item);
+    final lang = ref.read(appLanguageProvider);
+    await AiContentReportGenerator.printDocument(_item, lang: lang);
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Color(0xFF0284C7),
@@ -101,6 +136,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'वापस'),
             onPressed: () => Navigator.pop(context),
           ),
           title: Column(
@@ -108,7 +144,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _item.contentType.titleMr,
+                _item.contentType.title(lang),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -118,7 +154,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                 ),
               ),
               Text(
-                '${_item.tone.name} • ${_item.language.label}',
+                '${_item.tone.title(lang)} • ${_item.language.labelFor(lang)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -136,17 +172,27 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                     : Icons.star_outline_rounded,
                 color: _item.isFavorite ? Colors.amberAccent : Colors.white,
               ),
-              tooltip: 'Favorite',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Favorite',
+                mr: 'आवडते',
+                hi: 'पसंदीदा',
+              ),
               onPressed: _handleToggleFavorite,
             ),
             IconButton(
               icon: const Icon(Icons.print_rounded, color: Colors.white),
-              tooltip: 'Download Report',
+              tooltip: AppTranslations.getDownloadReport(lang),
               onPressed: _handlePrintPdf,
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded, color: Colors.white),
-              tooltip: 'Share',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Share',
+                mr: 'शेअर करा',
+                hi: 'साझा करें',
+              ),
               onPressed: _handleShare,
             ),
           ],
@@ -198,7 +244,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                _item.contentType.titleMr,
+                                _item.contentType.title(lang),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -228,7 +274,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                _item.tone.titleMr,
+                                _item.tone.title(lang),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -240,7 +286,7 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                         ),
                         const Spacer(),
                         Text(
-                          _item.relativeTime,
+                          _item.relativeTimeFor(lang),
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF94A3B8),
@@ -249,8 +295,9 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Text(
+                    AppTranslatedText(
                       _item.title,
+                      targetLanguage: lang,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -270,7 +317,12 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${_item.wordCount} words',
+                          AppTranslations.pick(
+                            lang,
+                            en: '${AppTranslations.formatDigits(_item.wordCount, lang)} words',
+                            mr: '${AppTranslations.formatDigits(_item.wordCount, lang)} शब्द',
+                            hi: '${AppTranslations.formatDigits(_item.wordCount, lang)} शब्द',
+                          ),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -284,15 +336,18 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                           color: Color(0xFF64748B),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          'Reading Time: ${_item.readingTimeFormatted}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
+                        Expanded(
+                          child: Text(
+                            '${AppTranslations.pick(lang, en: "Reading Time", mr: "वाचन वेळ", hi: "पढ़ने का समय")}: ${_item.readingTimeFormattedFor(lang)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
                           ),
                         ),
-                        const Spacer(),
                         // Font Size Controls for reading on stage
                         InkWell(
                           onTap: () {
@@ -357,14 +412,28 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                     ),
                   ],
                 ),
-                child: SelectableText(
-                  _item.generatedContent,
-                  style: TextStyle(
-                    fontSize: _fontSize,
-                    height: 1.6,
-                    color: const Color(0xFF1E293B),
-                    fontWeight: FontWeight.normal,
+                child: FutureBuilder<String>(
+                  key: ValueKey('ai_content_${_item.id}_$lang'),
+                  future: DynamicTranslationService.translateOrRaw(
+                    _item.generatedContent,
+                    lang,
                   ),
+                  initialData: DynamicTranslationService.getCachedTranslation(
+                        _item.generatedContent,
+                        lang,
+                      ) ??
+                      _item.generatedContent,
+                  builder: (ctx, snap) {
+                    return SelectableText(
+                      snap.data ?? _item.generatedContent,
+                      style: TextStyle(
+                        fontSize: _fontSize,
+                        height: 1.6,
+                        color: const Color(0xFF1E293B),
+                        fontWeight: FontWeight.normal,
+                      ),
+                    );
+                  },
                 ),
               ),
 
@@ -381,7 +450,19 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                         size: 18,
                       ),
                       label: Text(
-                        _copied ? 'Copied!' : 'Copy Content',
+                        _copied
+                            ? AppTranslations.pick(
+                                lang,
+                                en: 'Copied!',
+                                mr: 'कॉपी झाले!',
+                                hi: 'कॉपी हो गया!',
+                              )
+                            : AppTranslations.pick(
+                                lang,
+                                en: 'Copy Content',
+                                mr: 'मजकूर कॉपी करा',
+                                hi: 'सामग्री कॉपी करें',
+                              ),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -401,9 +482,14 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
                   ElevatedButton.icon(
                     onPressed: _handleShare,
                     icon: const Icon(Icons.share_rounded, size: 18),
-                    label: const Text(
-                      'Share',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    label: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Share',
+                        mr: 'शेअर करा',
+                        hi: 'साझा करें',
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF16A34A),
@@ -422,8 +508,18 @@ class _AiContentDetailScreenState extends ConsumerState<AiContentDetailScreen> {
               ),
               const SizedBox(height: 12),
               AppPdfButton.outlined(
-                label: 'Reports',
-                tooltip: 'Reports',
+                label: AppTranslations.pick(
+                  lang,
+                  en: 'Reports',
+                  mr: 'अहवाल',
+                  hi: 'रिपोर्ट',
+                ),
+                tooltip: AppTranslations.pick(
+                  lang,
+                  en: 'Reports',
+                  mr: 'अहवाल',
+                  hi: 'रिपोर्ट',
+                ),
                 isCompact: false,
                 onPressed: _handlePrintPdf,
               ),

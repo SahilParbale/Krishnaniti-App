@@ -9,6 +9,7 @@ import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../providers/language_provider.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_modal_sheet.dart';
 import 'complaint_form_constants.dart';
@@ -272,9 +273,12 @@ class _NewComplaintBottomSheetState
       _pickedFiles.clear();
     });
     HapticFeedback.mediumImpact();
+    final lang = ref.read(appLanguageProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Draft cleared'),
+        content: Text(
+          AppTranslations.pick(lang, en: 'Draft cleared', mr: 'मसुदा हटवला', hi: 'ड्राफ़्ट साफ़ किया गया'),
+        ),
         backgroundColor: const Color(0xFF64748B),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -587,8 +591,18 @@ class _NewComplaintBottomSheetState
                       const Icon(Icons.link_rounded, size: 16, color: Color(0xFF0284C7)),
                       const SizedBox(width: 6),
                       Text(
-                        '${lang == "mr" ? "जोडलेले मतदार:" : (lang == "hi" ? "जुड़े मतदाता:" : "Linked:")} $_linkedVoterDisplay',
+                        '${AppTranslations.pick(lang, en: 'Linked:', mr: 'जोडलेले मतदार:', hi: 'जुड़े मतदाता:')} ',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                      ),
+                      Flexible(
+                        child: AppTranslatedText(
+                          _linkedVoterDisplay!,
+                          isName: true,
+                          targetLanguage: lang,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
@@ -875,12 +889,17 @@ class _NewComplaintBottomSheetState
               const SizedBox(width: 10),
               Expanded(
                 child: _buildDropdown(
-                  label: lang == 'mr' ? 'वार्ड / प्रभाग' : (lang == 'hi' ? 'वार्ड / प्रभाग' : 'Ward'),
+                  label: AppTranslations.pick(lang, en: 'Ward', mr: 'वार्ड / प्रभाग', hi: 'वार्ड / प्रभाग'),
                   value: _selectedWard,
                   items: kWardsList.map((w) {
                     return DropdownMenuItem(
                       value: w,
-                      child: Text(w, overflow: TextOverflow.ellipsis),
+                      child: AppTranslatedText(
+                        AppTranslations.getAreaName(w, lang),
+                        targetLanguage: lang,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -946,9 +965,23 @@ class _NewComplaintBottomSheetState
                 child: Text(lang == 'mr' ? 'कर्मचारी निवडा (ऐच्छिक)' : (lang == 'hi' ? 'कर्मचारी चुनें (वैकल्पिक)' : 'Select Staff (Optional)')),
               ),
               ..._staffList.map((s) {
+                final roleLabel = AppTranslations.getRoleName(s.role ?? 'Staff', lang);
                 return DropdownMenuItem(
                   value: s.id,
-                  child: Text('${s.name} (${s.role})', overflow: TextOverflow.ellipsis),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: AppTranslatedText(
+                          s.name,
+                          isName: true,
+                          targetLanguage: lang,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(' ($roleLabel)', overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
                 );
               }),
             ],
@@ -1007,9 +1040,23 @@ class _NewComplaintBottomSheetState
                 child: Text(lang == 'mr' ? 'कर्मचारी निवडा (ऐच्छिक)' : (lang == 'hi' ? 'कर्मचारी चुनें (वैकल्पिक)' : 'Select Staff (Optional)')),
               ),
               ..._staffList.map((s) {
+                final roleLabel = AppTranslations.getRoleName(s.role ?? 'Staff', lang);
                 return DropdownMenuItem(
                   value: s.id,
-                  child: Text('${s.name} (${s.role})', overflow: TextOverflow.ellipsis),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: AppTranslatedText(
+                          s.name,
+                          isName: true,
+                          targetLanguage: lang,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(' ($roleLabel)', overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
                 );
               }),
             ],
@@ -1095,9 +1142,15 @@ class _NewComplaintBottomSheetState
       value: _selectedSociety.isNotEmpty ? _selectedSociety : null,
       items: societies.asMap().entries.map((e) {
         final formattedName = '${e.key + 1} - ${e.value}';
+        final displayName = '${AppTranslations.formatDigits(e.key + 1, lang)} - ${e.value}';
         return DropdownMenuItem<String>(
           value: formattedName,
-          child: Text(formattedName, overflow: TextOverflow.ellipsis),
+          child: AppTranslatedText(
+            displayName,
+            targetLanguage: lang,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         );
       }).toList(),
       onChanged: (val) {
@@ -1568,8 +1621,10 @@ class _VoterSearchModalSheetState
 
                           return ListTile(
                             onTap: () => widget.onSelect(v),
-                            title: Text(
+                            title: AppTranslatedText(
                               displayName,
+                              isName: true,
+                              targetLanguage: lang,
                               style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                             subtitle: Column(
@@ -1604,8 +1659,9 @@ class _VoterSearchModalSheetState
                                   ],
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
+                                AppTranslatedText(
                                   v.address,
+                                  targetLanguage: lang,
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,

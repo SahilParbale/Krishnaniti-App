@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/localization/app_translations.dart';
 
 /// Supported content types in the AI Content Studio
 enum AiContentType {
@@ -61,6 +62,26 @@ extension AiContentTypeX on AiContentType {
         return 'कामाचा अहवाल';
     }
   }
+
+  String get titleHi {
+    switch (this) {
+      case AiContentType.speech:
+        return 'भाषण';
+      case AiContentType.socialMediaCaption:
+        return 'सोशल मीडिया कैप्शन';
+      case AiContentType.pressRelease:
+        return 'प्रेस विज्ञप्ति';
+      case AiContentType.letterNotice:
+        return 'पत्र / सूचना';
+      case AiContentType.email:
+        return 'ईमेल';
+      case AiContentType.workReport:
+        return 'कार्य रिपोर्ट';
+    }
+  }
+
+  String title(String lang) =>
+      lang == 'mr' ? titleMr : (lang == 'hi' ? titleHi : titleEn);
 
   IconData get icon {
     switch (this) {
@@ -152,6 +173,24 @@ extension AiToneTypeX on AiToneType {
     }
   }
 
+  String get titleHi {
+    switch (this) {
+      case AiToneType.enthusiastic:
+        return 'उत्साही';
+      case AiToneType.formal:
+        return 'औपचारिक';
+      case AiToneType.professional:
+        return 'व्यावसायिक';
+      case AiToneType.emotional:
+        return 'भावनात्मक';
+      case AiToneType.urgent:
+        return 'तत्काल';
+    }
+  }
+
+  String title(String lang) =>
+      lang == 'mr' ? titleMr : (lang == 'hi' ? titleHi : titleEn);
+
   IconData get icon {
     switch (this) {
       case AiToneType.enthusiastic:
@@ -195,6 +234,32 @@ extension AiLanguageTypeX on AiLanguageType {
         return 'English';
       case AiLanguageType.hindi:
         return 'हिंदी (Hindi)';
+    }
+  }
+
+  String labelFor(String lang) {
+    switch (this) {
+      case AiLanguageType.marathi:
+        return AppTranslations.pick(
+          lang,
+          en: 'Marathi',
+          mr: 'मराठी',
+          hi: 'मराठी (Marathi)',
+        );
+      case AiLanguageType.english:
+        return AppTranslations.pick(
+          lang,
+          en: 'English',
+          mr: 'इंग्रजी (English)',
+          hi: 'अंग्रेज़ी (English)',
+        );
+      case AiLanguageType.hindi:
+        return AppTranslations.pick(
+          lang,
+          en: 'Hindi',
+          mr: 'हिंदी (Hindi)',
+          hi: 'हिंदी',
+        );
     }
   }
 
@@ -246,6 +311,26 @@ class AiContentHistoryItem {
     return '${mins.toStringAsFixed(1)} मिनिटे';
   }
 
+  String readingTimeFormattedFor(String lang) {
+    final mins = readingTimeMinutes;
+    if (mins < 1) {
+      final secs = AppTranslations.formatDigits((mins * 60).round(), lang);
+      return AppTranslations.pick(
+        lang,
+        en: '$secs sec',
+        mr: '$secs सेकंद',
+        hi: '$secs सेकंड',
+      );
+    }
+    final minsStr = AppTranslations.formatDigits(mins.toStringAsFixed(1), lang);
+    return AppTranslations.pick(
+      lang,
+      en: '$minsStr min',
+      mr: '$minsStr मिनिटे',
+      hi: '$minsStr मिनट',
+    );
+  }
+
   String get relativeTime {
     final diff = DateTime.now().difference(createdAt);
     if (diff.inMinutes < 1) return 'आत्ताच';
@@ -253,6 +338,41 @@ class AiContentHistoryItem {
     if (diff.inHours < 24) return '${diff.inHours} तासांपूर्वी';
     if (diff.inDays < 7) return '${diff.inDays} दिवसांपूर्वी';
     return '${createdAt.day}/${createdAt.month}/${createdAt.year}';
+  }
+
+  String relativeTimeFor(String lang) {
+    final diff = DateTime.now().difference(createdAt);
+    if (diff.inMinutes < 1) {
+      return AppTranslations.pick(lang, en: 'Just now', mr: 'आत्ताच', hi: 'अभी');
+    }
+    if (diff.inMinutes < 60) {
+      final m = AppTranslations.formatDigits(diff.inMinutes, lang);
+      return AppTranslations.pick(
+        lang,
+        en: '${m}m ago',
+        mr: '$m मिनिटांपूर्वी',
+        hi: '$m मिनट पहले',
+      );
+    }
+    if (diff.inHours < 24) {
+      final h = AppTranslations.formatDigits(diff.inHours, lang);
+      return AppTranslations.pick(
+        lang,
+        en: '${h}h ago',
+        mr: '$h तासांपूर्वी',
+        hi: '$h घंटे पहले',
+      );
+    }
+    if (diff.inDays < 7) {
+      final d = AppTranslations.formatDigits(diff.inDays, lang);
+      return AppTranslations.pick(
+        lang,
+        en: '${d}d ago',
+        mr: '$d दिवसांपूर्वी',
+        hi: '$d दिन पहले',
+      );
+    }
+    return AppTranslations.formatDate(createdAt, lang, pattern: 'dd/MM/yyyy');
   }
 
   AiContentHistoryItem copyWith({

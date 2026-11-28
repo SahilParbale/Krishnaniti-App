@@ -1,13 +1,15 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
@@ -68,8 +70,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
 
     try {
       final list = await repo.getVotersWithMobile(
-        name: _nameController.text.trim(),
-        address: _addressController.text.trim(),
+        name: AppTranslations.normalizeAsciiDigits(_nameController.text.trim()),
+        address: AppTranslations.normalizeAsciiDigits(_addressController.text.trim()),
       );
 
       if (mounted) {
@@ -118,10 +120,21 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
   }
 
   Future<void> _makeCall(VoterModel voter) async {
-    final phone = voter.mobile?.replaceAll(RegExp(r'\s+'), '') ?? '';
+    final lang = ref.read(appLanguageProvider);
+    final phone = AppTranslations.normalizeAsciiDigits(voter.mobile ?? '')
+        .replaceAll(RegExp(r'\s+'), '');
     if (phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No mobile number available for this voter')),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'No mobile number available for this voter',
+              mr: 'या मतदाराचा मोबाईल क्रमांक उपलब्ध नाही',
+              hi: 'इस मतदाता का मोबाइल नंबर उपलब्ध नहीं है',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -166,7 +179,16 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open dialer')),
+          SnackBar(
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Could not open dialer',
+                mr: 'डायलर उघडता आला नाही',
+                hi: 'डायलर खोला नहीं जा सका',
+              ),
+            ),
+          ),
         );
       }
     }
@@ -174,6 +196,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -185,25 +208,35 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Open Menu Drawer',
+              mr: 'मेनू उघडा',
+              hi: 'मेनू खोलें',
             ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'Voice Call',
+              AppTranslations.pick(
+                lang,
+                en: 'Voice Call',
+                mr: 'व्हॉइस कॉल',
+                hi: 'वॉयस कॉल',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -211,10 +244,15 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
               ),
             ),
             Text(
-              'Audio broadcasts in your voice',
+              AppTranslations.pick(
+                lang,
+                en: 'Audio broadcasts in your voice',
+                mr: 'आपल्या आवाजात ऑडिओ प्रसारण व थेट कॉल',
+                hi: 'आपकी आवाज़ में ऑडियो प्रसारण व सीधी कॉल',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -225,12 +263,14 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
         actions: [
           if (_callHistory.isNotEmpty) ...[
             AppPdfButton(
-              label: 'Reports',
+              label: AppTranslations.pick(lang, en: 'Reports', mr: 'अहवाल', hi: 'रिपोर्ट'),
+              tooltip: AppTranslations.getDownloadReport(lang),
               style: AppPdfButtonStyle.outlined,
               onPressed: () {
                 CommunicationHistoryReportGenerator.generateAndPrintReport(
                   logs: _callHistory,
                   title: 'Public Voice Call History & Broadcast Report',
+                  lang: lang,
                 );
               },
             ),
@@ -269,16 +309,21 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
-                tabs: const [
+                tabs: [
                   Tab(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.phone, size: 16),
-                        SizedBox(width: 6),
+                        const Icon(Icons.phone, size: 16),
+                        const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'Voice Call',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Voice Call',
+                              mr: 'व्हॉइस कॉल',
+                              hi: 'वॉयस कॉल',
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -290,11 +335,16 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.history, size: 16),
-                        SizedBox(width: 6),
+                        const Icon(Icons.history, size: 16),
+                        const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'Call History',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Call History',
+                              mr: 'कॉल इतिहास',
+                              hi: 'कॉल इतिहास',
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -310,8 +360,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildCallTab(theme, isDark),
-                _buildHistoryTab(theme, isDark),
+                _buildCallTab(theme, isDark, lang),
+                _buildHistoryTab(theme, isDark, lang),
               ],
             ),
           ),
@@ -320,7 +370,9 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
     );
   }
 
-  Widget _buildCallTab(ThemeData theme, bool isDark) {
+  Widget _buildCallTab(ThemeData theme, bool isDark, String lang) {
+    final contactsCountStr = AppTranslations.formatDigits(_voters.length, lang);
+
     return Column(
       children: [
         // Filter bar
@@ -338,7 +390,12 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                     child: TextField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        hintText: 'Search voter by name...',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'Search voter by name...',
+                          mr: 'मतदाराचे नाव शोधा...',
+                          hi: 'मतदाता का नाम खोजें...',
+                        ),
                         prefixIcon: const Icon(Icons.search, size: 20),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -351,7 +408,12 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                   IconButton.filledTonal(
                     onPressed: _loadVoters,
                     icon: const Icon(Icons.filter_alt, size: 20),
-                    tooltip: 'Apply Filters',
+                    tooltip: AppTranslations.pick(
+                      lang,
+                      en: 'Apply Filters',
+                      mr: 'फिल्टर लागू करा',
+                      hi: 'फ़िल्टर लागू करें',
+                    ),
                   ),
                 ],
               ),
@@ -359,7 +421,12 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
               TextField(
                 controller: _addressController,
                 decoration: InputDecoration(
-                  hintText: 'Filter by address / area...',
+                  hintText: AppTranslations.pick(
+                    lang,
+                    en: 'Filter by address / area...',
+                    mr: 'पत्ता / परिसरानुसार शोधा...',
+                    hi: 'पता / क्षेत्र से फ़िल्टर करें...',
+                  ),
                   prefixIcon: const Icon(Icons.location_on_outlined, size: 20),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -378,7 +445,12 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Available Contacts: ${_voters.length}',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Available Contacts: $contactsCountStr',
+                  mr: 'उपलब्ध संपर्क: $contactsCountStr',
+                  hi: 'उपलब्ध संपर्क: $contactsCountStr',
+                ),
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.grey[300] : Colors.grey[700],
@@ -405,7 +477,15 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                         children: [
                           Icon(Icons.phone_disabled_outlined, size: 48, color: Colors.grey[400]),
                           const SizedBox(height: 12),
-                          Text('No voters with valid phone numbers found', style: TextStyle(color: Colors.grey[600])),
+                          Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'No voters with valid phone numbers found',
+                              mr: 'वैध मोबाईल क्रमांक असलेले मतदार आढळले नाहीत',
+                              hi: 'मान्य फ़ोन नंबर वाले कोई मतदाता नहीं मिले',
+                            ),
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
                         ],
                       ),
                     )
@@ -421,7 +501,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                               currentCount: _visibleVoters.length,
                               totalCount: _voters.length,
                               pageSize: 20,
-                              label: 'voters',
+                              label: AppTranslations.pick(lang, en: 'voters', mr: 'मतदार', hi: 'मतदाता'),
+                              isMarathi: lang == 'mr',
                               onLoadMore: () {
                                 setState(() {
                                   _displayedVotersLimit += 20;
@@ -431,9 +512,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                           }
                           final voter = _visibleVoters[index];
                           final hasPhone = (voter.mobile != null && voter.mobile!.isNotEmpty);
-                          final name = voter.nameMarathi.isNotEmpty
-                              ? voter.nameMarathi
-                              : (voter.nameEnglish.isNotEmpty ? voter.nameEnglish : 'Unnamed Voter');
+                          final hasName = voter.nameMarathi.isNotEmpty || voter.nameEnglish.isNotEmpty;
 
                           return Card(
                             elevation: 0,
@@ -455,17 +534,37 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          name,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                        ),
+                                        if (hasName)
+                                          AppTranslatedText(
+                                            voter.displayNameFor(lang),
+                                            isName: true,
+                                            targetLanguage: lang,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          )
+                                        else
+                                          Text(
+                                            AppTranslations.pick(
+                                              lang,
+                                              en: 'Unnamed Voter',
+                                              mr: 'निनावी मतदार',
+                                              hi: 'अनाम मतदाता',
+                                            ),
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          ),
                                         const SizedBox(height: 2),
                                         Row(
                                           children: [
                                             Icon(Icons.call, size: 14, color: Colors.grey[600]),
                                             const SizedBox(width: 4),
                                             Text(
-                                              hasPhone ? voter.mobile! : 'No mobile',
+                                              hasPhone
+                                                  ? AppTranslations.formatDigits(voter.mobile!, lang)
+                                                  : AppTranslations.pick(
+                                                      lang,
+                                                      en: 'No mobile',
+                                                      mr: 'मोबाईल नाही',
+                                                      hi: 'मोबाइल नहीं',
+                                                    ),
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: hasPhone ? Colors.green[700] : Colors.grey,
@@ -476,8 +575,9 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                                         ),
                                         if (voter.address.isNotEmpty) ...[
                                           const SizedBox(height: 2),
-                                          Text(
+                                          AppTranslatedText(
                                             voter.address,
+                                            targetLanguage: lang,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(fontSize: 11, color: Colors.grey[600]),
@@ -490,7 +590,14 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                                   ElevatedButton.icon(
                                     onPressed: hasPhone ? () => _makeCall(voter) : null,
                                     icon: const Icon(Icons.phone, size: 16),
-                                    label: const Text('Call'),
+                                    label: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Call',
+                                        mr: 'कॉल करा',
+                                        hi: 'कॉल करें',
+                                      ),
+                                    ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green[600],
                                       foregroundColor: Colors.white,
@@ -510,7 +617,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
     );
   }
 
-  Widget _buildHistoryTab(ThemeData theme, bool isDark) {
+  Widget _buildHistoryTab(ThemeData theme, bool isDark, String lang) {
     if (_isLoadingHistory && _callHistory.isEmpty) {
       return const AppShimmerList(count: 6);
     }
@@ -522,9 +629,16 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
           children: [
             Icon(Icons.history_outlined, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 12),
-            Text('No voice call history found', style: TextStyle(color: Colors.grey[600])),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No voice call history found',
+                mr: 'व्हॉइस कॉल इतिहास आढळला नाही',
+                hi: 'वॉयस कॉल इतिहास नहीं मिला',
+              ),
+              style: TextStyle(color: Colors.grey[600]),
+            ),
             const SizedBox(height: 12),
-
           ],
         ),
       );
@@ -545,7 +659,8 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                     currentCount: _visibleHistory.length,
                     totalCount: _callHistory.length,
                     pageSize: 20,
-                    label: 'calls',
+                    label: AppTranslations.pick(lang, en: 'calls', mr: 'कॉल्स', hi: 'कॉल्स'),
+                    isMarathi: lang == 'mr',
                     onLoadMore: () {
                       setState(() {
                         _displayedHistoryLimit += 20;
@@ -554,7 +669,7 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                   );
                 }
                 final item = _visibleHistory[index];
-                final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt);
+                final dateStr = AppTranslations.formatDateTime(item.sentAt, lang);
 
                 return Card(
                   elevation: 0,
@@ -591,9 +706,14 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                                       color: Colors.green.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Text(
-                                      'VOICE CALL',
-                                      style: TextStyle(
+                                    child: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'VOICE CALL',
+                                        mr: 'व्हॉइस कॉल',
+                                        hi: 'वॉयस कॉल',
+                                      ),
+                                      style: const TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.green,
@@ -603,8 +723,9 @@ class _VoiceCallScreenState extends ConsumerState<VoiceCallScreen> with SingleTi
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              Text(
+                              AppTranslatedText(
                                 item.message.isNotEmpty ? item.message : item.title,
+                                targetLanguage: lang,
                                 style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[300] : Colors.grey[700]),
                               ),
                             ],

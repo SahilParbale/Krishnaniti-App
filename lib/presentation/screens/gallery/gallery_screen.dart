@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import '../../../data/models/gallery_model.dart';
 import '../../../data/repositories/gallery_repository.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
@@ -65,7 +64,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   List<GalleryItemModel> get _filteredItems {
-    final q = _searchCtrl.text.trim().toLowerCase();
+    final q = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim())
+        .toLowerCase();
     return _allGalleryItems.where((item) {
       final matchesSearch = q.isEmpty ||
           item.title.toLowerCase().contains(q) ||
@@ -82,7 +82,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   void _showAddPhotoDialog() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final urlCtrl = TextEditingController();
@@ -138,10 +138,18 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 // 1. FIXED HEADER
                 AppModalHeader(
                   icon: Icons.add_photo_alternate_rounded,
-                  title: isMr ? 'नवीन फोटो जोडा' : 'Add New Photo',
-                  subtitle: isMr
-                      ? 'गॅलरीमध्ये फोटो, श्रेणी व माहिती जोडा'
-                      : 'Add media files, category and event details',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Add New Photo',
+                    mr: 'नवीन फोटो जोडा',
+                    hi: 'नया फ़ोटो जोड़ें',
+                  ),
+                  subtitle: AppTranslations.pick(
+                    lang,
+                    en: 'Add media files, category and event details',
+                    mr: 'गॅलरीमध्ये फोटो, श्रेणी व माहिती जोडा',
+                    hi: 'गैलरी में फ़ोटो, श्रेणी और विवरण जोड़ें',
+                  ),
                   onClose: () => Navigator.pop(ctx),
                 ),
 
@@ -165,13 +173,23 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppFieldLabel(
-                                  label: isMr ? 'फोटोचे नाव / शीर्षक' : 'Photo Title',
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Photo Title',
+                                    mr: 'फोटोचे नाव / शीर्षक',
+                                    hi: 'फ़ोटो का शीर्षक',
+                                  ),
                                   isRequired: true,
                                 ),
                                 TextField(
                                   controller: titleCtrl,
                                   decoration: inputDec(
-                                    hintText: isMr ? 'उदा. प्रभाग विकास पाहणी २०२४' : 'e.g. Ward Development 2024',
+                                    hintText: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g. Ward Development 2024',
+                                      mr: 'उदा. प्रभाग विकास पाहणी २०२४',
+                                      hi: 'उदा. वार्ड विकास निरीक्षण २०२४',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -184,8 +202,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<GalleryCategory>(
-                                label: isMr ? 'श्रेणी' : 'Category',
-                                value: selectedCat,
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Category',
+                                    mr: 'श्रेणी',
+                                    hi: 'श्रेणी',
+                                  ),
+                                  value: selectedCat,
                                   isExpanded: true,
                                   items: GalleryCategory.values.map((c) {
                                     return DropdownMenuItem(
@@ -194,7 +217,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                         children: [
                                           Icon(c.icon, size: 14, color: c.color),
                                           const SizedBox(width: 6),
-                                          Text(isMr ? c.titleMr : c.titleEn, style: const TextStyle(fontSize: 12)),
+                                          Flexible(
+                                            child: Text(
+                                              c.title(lang),
+                                              style: const TextStyle(fontSize: 12),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     );
@@ -210,11 +239,16 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      // STANDARDIZED IMAGE UPLOAD (Camera & Phone Storage)
+                      // STANDARDIZED IMAGE UPLOAD
                       AppImagePickerField(
-                        label: isMr ? 'फोटो निवडा (कॅमेरा व मोबाइल स्टोरेज)' : 'Select Photo (Camera & Phone Storage)',
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Select Photo (Camera & Phone Storage)',
+                          mr: 'फोटो निवडा (कॅमेरा व मोबाइल स्टोरेज)',
+                          hi: 'फ़ोटो चुनें (कैमरा और फ़ोन स्टोरेज)',
+                        ),
                         isRequired: true,
-                        isMarathi: isMr,
+                        isMarathi: lang == 'mr',
                         initialFiles: pickedImage != null ? [pickedImage!] : [],
                         onFilesChanged: (files) {
                           setModalState(() {
@@ -226,9 +260,19 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
                       // Optional Image URL
                       AppFieldLabel(
-                        label: isMr ? 'किंवा फोटो वेब लिंक / URL' : 'Or Image Web URL',
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Or Image Web URL',
+                          mr: 'किंवा फोटो वेब लिंक / URL',
+                          hi: 'या फ़ोटो वेब लिंक / URL',
+                        ),
                         isRequired: false,
-                        optionalHint: isMr ? 'ऐच्छिक' : 'Optional',
+                        optionalHint: AppTranslations.pick(
+                          lang,
+                          en: 'Optional',
+                          mr: 'ऐच्छिक',
+                          hi: 'वैकल्पिक',
+                        ),
                       ),
                       TextField(
                         controller: urlCtrl,
@@ -241,7 +285,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
                       // Date Picker
                       AppFieldLabel(
-                        label: isMr ? 'तारीख' : 'Date',
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Date',
+                          mr: 'तारीख',
+                          hi: 'दिनांक',
+                        ),
                         isRequired: false,
                       ),
                       InkWell(
@@ -268,7 +317,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                               const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
                               const SizedBox(width: 8),
                               Text(
-                                DateFormat('dd/MM/yyyy').format(selectedDate),
+                                AppTranslations.formatDate(
+                                  selectedDate,
+                                  lang,
+                                  pattern: 'dd/MM/yyyy',
+                                ),
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -279,20 +332,35 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
                       // Description
                       AppFieldLabel(
-                        label: isMr ? 'तपशील / वर्णन' : 'Description',
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Description',
+                          mr: 'तपशील / वर्णन',
+                          hi: 'विवरण',
+                        ),
                         isRequired: false,
-                        optionalHint: isMr ? 'ऐच्छिक' : 'Optional',
+                        optionalHint: AppTranslations.pick(
+                          lang,
+                          en: 'Optional',
+                          mr: 'ऐच्छिक',
+                          hi: 'वैकल्पिक',
+                        ),
                       ),
                       TextField(
                         controller: descCtrl,
                         maxLines: 3,
                         decoration: inputDec(
-                          hintText: isMr ? 'फोटो किंवा कार्यक्रमाविषयी थोडक्यात माहिती...' : 'Brief details about this photo or event...',
+                          hintText: AppTranslations.pick(
+                            lang,
+                            en: 'Brief details about this photo or event...',
+                            mr: 'फोटो किंवा कार्यक्रमाविषयी थोडक्यात माहिती...',
+                            hi: 'इस फ़ोटो या कार्यक्रम के बारे में संक्षिप्त जानकारी...',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // SCROLLABLE ACTION BUTTONS (Cancel & Submit)
+                      // SCROLLABLE ACTION BUTTONS
                       Row(
                         children: [
                           Expanded(
@@ -304,7 +372,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                               ),
                               onPressed: () => Navigator.pop(ctx),
                               child: Text(
-                                isMr ? 'रद्द करा' : 'Cancel',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Cancel',
+                                  mr: 'रद्द करा',
+                                  hi: 'रद्द करें',
+                                ),
                                 style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -317,7 +390,16 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                 final title = titleCtrl.text.trim();
                                 if (title.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isMr ? 'कृपया फोटोचे शीर्षक प्रविष्ट करा' : 'Please enter photo title.')),
+                                    SnackBar(
+                                      content: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Please enter photo title.',
+                                          mr: 'कृपया फोटोचे शीर्षक प्रविष्ट करा',
+                                          hi: 'कृपया फ़ोटो का शीर्षक दर्ज करें।',
+                                        ),
+                                      ),
+                                    ),
                                   );
                                   return;
                                 }
@@ -357,7 +439,14 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                   _loadGallery();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(isMr ? 'फोटो गॅलरीमध्ये यशस्वीरित्या जोडला गेला!' : 'Photo added to gallery successfully!'),
+                                      content: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Photo added to gallery successfully!',
+                                          mr: 'फोटो गॅलरीमध्ये यशस्वीरित्या जोडला गेला!',
+                                          hi: 'फ़ोटो गैलरी में सफलतापूर्वक जोड़ी गई!',
+                                        ),
+                                      ),
                                       backgroundColor: const Color(0xFF16A34A),
                                     ),
                                   );
@@ -372,7 +461,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                               ),
                               icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
                               label: Text(
-                                isMr ? 'गॅलरीत जोडा' : 'Add to Gallery',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Add to Gallery',
+                                  mr: 'गॅलरीत जोडा',
+                                  hi: 'गैलरी में जोड़ें',
+                                ),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ),
@@ -413,7 +507,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -481,7 +580,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                           totalCount: filtered.length,
                           pageSize: 20,
                           onLoadMore: () => setState(() => _displayedLimit += 20),
-                          label: isMarathi ? 'छायाचित्रे' : 'photos',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'photos',
+                            mr: 'छायाचित्रे',
+                            hi: 'फ़ोटो',
+                          ),
                           isMarathi: isMarathi,
                         ),
 
@@ -560,7 +664,19 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         color: const Color(0xFF0284C7),
                         size: 20,
                       ),
-                      tooltip: _viewMode == 'grid' ? 'List View' : 'Grid View',
+                      tooltip: _viewMode == 'grid'
+                          ? AppTranslations.pick(
+                              lang,
+                              en: 'List View',
+                              mr: 'यादी दृश्य',
+                              hi: 'सूची दृश्य',
+                            )
+                          : AppTranslations.pick(
+                              lang,
+                              en: 'Grid View',
+                              mr: 'ग्रिड दृश्य',
+                              hi: 'ग्रिड दृश्य',
+                            ),
                       onPressed: () {
                         setState(() {
                           _viewMode = _viewMode == 'grid' ? 'list' : 'grid';
@@ -568,8 +684,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       },
                     ),
                     AppPdfButton.icon(
-                      tooltip: 'Download Report',
-                      onPressed: () => GalleryReportGenerator.generateAndPrintReport(items: filtered),
+                      tooltip: AppTranslations.getDownloadReport(lang),
+                      onPressed: () => GalleryReportGenerator.generateAndPrintReport(
+                        items: filtered,
+                        lang: lang,
+                      ),
                     ),
                   ],
                 ),
@@ -585,11 +704,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             child: Row(
               children: [
                 _buildCategoryFilterChip(
-                  lang == 'mr'
-                      ? 'सर्व (${AppTranslations.formatDigits(_allGalleryItems.length, lang)})'
-                      : (lang == 'hi'
-                          ? 'सभी (${AppTranslations.formatDigits(_allGalleryItems.length, lang)})'
-                          : 'All (${_allGalleryItems.length})'),
+                  '${AppTranslations.getAll(lang)} (${AppTranslations.formatDigits(_allGalleryItems.length, lang)})',
                   'all',
                 ),
                 const SizedBox(width: 6),
@@ -684,6 +799,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   Widget _buildGridCard(GalleryItemModel item, String lang) {
+    final rawTitle =
+        lang == 'mr' && item.titleMr.isNotEmpty ? item.titleMr : item.title;
     return InkWell(
       onTap: () async {
         await Navigator.push(
@@ -752,7 +869,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        item.category.titleMr,
+                        item.category.title(lang),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 9.5,
@@ -791,8 +908,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.titleMr,
+                    AppTranslatedText(
+                      rawTitle,
+                      targetLanguage: lang,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -808,8 +926,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         const Icon(Icons.location_on_outlined, size: 11, color: Color(0xFF64748B)),
                         const SizedBox(width: 2),
                         Expanded(
-                          child: Text(
+                          child: AppTranslatedText(
                             AppTranslations.getAreaName(item.location, lang),
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -822,7 +941,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          AppTranslations.formatDigits(item.formattedDate, lang),
+                          item.formattedDateFor(lang),
                           style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
                         ),
                         Text(
@@ -862,6 +981,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (ctx, idx) {
         final item = items[idx];
+        final rawTitle =
+            lang == 'mr' && item.titleMr.isNotEmpty ? item.titleMr : item.title;
+        final rawDesc = lang == 'mr' && item.descriptionMr.isNotEmpty
+            ? item.descriptionMr
+            : item.description;
         return InkWell(
           onTap: () async {
             await Navigator.push(
@@ -923,7 +1047,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              item.category.titleMr,
+                              item.category.title(lang),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -933,14 +1057,15 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                           ),
                           const Spacer(),
                           Text(
-                            AppTranslations.formatDigits(item.formattedDate, lang),
+                            item.formattedDateFor(lang),
                             style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        item.titleMr,
+                      AppTranslatedText(
+                        rawTitle,
+                        targetLanguage: lang,
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -950,8 +1075,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        item.descriptionMr,
+                      AppTranslatedText(
+                        rawDesc,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -962,8 +1088,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                           const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF64748B)),
                           const SizedBox(width: 2),
                           Expanded(
-                            child: Text(
+                            child: AppTranslatedText(
                               AppTranslations.getAreaName(item.location, lang),
+                              targetLanguage: lang,
                               style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

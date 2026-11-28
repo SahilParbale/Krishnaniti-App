@@ -110,14 +110,22 @@ class OppositionNegativeStoryModel {
     );
   }
 
-  String get severityLabelMarathi {
-    switch (severity) {
-      case 'High':
-        return 'तीव्र प्रभाव (High)';
-      case 'Medium':
-        return 'मध्यम प्रभाव (Medium)';
-      case 'Low':
-        return 'सौम्य प्रभाव (Low)';
+  String get severityLabelMarathi => severityLabel('mr');
+
+  String severityLabel(String lang) {
+    switch (severity.toLowerCase()) {
+      case 'high':
+        return lang == 'mr'
+            ? 'तीव्र प्रभाव'
+            : (lang == 'hi' ? 'उच्च प्रभाव' : 'High Impact');
+      case 'medium':
+        return lang == 'mr'
+            ? 'मध्यम प्रभाव'
+            : (lang == 'hi' ? 'मध्यम प्रभाव' : 'Medium Impact');
+      case 'low':
+        return lang == 'mr'
+            ? 'सौम्य प्रभाव'
+            : (lang == 'hi' ? 'कम प्रभाव' : 'Low Impact');
       default:
         return severity;
     }
@@ -265,42 +273,50 @@ class OppositionMemberModel {
     );
   }
 
-  String get candidacyStatusLabelMarathi {
+  String get candidacyStatusLabelMarathi => candidacyStatusLabel('mr');
+
+  String candidacyStatusLabel(String lang) {
     if (!isCandidate || candidacyStatus == null) return '';
     switch (candidacyStatus) {
       case 'Declared':
-        return 'घोषित';
+        return lang == 'mr' ? 'घोषित' : (lang == 'hi' ? 'घोषित' : 'Declared');
       case 'Contesting':
-        return 'लढत असलेले';
+        return lang == 'mr' ? 'लढत असलेले' : (lang == 'hi' ? 'चुनाव लड़ रहे' : 'Contesting');
       case 'Withdrawn':
-        return 'मागे घेतलेले';
+        return lang == 'mr' ? 'मागे घेतलेले' : (lang == 'hi' ? 'नाम वापस' : 'Withdrawn');
       case 'Won':
-        return 'विजयी';
+        return lang == 'mr' ? 'विजयी' : (lang == 'hi' ? 'विजयी' : 'Won');
       case 'Lost':
-        return 'पराजित';
+        return lang == 'mr' ? 'पराजित' : (lang == 'hi' ? 'पराजित' : 'Lost');
       default:
         return candidacyStatus!;
     }
   }
 
-  String get typeLabelMarathi => isCandidate ? 'विरोधी उमेदवार' : 'विरोधी कार्यकर्ता';
+  String get typeLabelMarathi => typeLabel('mr');
 
-  String get partyFullLabel {
+  String typeLabel(String lang) => isCandidate
+      ? (lang == 'mr' ? 'विरोधी उमेदवार' : (lang == 'hi' ? 'विपक्षी उम्मीदवार' : 'Opposition Candidate'))
+      : (lang == 'mr' ? 'विरोधी कार्यकर्ता' : (lang == 'hi' ? 'विपक्षी कार्यकर्ता' : 'Opposition Worker'));
+
+  String get partyFullLabel => partyFullLabelFor('mr');
+
+  String partyFullLabelFor(String lang) {
     switch (party.toUpperCase()) {
       case 'INC':
-        return 'काँग्रेस (INC)';
+        return lang == 'mr' ? 'काँग्रेस (INC)' : (lang == 'hi' ? 'कांग्रेस (INC)' : 'Congress (INC)');
       case 'NCP':
-        return 'राष्ट्रवादी (NCP)';
+        return lang == 'mr' ? 'राष्ट्रवादी (NCP)' : (lang == 'hi' ? 'राष्ट्रवादी (NCP)' : 'NCP');
       case 'UBT':
-        return 'शिवसेना (UBT)';
+        return lang == 'mr' ? 'शिवसेना (UBT)' : (lang == 'hi' ? 'शिवसेना (UBT)' : 'Shiv Sena (UBT)');
       case 'MNS':
-        return 'मनसे (MNS)';
+        return lang == 'mr' ? 'मनसे (MNS)' : (lang == 'hi' ? 'मनसे (MNS)' : 'MNS');
       case 'BJP':
-        return 'भाजप (BJP)';
+        return lang == 'mr' ? 'भाजप (BJP)' : (lang == 'hi' ? 'भाजपा (BJP)' : 'BJP');
       case 'AAP':
-        return 'आप (AAP)';
+        return lang == 'mr' ? 'आप (AAP)' : (lang == 'hi' ? 'आप (AAP)' : 'AAP');
       case 'INDEPENDENT':
-        return 'अपक्ष (Independent)';
+        return lang == 'mr' ? 'अपक्ष (Independent)' : (lang == 'hi' ? 'निर्दलीय (Independent)' : 'Independent');
       default:
         return party;
     }

@@ -7,7 +7,6 @@ import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/visitors_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_load_more_footer.dart';
@@ -80,7 +79,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
   }
 
   List<VisitorModel> get _filteredVisitors {
-    final query = _searchCtrl.text.trim().toLowerCase();
+    final query = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim()).toLowerCase();
 
     return _allVisitors.where((v) {
       // Primary Tab
@@ -135,8 +134,28 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
     }
   }
 
+  String _localizedPurpose(String purpose, String lang) {
+    switch (purpose) {
+      case 'Complaint':
+        return AppTranslations.pick(lang, en: 'Complaint', mr: 'तक्रार (Complaint)', hi: 'शिकायत');
+      case 'Meeting':
+        return AppTranslations.pick(lang, en: 'Meeting', mr: 'भेट / चर्चा (Meeting)', hi: 'बैठक / चर्चा');
+      case 'Greeting':
+      case 'Invitation':
+        return AppTranslations.pick(lang, en: 'Greeting / Invite', mr: 'निमंत्रण / सत्कार', hi: 'निमंत्रण / सम्मान');
+      case 'Help':
+        return AppTranslations.pick(lang, en: 'Help / Relief', mr: 'वैयक्तिक मदत (Help)', hi: 'व्यक्तिगत सहायता');
+      case 'Donation':
+        return AppTranslations.pick(lang, en: 'Donation', mr: 'देणगी / निधी (Donation)', hi: 'दान / निधि');
+      case 'Other':
+        return AppTranslations.pick(lang, en: 'Other', mr: 'इतर (Other)', hi: 'अन्य');
+      default:
+        return purpose;
+    }
+  }
+
   void _openAddVisitorModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameCtrl = TextEditingController();
     final mobileCtrl = TextEditingController();
     final areaCtrl = TextEditingController();
@@ -206,10 +225,18 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 // 1. FIXED HEADER
                 AppModalHeader(
                   icon: Icons.people_alt_outlined,
-                  title: isMr ? 'नवीन अभ्यागत नोंद' : 'Log New Visitor',
-                  subtitle: isMr
-                      ? 'कार्यालयामध्ये आलेल्या नागरिकांची भेट व चर्चा नोंदवा'
-                      : 'Check in office visitors, invitations and citizen grievances',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Log New Visitor',
+                    mr: 'नवीन अभ्यागत नोंद',
+                    hi: 'नया आगंतुक दर्ज करें',
+                  ),
+                  subtitle: AppTranslations.pick(
+                    lang,
+                    en: 'Check in office visitors, invitations and citizen grievances',
+                    mr: 'कार्यालयामध्ये आलेल्या नागरिकांची भेट व चर्चा नोंदवा',
+                    hi: 'कार्यालय में आने वाले नागरिकों की भेंट व चर्चा दर्ज करें',
+                  ),
                   onClose: () => Navigator.pop(ctx),
                 ),
 
@@ -221,14 +248,27 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Name & Voter Lookup
-                        fieldLabel(isMr ? 'अभ्यागताचे पूर्ण नाव' : 'Visitor Full Name', isRequired: true),
+                        fieldLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Visitor Full Name',
+                            mr: 'अभ्यागताचे पूर्ण नाव',
+                            hi: 'आगंतुक का पूरा नाम',
+                          ),
+                          isRequired: true,
+                        ),
                         Row(
                           children: [
                             Expanded(
                               child: TextField(
                                 controller: nameCtrl,
                                 decoration: inputDec(
-                                  hint: isMr ? 'नागरिकाचे नाव प्रविष्ट करा' : 'Enter citizen / visitor name',
+                                  hint: AppTranslations.pick(
+                                    lang,
+                                    en: 'Enter citizen / visitor name',
+                                    mr: 'नागरिकाचे नाव प्रविष्ट करा',
+                                    hi: 'नागरिक / आगंतुक का नाम दर्ज करें',
+                                  ),
                                 ),
                               ),
                             ),
@@ -258,7 +298,10 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                   children: [
                                     const Icon(Icons.how_to_reg_outlined, size: 18, color: Color(0xFF0284C7)),
                                     const SizedBox(width: 4),
-                                    Text(isMr ? 'मतदार' : 'Voters', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                                    Text(
+                                      AppTranslations.pick(lang, en: 'Voters', mr: 'मतदार', hi: 'मतदाता'),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -277,7 +320,9 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  fieldLabel(isMr ? 'मोबाईल (+91)' : 'Mobile (+91)'),
+                                  fieldLabel(
+                                    AppTranslations.pick(lang, en: 'Mobile (+91)', mr: 'मोबाईल (+91)', hi: 'मोबाइल (+91)'),
+                                  ),
                                   TextField(
                                     controller: mobileCtrl,
                                     keyboardType: TextInputType.phone,
@@ -296,16 +341,17 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppDropdownFormField<String>(
-                                label: isMr ? 'भेटीचे कारण / स्वरूप' : 'Visit Purpose',
-                                isRequired: true,
-                                value: selectedPurpose,
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Visit Purpose',
+                                      mr: 'भेटीचे कारण / स्वरूप',
+                                      hi: 'भेंट का उद्देश्य',
+                                    ),
+                                    isRequired: true,
+                                    value: selectedPurpose,
                                     items: [
-                                      DropdownMenuItem(value: 'Complaint', child: Text(isMr ? 'तक्रार (Complaint)' : 'Complaint')),
-                                      DropdownMenuItem(value: 'Meeting', child: Text(isMr ? 'भेट / चर्चा (Meeting)' : 'Meeting')),
-                                      DropdownMenuItem(value: 'Greeting', child: Text(isMr ? 'निमंत्रण / सत्कार' : 'Greeting / Invite')),
-                                      DropdownMenuItem(value: 'Help', child: Text(isMr ? 'वैयक्तिक मदत (Help)' : 'Help / Relief')),
-                                      DropdownMenuItem(value: 'Donation', child: Text(isMr ? 'देणगी / निधी (Donation)' : 'Donation')),
-                                      DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर (Other)' : 'Other')),
+                                      for (final code in const ['Complaint', 'Meeting', 'Greeting', 'Help', 'Donation', 'Other'])
+                                        DropdownMenuItem(value: code, child: Text(_localizedPurpose(code, lang))),
                                     ],
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => selectedPurpose = val);
@@ -329,15 +375,38 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 children: [
                                   fieldLabel(
                                     isGreeting
-                                        ? (isMr ? 'कार्यक्रमाचे ठिकाण / पत्ता' : 'Event Venue / Address')
-                                        : (isMr ? 'क्षेत्र / परिसर' : 'Area / Locality'),
+                                        ? AppTranslations.pick(
+                                            lang,
+                                            en: 'Event Venue / Address',
+                                            mr: 'कार्यक्रमाचे ठिकाण / पत्ता',
+                                            hi: 'कार्यक्रम स्थल / पता',
+                                          )
+                                        : AppTranslations.pick(
+                                            lang,
+                                            en: 'Area / Locality',
+                                            mr: 'क्षेत्र / परिसर',
+                                            hi: 'क्षेत्र / इलाका',
+                                          ),
                                   ),
                                   TextField(
                                     controller: areaCtrl,
                                     decoration: inputDec(
                                       hint: isGreeting
-                                          ? (isMr ? 'उदा. शिवाजी चौक सभागृह' : 'e.g. Shivaji Chowk Hall')
-                                          : (isMr ? 'उदा. गल्ली क्र. ४, प्रभाग १२' : 'e.g. Lane 4, Ward 12'),
+                                          ? AppTranslations.pick(
+                                              lang,
+                                              en: 'e.g. Shivaji Chowk Hall',
+                                              mr: 'उदा. शिवाजी चौक सभागृह',
+                                              hi: 'उदा. शिवाजी चौक हॉल',
+                                            )
+                                          : AppTranslations.formatDigits(
+                                              AppTranslations.pick(
+                                                lang,
+                                                en: 'e.g. Lane 4, Ward 12',
+                                                mr: 'उदा. गल्ली क्र. 4, प्रभाग 12',
+                                                hi: 'उदा. गली नं. 4, वार्ड 12',
+                                              ),
+                                              lang,
+                                            ),
                                     ),
                                   ),
                                 ],
@@ -348,11 +417,23 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  fieldLabel(isMr ? 'संदर्भ / नेता (ऐच्छिक)' : 'Reference / Leader'),
+                                  fieldLabel(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Reference / Leader',
+                                      mr: 'संदर्भ / नेता (ऐच्छिक)',
+                                      hi: 'संदर्भ / नेता (वैकल्पिक)',
+                                    ),
+                                  ),
                                   TextField(
                                     controller: refCtrl,
                                     decoration: inputDec(
-                                      hint: isMr ? 'उदा. सुनील शिंदे / स्वतः' : 'e.g. Sunil Shinde / Self',
+                                      hint: AppTranslations.pick(
+                                        lang,
+                                        en: 'e.g. Sunil Shinde / Self',
+                                        mr: 'उदा. सुनील शिंदे / स्वतः',
+                                        hi: 'उदा. सुनील शिंदे / स्वयं',
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -371,7 +452,14 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    fieldLabel(isMr ? 'कार्यक्रमाची तारीख' : 'Event Date'),
+                                    fieldLabel(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Event Date',
+                                        mr: 'कार्यक्रमाची तारीख',
+                                        hi: 'कार्यक्रम की तिथि',
+                                      ),
+                                    ),
                                     TextField(
                                       controller: eventDateCtrl,
                                       decoration: inputDec(hint: 'YYYY-MM-DD'),
@@ -384,10 +472,19 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    fieldLabel(isMr ? 'कार्यक्रमाची वेळ' : 'Event Time'),
+                                    fieldLabel(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Event Time',
+                                        mr: 'कार्यक्रमाची वेळ',
+                                        hi: 'कार्यक्रम का समय',
+                                      ),
+                                    ),
                                     TextField(
                                       controller: eventTimeCtrl,
-                                      decoration: inputDec(hint: 'उदा. 18:30'),
+                                      decoration: inputDec(
+                                        hint: AppTranslations.pick(lang, en: 'e.g. 18:30', mr: 'उदा. 18:30', hi: 'उदा. 18:30'),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -398,7 +495,14 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
 
                         if (isDonation) ...[
                           const SizedBox(height: 14),
-                          fieldLabel(isMr ? 'अपेक्षित मदत / देणगी रक्कम (₹)' : 'Requested Amount (₹)'),
+                          fieldLabel(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Requested Amount (₹)',
+                              mr: 'अपेक्षित मदत / देणगी रक्कम (₹)',
+                              hi: 'अनुरोधित सहायता / दान राशि (₹)',
+                            ),
+                          ),
                           TextField(
                             controller: amountCtrl,
                             keyboardType: TextInputType.number,
@@ -412,12 +516,24 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         const SizedBox(height: 14),
 
                         // Discussion Remarks
-                        fieldLabel(isMr ? 'चर्चा नोंदी व शेरा' : 'Discussion Notes & Remarks'),
+                        fieldLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Discussion Notes & Remarks',
+                            mr: 'चर्चा नोंदी व शेरा',
+                            hi: 'चर्चा नोट्स और टिप्पणी',
+                          ),
+                        ),
                         TextField(
                           controller: remarksCtrl,
                           maxLines: 3,
                           decoration: inputDec(
-                            hint: isMr ? 'समस्या किंवा संभाषणाचा संक्षिप्त गोषवारा...' : 'Brief summary of problem, petition, or conversation...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Brief summary of problem, petition, or conversation...',
+                              mr: 'समस्या किंवा संभाषणाचा संक्षिप्त गोषवारा...',
+                              hi: 'समस्या, आवेदन या बातचीत का संक्षिप्त सारांश...',
+                            ),
                           ),
                         ),
 
@@ -432,7 +548,16 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                               final name = nameCtrl.text.trim();
                               if (name.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(isMr ? 'कृपया अभ्यागताचे नाव प्रविष्ट करा' : 'Please enter visitor name')),
+                                  SnackBar(
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Please enter visitor name',
+                                        mr: 'कृपया अभ्यागताचे नाव प्रविष्ट करा',
+                                        hi: 'कृपया आगंतुक का नाम दर्ज करें',
+                                      ),
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
@@ -462,7 +587,14 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(isMr ? 'अभ्यागत नोंद यशस्वीरित्या जतन केली!' : 'Visitor checked in successfully!'),
+                                      content: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Visitor checked in successfully!',
+                                          mr: 'अभ्यागत नोंद यशस्वीरित्या जतन केली!',
+                                          hi: 'आगंतुक पंजीकरण सफलतापूर्वक सहेजा गया!',
+                                        ),
+                                      ),
                                       backgroundColor: const Color(0xFF0F766E),
                                     ),
                                   );
@@ -481,7 +613,12 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                 const Icon(Icons.check_circle_outline_rounded, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
-                                  isMr ? 'अभ्यागत नोंद जतन करा' : 'Check-In Visitor',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Check-In Visitor',
+                                    mr: 'अभ्यागत नोंद जतन करा',
+                                    hi: 'आगंतुक दर्ज करें',
+                                  ),
                                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -502,7 +639,6 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
 
   void _openVoterLookup(Function(VoterModel voter) onSelected) {
     final lang = ref.read(appLanguageProvider);
-    final isMr = lang == 'mr';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -531,8 +667,18 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 children: [
                   AppModalHeader(
                     icon: Icons.how_to_reg_outlined,
-                    title: isMr ? 'प्रभाग मतदार यादीतून निवडा' : 'Select Voter from Ward Register',
-                    subtitle: isMr ? 'नाव, मोबाईल किंवा ओळखपत्र क्रमांकाने शोधा' : 'Search by name, mobile or voter ID',
+                    title: AppTranslations.pick(
+                      lang,
+                      en: 'Select Voter from Ward Register',
+                      mr: 'प्रभाग मतदार यादीतून निवडा',
+                      hi: 'वार्ड मतदाता सूची से चुनें',
+                    ),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Search by name, mobile or voter ID',
+                      mr: 'नाव, मोबाईल किंवा ओळखपत्र क्रमांकाने शोधा',
+                      hi: 'नाम, मोबाइल या मतदाता पहचान पत्र से खोजें',
+                    ),
                     onClose: () => Navigator.pop(ctx),
                   ),
                   Expanded(
@@ -543,7 +689,12 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                           TextField(
                     controller: voterSearchCtrl,
                     decoration: InputDecoration(
-                      hintText: isMr ? 'मतदाराचे नाव किंवा EPIC क्रमांक शोधा...' : 'Type voter name or EPIC ID...',
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Type voter name or EPIC ID...',
+                        mr: 'मतदाराचे नाव किंवा EPIC क्रमांक शोधा...',
+                        hi: 'मतदाता का नाम या EPIC नंबर खोजें...',
+                      ),
                       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B)),
                       filled: true,
@@ -586,7 +737,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                         }
                         return ListView.separated(
                           itemCount: voters.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (lCtx, idx) {
                             final v = voters[idx];
                             return ListTile(
@@ -598,8 +749,27 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                   style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
                                 ),
                               ),
-                              title: Text(v.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              subtitle: Text('${v.epicNo.isNotEmpty ? "EPIC: ${v.epicNo} | " : ""}${v.address}', style: const TextStyle(fontSize: 12)),
+                              title: AppTranslatedText(
+                                v.displayName,
+                                isName: true,
+                                targetLanguage: lang,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              subtitle: Row(
+                                children: [
+                                  if (v.epicNo.isNotEmpty)
+                                    Text('EPIC: ${v.epicNo} | ', style: const TextStyle(fontSize: 12)),
+                                  Expanded(
+                                    child: AppTranslatedText(
+                                      v.address,
+                                      targetLanguage: lang,
+                                      style: const TextStyle(fontSize: 12),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                               trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF0284C7)),
                               onTap: () {
                                 Navigator.pop(ctx);
@@ -627,7 +797,6 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final filtered = _filteredVisitors;
 
     final todayCount = _allVisitors.where((v) => v.isToday).length;
@@ -657,7 +826,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(lang, en: 'Open Menu Drawer', mr: 'मेनू उघडा', hi: 'मेनू खोलें'),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -724,8 +893,9 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                     // Today Tab
                     Expanded(
                       child: _buildPrimaryTab(
-                        label: isMr ? 'आजच्या भेटी' : 'Today',
+                        label: AppTranslations.pick(lang, en: 'Today', mr: 'आजच्या भेटी', hi: 'आज की भेंट'),
                         count: todayCount,
+                        lang: lang,
                         isActive: _activeTab == 'today',
                         icon: Icons.today_rounded,
                         onTap: () => setState(() {
@@ -784,7 +954,12 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                       controller: _searchCtrl,
                       onChanged: (_) => setState(() => _displayedLimit = 20),
                       decoration: InputDecoration(
-                        hintText: isMr ? 'नाव किंवा मोबाईल नंबर शोधा...' : 'Search by name or mobile...',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'Search by name or mobile...',
+                          mr: 'नाव किंवा मोबाईल नंबर शोधा...',
+                          hi: 'नाम या मोबाइल नंबर से खोजें...',
+                        ),
                         hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                         suffixIcon: _searchCtrl.text.isNotEmpty
@@ -813,7 +988,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   if (_uniqueAreas.isNotEmpty) ...[
                     const SizedBox(width: 8),
                     AppDropdown<String>(
-                      title: isMr ? 'भाग निवडा' : 'Filter by Area',
+                      title: AppTranslations.pick(lang, en: 'Filter by Area', mr: 'भाग निवडा', hi: 'क्षेत्र चुनें'),
                       value: _selectedArea,
                       height: 42,
                       isExpanded: false,
@@ -909,12 +1084,12 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                                   onLoadMore: () {
                                     setState(() => _displayedLimit += 20);
                                   },
-                                  label: isMr ? 'भेटी' : 'visitors',
-                                  isMarathi: isMr,
+                                  label: AppTranslations.pick(lang, en: 'visitors', mr: 'भेटी', hi: 'आगंतुक'),
+                                  isMarathi: lang == 'mr',
                                 );
                               }
                               final visitor = _visibleVisitors[index];
-                              return _buildVisitorCard(visitor, isMr, lang);
+                              return _buildVisitorCard(visitor, lang);
                             },
                           ),
                         ),
@@ -973,7 +1148,10 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
     );
   }
 
-  Widget _buildVisitorCard(VisitorModel visitor, bool isMr, [String lang = 'en']) {
+  Widget _buildVisitorCard(VisitorModel visitor, String lang) {
+    final dateStr = AppTranslations.formatDate(visitor.visitDate, lang, pattern: 'dd MMM yyyy');
+    final timeStr = AppTranslations.formatTime(visitor.visitDate, lang);
+    final refPrefix = AppTranslations.pick(lang, en: 'Ref:', mr: 'संदर्भ:', hi: 'संदर्भ:');
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -1049,10 +1227,11 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                     decoration: BoxDecoration(
                       color: visitor.purposeBgColor,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: visitor.purposeColor.withOpacity(0.3)),
+                      border: Border.all(color: visitor.purposeColor.withValues(alpha: 0.3)),
                     ),
                     child: AppTranslatedText(
-                      visitor.purpose,
+                      _localizedPurpose(visitor.purpose, lang),
+                      targetLanguage: lang,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -1082,30 +1261,34 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                 children: [
                   _buildTag(
                     Icons.access_time_rounded,
-                    AppTranslations.formatDigits('${visitor.formattedDate}, ${visitor.formattedTime}', lang),
+                    '$dateStr, $timeStr',
                     const Color(0xFF0284C7),
                     const Color(0xFFF0F9FF),
                   ),
                   if (visitor.area != null && visitor.area!.isNotEmpty)
-                    _buildTag(
+                    _buildTranslatedTag(
                       Icons.location_on_outlined,
                       AppTranslations.getAreaName(visitor.area!, lang),
                       const Color(0xFF475569),
                       const Color(0xFFF8FAFC),
+                      lang: lang,
                     ),
                   if (visitor.amount != null && visitor.amount!.isNotEmpty)
                     _buildTag(
                       Icons.currency_rupee_rounded,
-                      '₹${AppTranslations.formatDigits(visitor.amount!, lang)}',
+                      AppTranslations.formatCurrency(visitor.amount!, lang),
                       const Color(0xFF16A34A),
                       const Color(0xFFF0FDF4),
                     ),
                   if (visitor.reference != null && visitor.reference!.isNotEmpty)
-                    _buildTag(
+                    _buildTranslatedTag(
                       Icons.person_pin_circle_outlined,
-                      '${lang == "mr" ? "संदर्भ:" : (lang == "hi" ? "संदर्भ:" : "Ref:")} ${visitor.reference!}',
+                      visitor.reference!,
                       const Color(0xFF6B21A8),
                       const Color(0xFFFAF5FF),
+                      prefix: '$refPrefix ',
+                      isName: true,
+                      lang: lang,
                     ),
                 ],
               ),
@@ -1130,10 +1313,13 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                               border: Border.all(color: const Color(0xFFBAE6FD)),
                             ),
                             child: Row(
-                              children: const [
-                                Icon(Icons.phone_outlined, size: 13, color: Color(0xFF0284C7)),
-                                SizedBox(width: 4),
-                                Text('Call', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                              children: [
+                                const Icon(Icons.phone_outlined, size: 13, color: Color(0xFF0284C7)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  AppTranslations.pick(lang, en: 'Call', mr: 'कॉल', hi: 'कॉल'),
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                ),
                               ],
                             ),
                           ),
@@ -1150,10 +1336,13 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                               border: Border.all(color: const Color(0xFFBBF7D0)),
                             ),
                             child: Row(
-                              children: const [
-                                Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Color(0xFF16A34A)),
-                                SizedBox(width: 4),
-                                Text('WhatsApp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                              children: [
+                                const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Color(0xFF16A34A)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  AppTranslations.pick(lang, en: 'WhatsApp', mr: 'व्हॉट्सॲप', hi: 'व्हाट्सऐप'),
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                                ),
                               ],
                             ),
                           ),
@@ -1166,7 +1355,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
                   Row(
                     children: [
                       Text(
-                        isMr ? 'तपशील' : 'Details',
+                        AppTranslations.pick(lang, en: 'Details', mr: 'तपशील', hi: 'विवरण'),
                         style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                       ),
                       const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF0284C7)),
@@ -1187,7 +1376,7 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: textColor.withOpacity(0.2)),
+        border: Border.all(color: textColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1197,6 +1386,47 @@ class _VisitorsScreenState extends ConsumerState<VisitorsScreen> {
           Text(
             label,
             style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: textColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTranslatedTag(
+    IconData icon,
+    String text,
+    Color textColor,
+    Color bgColor, {
+    required String lang,
+    String prefix = '',
+    bool isName = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: textColor.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: textColor),
+          const SizedBox(width: 4),
+          if (prefix.isNotEmpty)
+            Text(
+              prefix,
+              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: textColor),
+            ),
+          Flexible(
+            child: AppTranslatedText(
+              text,
+              isName: isName,
+              targetLanguage: lang,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: textColor),
+            ),
           ),
         ],
       ),

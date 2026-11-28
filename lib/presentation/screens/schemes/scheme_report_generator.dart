@@ -3,35 +3,88 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import '../../../data/models/scheme_model.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../data/models/scheme_model.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pdf_report_theme.dart';
 import '../../widgets/app_report_preview_modal.dart';
 
 class SchemeReportGenerator {
   SchemeReportGenerator._();
 
+  static String _pickRawForLang(String raw, String lang) {
+    if (raw.trim().isEmpty) return '';
+    final extracted = SchemeModel.extractLocalized(raw, lang == 'mr');
+    if (extracted.trim().isNotEmpty) return extracted.trim();
+    return raw.trim();
+  }
+
+  static String _resolveStatus(Map<String, String> cache, String? raw, String lang) {
+    if (raw == null || raw.trim().isEmpty) return '-';
+    final clean = raw.trim();
+    final domain = AppTranslations.getStatus(clean, lang);
+    final plainDigits = AppTranslations.formatDigits(clean, lang);
+    if (domain.toLowerCase() != clean.toLowerCase() && domain != plainDigits) {
+      return AppTranslations.formatDigits(domain, lang);
+    }
+    if (lang == 'en' && !RegExp(r'[\u0900-\u097F]').hasMatch(clean)) {
+      return AppTranslations.formatDigits(domain, lang);
+    }
+    return PdfTranslationHelper.resolve(cache, clean, lang);
+  }
+
   /// Multi-page PDF directory of all government schemes
   static Future<void> generateAndPrintListReport({
     BuildContext? context,
     required List<SchemeModel> schemes,
-    bool isMarathi = true,
-    String lang = 'en',
+    bool? isMarathi,
+    String? lang,
     String? categoryFilter,
   }) async {
-    final pdf = pw.Document();
-    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+    final activeLang = (lang != null && lang.isNotEmpty)
+        ? lang
+        : (isMarathi == true ? 'mr' : appLanguageValueNotifier.value);
+    final pdf = await WebReportTheme.createDocument(lang: activeLang);
+    final now = DateTime.now();
+    final nowStr = PdfTranslationHelper.formatDateTime(now, activeLang);
     final total = schemes.length;
-    final activeLang = lang != 'en' ? lang : (isMarathi ? 'mr' : 'en');
 
-    final title = activeLang == 'mr'
-        ? 'शासकीय योजना'
-        : (activeLang == 'hi' ? 'सरकारी योजनाएं' : 'Government Schemes');
-    final subtitle = activeLang == 'mr'
-        ? 'राज्य व केंद्र शासकीय कल्याणकारी योजनांची अधिकृत सूची'
-        : (activeLang == 'hi'
-            ? 'राज्य व केंद्र सरकारी कल्याणकारी योजनाओं की आधिकारिक सूची'
-            : 'Official Directory of State & Central Welfare Schemes');
+    final rawNames = <String>[];
+    final rawDescs = <String>[];
+    final rawBenefits = <String>[];
+    for (final item in schemes) {
+      rawNames.add(_pickRawForLang(item.name, activeLang));
+      rawDescs.add(_pickRawForLang(item.description, activeLang));
+      rawBenefits.add(_pickRawForLang(item.benefits, activeLang));
+    }
+
+    final textCache = await PdfTranslationHelper.batchText([
+      categoryFilter,
+      ...rawNames,
+      ...rawDescs,
+      ...rawBenefits,
+      for (final item in schemes) item.category,
+    ], activeLang);
+
+    final title = AppTranslations.pick(
+      activeLang,
+      en: 'Government Schemes',
+      mr: 'शासकीय योजना',
+      hi: 'सरकारी योजनाएं',
+    );
+    final subtitle = AppTranslations.pick(
+      activeLang,
+      en: 'Official Directory of State & Central Welfare Schemes',
+      mr: 'राज्य व केंद्र शासकीय कल्याणकारी योजनांची अधिकृत सूची',
+      hi: 'राज्य व केंद्र सरकारी कल्याणकारी योजनाओं की आधिकारिक सूची',
+    );
+
+    final hasCategoryFilter = categoryFilter != null &&
+        categoryFilter.trim().isNotEmpty &&
+        categoryFilter.trim().toLowerCase() != 'all';
+    final filterText = hasCategoryFilter
+        ? '${AppTranslations.getReportColumn('category', activeLang)}: ${PdfTranslationHelper.resolve(textCache, categoryFilter, activeLang)}'
+        : '';
 
     pdf.addPage(
       pw.MultiPage(
@@ -53,21 +106,42 @@ class SchemeReportGenerator {
               subtitle: subtitle,
               dateFormatted: nowStr,
               totalCount: total,
-              foundLabel: activeLang == 'mr' ? 'एकूण आढळले' : (activeLang == 'hi' ? 'कुल मिले' : 'Found'),
+              foundLabel: AppTranslations.pick(
+                activeLang,
+                en: 'Found',
+                mr: 'एकूण आढळले',
+                hi: 'कुल मिले',
+              ),
               lang: activeLang,
             ),
-            pw.SizedBox(height: 12),
+            if (filterText.isNotEmpty) ...[
+              pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 10),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: pw.BoxDecoration(
+                  color: WebReportTheme.slate50,
+                  borderRadius: pw.BorderRadius.circular(4),
+                  border: pw.Border.all(color: WebReportTheme.slate200, width: 0.5),
+                ),
+                child: pw.Text(
+                  filterText,
+                  style: const pw.TextStyle(fontSize: 8.5, color: WebReportTheme.slate600),
+                ),
+              ),
+            ] else
+              pw.SizedBox(height: 12),
 
             if (schemes.isEmpty)
               pw.Container(
                 alignment: pw.Alignment.center,
                 padding: const pw.EdgeInsets.all(40),
                 child: pw.Text(
-                  activeLang == 'mr'
-                      ? 'कोणत्याही शासकीय योजना सापडल्या नाहीत.'
-                      : (activeLang == 'hi'
-                          ? 'कोई सरकारी योजना नहीं मिली।'
-                          : 'No government schemes found for the selected view.'),
+                  AppTranslations.pick(
+                    activeLang,
+                    en: 'No government schemes found for the selected view.',
+                    mr: 'कोणत्याही शासकीय योजना सापडल्या नाहीत.',
+                    hi: 'कोई सरकारी योजना नहीं मिली।',
+                  ),
                   style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
                 ),
               )
@@ -88,24 +162,24 @@ class SchemeReportGenerator {
                   4: pw.FlexColumnWidth(3.0),
                 },
                 headers: [
-                  '#',
-                  activeLang == 'mr' ? 'योजनेचे नाव' : (activeLang == 'hi' ? 'योजना का नाम' : 'Scheme Name'),
-                  AppTranslations.getReportColumn('desc', activeLang),
+                  AppTranslations.pick(activeLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+                  AppTranslations.pick(activeLang, en: 'Scheme Name', mr: 'योजनेचे नाव', hi: 'योजना का नाम'),
+                  AppTranslations.getReportColumn('description', activeLang),
                   AppTranslations.getReportColumn('category', activeLang),
-                  activeLang == 'mr' ? 'लाभ' : (activeLang == 'hi' ? 'लाभ' : 'Benefits'),
+                  AppTranslations.pick(activeLang, en: 'Benefits', mr: 'लाभ', hi: 'लाभ'),
                 ],
                 data: List.generate(schemes.length, (index) {
                   final item = schemes[index];
-                  final isMrOrHi = activeLang == 'mr' || activeLang == 'hi';
-                  final nameStr = item.localizedName(isMrOrHi);
-                  final descStr = item.localizedDescription(isMrOrHi);
-                  final benStr = item.localizedBenefits(isMrOrHi);
+                  final nameStr = PdfTranslationHelper.resolve(textCache, rawNames[index], activeLang);
+                  final descStr = PdfTranslationHelper.resolve(textCache, rawDescs[index], activeLang);
+                  final catStr = PdfTranslationHelper.resolve(textCache, item.category, activeLang);
+                  final benStr = PdfTranslationHelper.resolve(textCache, rawBenefits[index], activeLang);
 
                   return [
-                    '${index + 1}',
+                    PdfTranslationHelper.formatNumber(index + 1, activeLang),
                     nameStr,
                     descStr,
-                    item.category.isNotEmpty ? item.category : '-',
+                    catStr,
                     benStr,
                   ];
                 }),
@@ -116,8 +190,9 @@ class SchemeReportGenerator {
       ),
     );
 
-    final fileName = 'Government_Schemes_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    final fileName = 'Government_Schemes_${DateFormat('yyyyMMdd').format(now)}';
     if (context != null) {
+      if (!context.mounted) return;
       await AppReportPreviewModal.show(
         context: context,
         title: title,
@@ -137,29 +212,56 @@ class SchemeReportGenerator {
   static Future<void> generateAndPrintSingleSchemeFlyer({
     BuildContext? context,
     required SchemeModel scheme,
-    required bool isMarathi,
+    bool? isMarathi,
+    String? lang,
   }) async {
-    final pdf = pw.Document();
-    final nameEn = SchemeModel.extractLocalized(scheme.name, false);
-    final nameMr = SchemeModel.extractLocalized(scheme.name, true);
+    final activeLang = (lang != null && lang.isNotEmpty)
+        ? lang
+        : (isMarathi == true ? 'mr' : appLanguageValueNotifier.value);
+    final pdf = await WebReportTheme.createDocument(lang: activeLang);
 
-    final descEn = SchemeModel.extractLocalized(scheme.description, false);
-    final descMr = SchemeModel.extractLocalized(scheme.description, true);
+    final rawName = _pickRawForLang(scheme.name, activeLang);
+    final rawDesc = _pickRawForLang(scheme.description, activeLang);
+    final rawElig = _pickRawForLang(scheme.eligibility, activeLang);
+    final rawBen = _pickRawForLang(scheme.benefits, activeLang);
+    final rawDoc = _pickRawForLang(scheme.documents, activeLang);
 
-    final eligEn = SchemeModel.extractLocalized(scheme.eligibility, false);
-    final eligMr = SchemeModel.extractLocalized(scheme.eligibility, true);
+    final textCache = await PdfTranslationHelper.batchText([
+      rawName,
+      rawDesc,
+      rawElig,
+      rawBen,
+      rawDoc,
+      scheme.category,
+    ], activeLang);
 
-    final benEn = SchemeModel.extractLocalized(scheme.benefits, false);
-    final benMr = SchemeModel.extractLocalized(scheme.benefits, true);
+    final resolvedName = PdfTranslationHelper.resolve(textCache, rawName, activeLang);
+    final resolvedDesc = PdfTranslationHelper.resolve(textCache, rawDesc, activeLang);
+    final resolvedElig = PdfTranslationHelper.resolve(textCache, rawElig, activeLang);
+    final resolvedBen = PdfTranslationHelper.resolve(textCache, rawBen, activeLang);
+    final resolvedDoc = PdfTranslationHelper.resolve(textCache, rawDoc, activeLang);
+    final defaultCat = AppTranslations.pick(
+      activeLang,
+      en: 'Government Scheme',
+      mr: 'शासकीय योजना',
+      hi: 'सरकारी योजना',
+    );
+    final resolvedCategory = scheme.category.trim().isNotEmpty
+        ? PdfTranslationHelper.resolve(textCache, scheme.category, activeLang, fallback: defaultCat)
+        : defaultCat;
 
-    final docEn = SchemeModel.extractLocalized(scheme.documents, false);
-    final docMr = SchemeModel.extractLocalized(scheme.documents, true);
+    final flyerSubtitle = AppTranslations.pick(
+      activeLang,
+      en: 'Scheme Guide & Eligibility Slip',
+      mr: 'योजना मार्गदर्शक व पात्रता पत्रक',
+      hi: 'योजना मार्गदर्शिका व पात्रता पत्र',
+    );
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(WebReportTheme.marginPt),
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) => WebReportTheme.buildFooter(context, lang: activeLang),
         build: (pw.Context context) {
           return [
             // Header
@@ -174,7 +276,7 @@ class SchemeReportGenerator {
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Text(
-                    nameEn,
+                    resolvedName,
                     textAlign: pw.TextAlign.center,
                     style: pw.TextStyle(
                       fontSize: 18,
@@ -182,18 +284,6 @@ class SchemeReportGenerator {
                       color: WebReportTheme.brand700,
                     ),
                   ),
-                  if (nameMr.isNotEmpty && nameMr != nameEn) ...[
-                    pw.SizedBox(height: 3),
-                    pw.Text(
-                      nameMr,
-                      textAlign: pw.TextAlign.center,
-                      style: pw.TextStyle(
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold,
-                        color: WebReportTheme.brand600,
-                      ),
-                    ),
-                  ],
                   pw.SizedBox(height: 6),
                   pw.Container(
                     padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -202,7 +292,7 @@ class SchemeReportGenerator {
                       borderRadius: pw.BorderRadius.circular(12),
                     ),
                     child: pw.Text(
-                      scheme.category.isNotEmpty ? scheme.category : 'Government Scheme',
+                      resolvedCategory,
                       style: pw.TextStyle(
                         fontSize: 9,
                         fontWeight: pw.FontWeight.bold,
@@ -217,37 +307,33 @@ class SchemeReportGenerator {
 
             // Description Box
             _buildFlyerSection(
-              title: 'Description / माहिती',
+              title: AppTranslations.pick(activeLang, en: 'Description', mr: 'माहिती / वर्णन', hi: 'विवरण / जानकारी'),
               accentColor: WebReportTheme.brand600,
-              contentEn: descEn,
-              contentMr: descMr,
+              content: resolvedDesc,
             ),
             pw.SizedBox(height: 12),
 
             // Eligibility Box
             _buildFlyerSection(
-              title: 'Eligibility / पात्रता',
+              title: AppTranslations.pick(activeLang, en: 'Eligibility', mr: 'पात्रता', hi: 'पात्रता'),
               accentColor: PdfColors.green700,
-              contentEn: eligEn,
-              contentMr: eligMr,
+              content: resolvedElig,
             ),
             pw.SizedBox(height: 12),
 
             // Benefits Box
             _buildFlyerSection(
-              title: 'Benefits / फायदे',
+              title: AppTranslations.pick(activeLang, en: 'Benefits', mr: 'फायदे / लाभ', hi: 'लाभ / फायदे'),
               accentColor: PdfColors.amber700,
-              contentEn: benEn,
-              contentMr: benMr,
+              content: resolvedBen,
             ),
             pw.SizedBox(height: 12),
 
             // Required Documents Box
             _buildFlyerSection(
-              title: 'Required Documents / आवश्यक कागदपत्रे',
+              title: AppTranslations.pick(activeLang, en: 'Required Documents', mr: 'आवश्यक कागदपत्रे', hi: 'आवश्यक दस्तावेज़'),
               accentColor: PdfColors.purple700,
-              contentEn: docEn,
-              contentMr: docMr,
+              content: resolvedDoc,
             ),
           ];
         },
@@ -256,10 +342,11 @@ class SchemeReportGenerator {
 
     final fileName = 'Scheme_${scheme.id}_Flyer';
     if (context != null) {
+      if (!context.mounted) return;
       await AppReportPreviewModal.show(
         context: context,
-        title: isMarathi ? (nameMr.isNotEmpty ? nameMr : nameEn) : nameEn,
-        subtitle: 'Scheme Guide & Eligibility Slip',
+        title: resolvedName,
+        subtitle: flyerSubtitle,
         fileName: fileName,
         onBuildPdf: () async => pdf.save(),
       );
@@ -275,33 +362,70 @@ class SchemeReportGenerator {
   static Future<void> generateAndPrintBeneficiaryReport({
     BuildContext? context,
     required List<SchemeApplicationModel> applications,
-    bool isMarathi = false,
+    bool? isMarathi,
     String? lang,
   }) async {
-    final effectiveLang = lang ?? (isMarathi ? 'mr' : 'en');
-    final pdf = pw.Document();
-    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+    final effectiveLang = (lang != null && lang.isNotEmpty)
+        ? lang
+        : (isMarathi == true ? 'mr' : appLanguageValueNotifier.value);
+    final pdf = await WebReportTheme.createDocument(lang: effectiveLang);
+    final now = DateTime.now();
+    final nowStr = PdfTranslationHelper.formatDateTime(now, effectiveLang);
+
+    final rawSchemes = applications
+        .map((a) => a.schemeName != null ? _pickRawForLang(a.schemeName!, effectiveLang) : '')
+        .toList();
+
+    final results = await Future.wait([
+      PdfTranslationHelper.batchText([
+        ...rawSchemes,
+        for (final app in applications) ...[
+          app.address,
+          app.benefit,
+          app.rejectionReason,
+          app.status,
+        ],
+      ], effectiveLang),
+      PdfTranslationHelper.batchNames([
+        for (final app in applications) app.applicantName,
+      ], effectiveLang),
+    ]);
+    final textCache = results[0];
+    final nameCache = results[1];
 
     final total = applications.length;
     final approved = applications.where((a) => a.isApproved).length;
     final pending = applications.where((a) => a.isPending).length;
     final rejected = applications.where((a) => a.isRejected).length;
 
-    final title = effectiveLang == 'mr'
-        ? 'शासकीय योजना'
-        : (effectiveLang == 'hi' ? 'सरकारी योजनाएं' : 'Government Schemes');
-    final subtitle = effectiveLang == 'mr'
-        ? 'अर्ज व लाभार्थी अहवाल'
-        : (effectiveLang == 'hi' ? 'आवेदन व लाभार्थी रिपोर्ट' : 'Application & Beneficiary Dossier');
-    final contTitle = effectiveLang == 'mr'
-        ? 'योजना लाभार्थी (पुढे चालू)'
-        : (effectiveLang == 'hi' ? 'योजना लाभार्थी (आगे जारी)' : 'Scheme Beneficiaries (Continued)');
-    final totalAppsLabel = effectiveLang == 'mr'
-        ? 'एकूण अर्ज'
-        : (effectiveLang == 'hi' ? 'कुल आवेदन' : 'Total Applications');
+    final title = AppTranslations.pick(
+      effectiveLang,
+      en: 'Government Schemes',
+      mr: 'शासकीय योजना',
+      hi: 'सरकारी योजनाएं',
+    );
+    final subtitle = AppTranslations.pick(
+      effectiveLang,
+      en: 'Application & Beneficiary Dossier',
+      mr: 'अर्ज व लाभार्थी अहवाल',
+      hi: 'आवेदन व लाभार्थी रिपोर्ट',
+    );
+    final contTitle = AppTranslations.pick(
+      effectiveLang,
+      en: 'Scheme Beneficiaries',
+      mr: 'योजना लाभार्थी',
+      hi: 'योजना लाभार्थी',
+    );
+    final totalAppsLabel = AppTranslations.pick(
+      effectiveLang,
+      en: 'Total Applications',
+      mr: 'एकूण अर्ज',
+      hi: 'कुल आवेदन',
+    );
     final approvedLabel = AppTranslations.getStatus('Approved', effectiveLang);
     final pendingLabel = AppTranslations.getStatus('Pending', effectiveLang);
     final rejectedLabel = AppTranslations.getStatus('Rejected', effectiveLang);
+    final datePrefix = AppTranslations.pick(effectiveLang, en: 'Date', mr: 'तारीख', hi: 'दिनांक');
 
     pdf.addPage(
       pw.MultiPage(
@@ -322,8 +446,8 @@ class SchemeReportGenerator {
               title: title,
               subtitle: subtitle,
               metaLines: [
-                '${effectiveLang == 'mr' ? 'तारीख' : (effectiveLang == 'hi' ? 'दिनांक' : 'Date')}: $nowStr',
-                '$totalAppsLabel: $total',
+                '$datePrefix: $nowStr',
+                '$totalAppsLabel: ${PdfTranslationHelper.formatNumber(total, effectiveLang)}',
               ],
               lang: effectiveLang,
             ),
@@ -339,10 +463,10 @@ class SchemeReportGenerator {
               ),
               child: pw.Row(
                 children: [
-                  _buildSummaryItem(totalAppsLabel, '$total'),
-                  _buildSummaryItem(approvedLabel, '$approved', highlightColor: PdfColors.green700),
-                  _buildSummaryItem(pendingLabel, '$pending', highlightColor: PdfColors.amber800),
-                  _buildSummaryItem(rejectedLabel, '$rejected', highlightColor: PdfColors.red700),
+                  _buildSummaryItem(totalAppsLabel, PdfTranslationHelper.formatNumber(total, effectiveLang)),
+                  _buildSummaryItem(approvedLabel, PdfTranslationHelper.formatNumber(approved, effectiveLang), highlightColor: PdfColors.green700),
+                  _buildSummaryItem(pendingLabel, PdfTranslationHelper.formatNumber(pending, effectiveLang), highlightColor: PdfColors.amber800),
+                  _buildSummaryItem(rejectedLabel, PdfTranslationHelper.formatNumber(rejected, effectiveLang), highlightColor: PdfColors.red700),
                 ],
               ),
             ),
@@ -353,9 +477,12 @@ class SchemeReportGenerator {
                 alignment: pw.Alignment.center,
                 padding: const pw.EdgeInsets.all(40),
                 child: pw.Text(
-                  effectiveLang == 'mr'
-                      ? 'निवडलेल्या दृश्यासाठी कोणतीही योजना अर्ज नोंद आढळली नाही.'
-                      : (effectiveLang == 'hi' ? 'चयनित दृश्य के लिए कोई योजना आवेदन रिकॉर्ड नहीं मिला।' : 'No scheme application records found for the selected view.'),
+                  AppTranslations.pick(
+                    effectiveLang,
+                    en: 'No scheme application records found for the selected view.',
+                    mr: 'निवडलेल्या दृश्यासाठी कोणतीही योजना अर्ज नोंद आढळली नाही.',
+                    hi: 'चयनित दृश्य के लिए कोई योजना आवेदन रिकॉर्ड नहीं मिला।',
+                  ),
                   style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
                 ),
               )
@@ -378,29 +505,41 @@ class SchemeReportGenerator {
                   6: pw.FlexColumnWidth(2.2),
                 },
                 headers: [
-                  '#',
-                  effectiveLang == 'mr' ? 'अर्जदाराचे नाव' : (effectiveLang == 'hi' ? 'आवेदक का नाम' : 'Applicant Name'),
-                  effectiveLang == 'mr' ? 'मोबाईल / पत्ता' : (effectiveLang == 'hi' ? 'मोबाइल / पता' : 'Mobile / Address'),
+                  AppTranslations.pick(effectiveLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+                  AppTranslations.pick(effectiveLang, en: 'Applicant Name', mr: 'अर्जदाराचे नाव', hi: 'आवेदक का नाम'),
+                  AppTranslations.pick(effectiveLang, en: 'Mobile / Address', mr: 'मोबाईल / पत्ता', hi: 'मोबाइल / पता'),
                   AppTranslations.getReportColumn('scheme_name', effectiveLang),
                   AppTranslations.getReportColumn('date', effectiveLang),
                   AppTranslations.getReportColumn('status', effectiveLang),
-                  effectiveLang == 'mr' ? 'लाभ / कारण' : (effectiveLang == 'hi' ? 'लाभ / कारण' : 'Benefit / Reason'),
+                  AppTranslations.pick(effectiveLang, en: 'Benefit / Reason', mr: 'लाभ / कारण', hi: 'लाभ / कारण'),
                 ],
                 data: List.generate(applications.length, (index) {
                   final app = applications[index];
-                  final contactPart = [app.mobile, app.address].where((s) => s.isNotEmpty).join('\n');
-                  final dateStr = DateFormat('dd/MM/yyyy').format(app.createdAt);
-                  final notePart = app.isRejected
-                      ? (app.rejectionReason ?? '-')
-                      : (app.benefit ?? '-');
+                  final mobilePart = app.mobile.trim().isNotEmpty
+                      ? PdfTranslationHelper.formatNumber(app.mobile.trim(), effectiveLang)
+                      : '';
+                  final addressPart = app.address.trim().isNotEmpty
+                      ? PdfTranslationHelper.resolve(textCache, app.address, effectiveLang)
+                      : '';
+                  final contactPart = [mobilePart, addressPart].where((s) => s.isNotEmpty).join('\n');
+                  final dateStr = PdfTranslationHelper.formatDate(
+                    app.createdAt,
+                    effectiveLang,
+                    pattern: 'dd/MM/yyyy',
+                  );
+                  final rawNote = app.isRejected ? app.rejectionReason : app.benefit;
+                  final notePart = PdfTranslationHelper.resolve(textCache, rawNote, effectiveLang);
+                  final schemeStr = rawSchemes[index].isNotEmpty
+                      ? PdfTranslationHelper.resolve(textCache, rawSchemes[index], effectiveLang)
+                      : '-';
 
                   return [
-                    '${index + 1}',
-                    app.applicantName,
-                    contactPart,
-                    app.schemeName ?? '-',
+                    PdfTranslationHelper.formatNumber(index + 1, effectiveLang),
+                    PdfTranslationHelper.resolveName(nameCache, app.applicantName, effectiveLang),
+                    contactPart.isNotEmpty ? contactPart : '-',
+                    schemeStr,
                     dateStr,
-                    AppTranslations.getStatus(app.status, effectiveLang),
+                    _resolveStatus(textCache, app.status, effectiveLang),
                     notePart,
                   ];
                 }),
@@ -411,12 +550,25 @@ class SchemeReportGenerator {
       ),
     );
 
-    final fileName = 'Scheme_Applications_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    final modalTitle = AppTranslations.pick(
+      effectiveLang,
+      en: 'Scheme Applications Report',
+      mr: 'योजना अर्ज व लाभार्थी अहवाल',
+      hi: 'योजना आवेदन एवं लाभार्थी रिपोर्ट',
+    );
+    final modalSubtitle = AppTranslations.pick(
+      effectiveLang,
+      en: 'Beneficiary & Application Audit',
+      mr: 'लाभार्थी व अर्ज तपासणी अहवाल',
+      hi: 'लाभार्थी एवं आवेदन लेखापरीक्षा',
+    );
+    final fileName = 'Scheme_Applications_Report_${DateFormat('yyyyMMdd').format(now)}';
     if (context != null) {
+      if (!context.mounted) return;
       await AppReportPreviewModal.show(
         context: context,
-        title: isMarathi ? 'योजना अर्ज व लाभार्थी अहवाल' : 'Scheme Applications Report',
-        subtitle: 'Beneficiary & Application Audit',
+        title: modalTitle,
+        subtitle: modalSubtitle,
         fileName: fileName,
         onBuildPdf: () async => pdf.save(),
       );
@@ -431,10 +583,10 @@ class SchemeReportGenerator {
   static pw.Widget _buildFlyerSection({
     required String title,
     required PdfColor accentColor,
-    required String contentEn,
-    required String contentMr,
+    required String content,
   }) {
     return pw.Container(
+      width: double.infinity,
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
         color: WebReportTheme.slate50,
@@ -458,33 +610,9 @@ class SchemeReportGenerator {
             ),
           ),
           pw.SizedBox(height: 6),
-          pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('English', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500)),
-                    pw.SizedBox(height: 2),
-                    pw.Text(contentEn.isNotEmpty ? contentEn : '-', style: const pw.TextStyle(fontSize: 9, color: WebReportTheme.slate700)),
-                  ],
-                ),
-              ),
-              if (contentMr.isNotEmpty && contentMr != contentEn) ...[
-                pw.SizedBox(width: 12),
-                pw.Expanded(
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('मराठी', style: const pw.TextStyle(fontSize: 8, color: WebReportTheme.slate500)),
-                      pw.SizedBox(height: 2),
-                      pw.Text(contentMr, style: const pw.TextStyle(fontSize: 9, color: WebReportTheme.slate700)),
-                    ],
-                  ),
-                ),
-              ],
-            ],
+          pw.Text(
+            content.isNotEmpty ? content : '-',
+            style: const pw.TextStyle(fontSize: 9.5, lineSpacing: 2, color: WebReportTheme.slate700),
           ),
         ],
       ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/letter_type_model.dart';
 import '../../../data/repositories/letters_repository.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 
 /// Letter Type Manager Sheet / Modal matching LetterTypeManager.tsx 100% on desktop,
 /// while preserving the mobile bottom-sheet presentation for mobile screens.
@@ -70,7 +72,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
 
   // --- Add / Edit Modal (matching LetterTypeManager.tsx lines 242-360) ---
   void _showEditModal({LetterTypeModel? existingType}) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final isDesktop = _checkIsDesktop(context);
 
     final nameCtrl = TextEditingController(text: existingType?.name ?? '');
@@ -78,7 +80,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
     final descCtrl = TextEditingController(text: existingType?.description ?? '');
     final templateCtrl = TextEditingController(
       text: existingType?.templateContent ??
-          'This is to certify that Mr./Ms. {{name}}, residing at {{address}}, is a resident of Ward 12 to the best of my knowledge.\n\nThis letter is issued upon their request for the purpose of {{purpose}}.\n\nI wish them all the best for their future endeavors.',
+          AppTranslations.pick(
+            lang,
+            en: 'This is to certify that Mr./Ms. {{name}}, residing at {{address}}, is a resident of Ward 12 to the best of my knowledge.\n\nThis letter is issued upon their request for the purpose of {{purpose}}.\n\nI wish them all the best for their future endeavors.',
+            mr: 'प्रमाणित करण्यात येते की, श्री/श्रीमती {{name}}, रा. {{address}}, हे प्रभाग क्र. १२ मधील रहिवासी आहेत.\n\nसदर पत्र त्यांच्या विनंतीनुसार {{purpose}} या कारणास्तव देण्यात येत आहे.\n\nत्यांच्या भावी वाटचालीस मनःपूर्वक शुभेच्छा.',
+            hi: 'प्रमाणित किया जाता है कि श्री/श्रीमती {{name}}, निवासी {{address}}, मेरी जानकारी के अनुसार वार्ड क्र. १२ के निवासी हैं।\n\nयह पत्र उनके अनुरोध पर {{purpose}} के उद्देश्य से जारी किया जा रहा है।\n\nउनके उज्ज्वल भविष्य के लिए हार्दिक शुभकामनाएँ।',
+          ),
     );
 
     if (isDesktop) {
@@ -126,8 +133,18 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                           children: [
                             Text(
                               existingType != null
-                                  ? (isMr ? 'पत्राचा प्रकार संपादित करा' : 'Edit Letter Type')
-                                  : (isMr ? 'नवीन पत्र प्रकार जोडा' : 'Add New Letter Type'),
+                                  ? AppTranslations.pick(
+                                      lang,
+                                      en: 'Edit Letter Type',
+                                      mr: 'पत्राचा प्रकार संपादित करा',
+                                      hi: 'पत्र प्रकार संपादित करें',
+                                    )
+                                  : AppTranslations.pick(
+                                      lang,
+                                      en: 'Add New Letter Type',
+                                      mr: 'नवीन पत्र प्रकार जोडा',
+                                      hi: 'नया पत्र प्रकार जोड़ें',
+                                    ),
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
@@ -137,7 +154,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                             IconButton(
                               icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B), size: 20),
                               onPressed: () => Navigator.pop(dialogCtx),
-                              tooltip: 'Close',
+                              tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                             ),
                           ],
                         ),
@@ -159,7 +176,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isMr ? 'नाव (इंग्रजी) *' : 'Name (English) *',
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Name (English) *',
+                                            mr: 'नाव (इंग्रजी) *',
+                                            hi: 'नाम (अंग्रेज़ी) *',
+                                          ),
                                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                                         ),
                                         const SizedBox(height: 6),
@@ -167,7 +189,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                           controller: nameCtrl,
                                           style: const TextStyle(fontSize: 13),
                                           decoration: InputDecoration(
-                                            hintText: 'e.g. Character Certificate',
+                                            hintText: AppTranslations.pick(
+                                              lang,
+                                              en: 'e.g. Character Certificate',
+                                              mr: 'उदा. Character Certificate',
+                                              hi: 'उदा. Character Certificate',
+                                            ),
                                             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                             filled: true,
                                             fillColor: const Color(0xFFF8FAFC),
@@ -186,7 +213,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isMr ? 'नाव (मराठी)' : 'Name (Marathi)',
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Name (Marathi)',
+                                            mr: 'नाव (मराठी)',
+                                            hi: 'नाम (मराठी)',
+                                          ),
                                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                                         ),
                                         const SizedBox(height: 6),
@@ -194,7 +226,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                           controller: nameMrCtrl,
                                           style: const TextStyle(fontSize: 13),
                                           decoration: InputDecoration(
-                                            hintText: 'उदा. चारित्र्य दाखला',
+                                            hintText: AppTranslations.pick(
+                                              lang,
+                                              en: 'e.g. चारित्र्य दाखला',
+                                              mr: 'उदा. चारित्र्य दाखला',
+                                              hi: 'उदा. चारित्र्य दाखला',
+                                            ),
                                             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                             filled: true,
                                             fillColor: const Color(0xFFF8FAFC),
@@ -214,7 +251,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
 
                               // Description
                               Text(
-                                isMr ? 'वर्णन' : 'Description',
+                                AppTranslations.pick(lang, en: 'Description', mr: 'वर्णन', hi: 'विवरण'),
                                 style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                               ),
                               const SizedBox(height: 6),
@@ -222,7 +259,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                 controller: descCtrl,
                                 style: const TextStyle(fontSize: 13),
                                 decoration: InputDecoration(
-                                  hintText: isMr ? 'पत्राबद्दल थोडक्यात माहिती...' : 'Brief description of the letter purpose...',
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'Brief description of the letter purpose...',
+                                    mr: 'पत्राबद्दल थोडक्यात माहिती...',
+                                    hi: 'पत्र के उद्देश्य का संक्षिप्त विवरण...',
+                                  ),
                                   hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                   filled: true,
                                   fillColor: const Color(0xFFF8FAFC),
@@ -239,7 +281,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                               Row(
                                 children: [
                                   Text(
-                                    isMr ? 'साचा मजकूर (Template Content)' : 'Template Content',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Template Content',
+                                      mr: 'साचा मजकूर (Template Content)',
+                                      hi: 'टेम्पलेट सामग्री',
+                                    ),
                                     style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                                   ),
                                   const SizedBox(width: 8),
@@ -250,7 +297,15 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: const Color(0xFFE2E8F0)),
                                     ),
-                                    child: const Text('PDF Body Text', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                    child: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'PDF Body Text',
+                                        mr: 'PDF मुख्य मजकूर',
+                                        hi: 'PDF मुख्य पाठ',
+                                      ),
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -260,7 +315,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                 maxLines: 6,
                                 style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5, height: 1.5),
                                 decoration: InputDecoration(
-                                  hintText: 'Enter the body of the letter here...',
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'Enter the body of the letter here...',
+                                    mr: 'पत्राचा मुख्य मजकूर येथे लिहा...',
+                                    hi: 'पत्र की मुख्य सामग्री यहाँ दर्ज करें...',
+                                  ),
                                   hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                   filled: true,
                                   fillColor: const Color(0xFFF8FAFC),
@@ -285,7 +345,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      isMr ? 'वापरण्यायोग्य प्लेसहोल्डर्स (Placeholders):' : 'Available Placeholders:',
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Available Placeholders:',
+                                        mr: 'वापरण्यायोग्य प्लेसहोल्डर्स (Placeholders):',
+                                        hi: 'उपलब्ध प्लेसहोल्डर:',
+                                      ),
                                       style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF0369A1)),
                                     ),
                                     const SizedBox(height: 4),
@@ -293,11 +358,11 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                       spacing: 8,
                                       runSpacing: 4,
                                       children: [
-                                        _buildPlaceholderPill('{{name}}', 'Name'),
-                                        _buildPlaceholderPill('{{address}}', 'Address'),
-                                        _buildPlaceholderPill('{{purpose}}', 'Purpose'),
-                                        _buildPlaceholderPill('{{date}}', 'Date'),
-                                        _buildPlaceholderPill('{{age}}', 'Age'),
+                                        _buildPlaceholderPill('{{name}}', AppTranslations.pick(lang, en: 'Name', mr: 'नाव', hi: 'नाम')),
+                                        _buildPlaceholderPill('{{address}}', AppTranslations.pick(lang, en: 'Address', mr: 'पत्ता', hi: 'पता')),
+                                        _buildPlaceholderPill('{{purpose}}', AppTranslations.pick(lang, en: 'Purpose', mr: 'उद्देश', hi: 'उद्देश्य')),
+                                        _buildPlaceholderPill('{{date}}', AppTranslations.pick(lang, en: 'Date', mr: 'तारीख', hi: 'तिथि')),
+                                        _buildPlaceholderPill('{{age}}', AppTranslations.pick(lang, en: 'Age', mr: 'वय', hi: 'आयु')),
                                       ],
                                     ),
                                   ],
@@ -325,7 +390,10 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                               ),
-                              child: Text(isMr ? 'रद्द करा' : 'Cancel', style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                              child: Text(
+                                AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                                style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton.icon(
@@ -335,7 +403,16 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                       final name = nameCtrl.text.trim();
                                       if (name.isEmpty) {
                                         ScaffoldMessenger.of(dialogCtx).showSnackBar(
-                                          SnackBar(content: Text(isMr ? 'कृपया नाव प्रविष्ट करा' : 'Name is required')),
+                                          SnackBar(
+                                            content: Text(
+                                              AppTranslations.pick(
+                                                lang,
+                                                en: 'Name is required',
+                                                mr: 'कृपया नाव प्रविष्ट करा',
+                                                hi: 'कृपया नाम दर्ज करें',
+                                              ),
+                                            ),
+                                          ),
                                         );
                                         return;
                                       }
@@ -370,7 +447,15 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                               icon: const Icon(Icons.save_outlined, size: 16),
                               label: isSubmitting
                                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : Text(isMr ? 'बदल जतन करा' : 'Save Changes', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                  : Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Save Changes',
+                                        mr: 'बदल जतन करा',
+                                        hi: 'परिवर्तन सहेजें',
+                                      ),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                    ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0284C7),
                                 foregroundColor: Colors.white,
@@ -404,8 +489,18 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(
                 existingType != null
-                    ? (isMr ? 'पत्राचा प्रकार संपादित करा' : 'Edit Letter Type')
-                    : (isMr ? 'नवीन पत्र प्रकार जोडा' : 'Add New Letter Type'),
+                    ? AppTranslations.pick(
+                        lang,
+                        en: 'Edit Letter Type',
+                        mr: 'पत्राचा प्रकार संपादित करा',
+                        hi: 'पत्र प्रकार संपादित करें',
+                      )
+                    : AppTranslations.pick(
+                        lang,
+                        en: 'Add New Letter Type',
+                        mr: 'नवीन पत्र प्रकार जोडा',
+                        hi: 'नया पत्र प्रकार जोड़ें',
+                      ),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               content: SingleChildScrollView(
@@ -414,49 +509,79 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isMr ? 'इंग्रजी नाव *' : 'Type Name (English) *',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Type Name (English) *',
+                        mr: 'इंग्रजी नाव *',
+                        hi: 'प्रकार नाम (अंग्रेज़ी) *',
+                      ),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                     ),
                     const SizedBox(height: 4),
                     TextField(
                       controller: nameCtrl,
                       decoration: InputDecoration(
-                        hintText: 'e.g. Residential Certificate',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'e.g. Residential Certificate',
+                          mr: 'उदा. Residential Certificate',
+                          hi: 'उदा. Residential Certificate',
+                        ),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      isMr ? 'मराठी नाव' : 'Type Name (Marathi)',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Type Name (Marathi)',
+                        mr: 'मराठी नाव',
+                        hi: 'प्रकार नाम (मराठी)',
+                      ),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                     ),
                     const SizedBox(height: 4),
                     TextField(
                       controller: nameMrCtrl,
                       decoration: InputDecoration(
-                        hintText: 'उदा. रहिवासी दाखला',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'e.g. रहिवासी दाखला',
+                          mr: 'उदा. रहिवासी दाखला',
+                          hi: 'उदा. रहिवासी दाखला',
+                        ),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      isMr ? 'वर्णन' : 'Description',
+                      AppTranslations.pick(lang, en: 'Description', mr: 'वर्णन', hi: 'विवरण'),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                     ),
                     const SizedBox(height: 4),
                     TextField(
                       controller: descCtrl,
                       decoration: InputDecoration(
-                        hintText: isMr ? 'थोडक्यात माहिती' : 'Brief description',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'Brief description',
+                          mr: 'थोडक्यात माहिती',
+                          hi: 'संक्षिप्त विवरण',
+                        ),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      isMr ? 'पत्र मजकूर साचा (Template)' : 'Template Content',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Template Content',
+                        mr: 'पत्र मजकूर साचा (Template)',
+                        hi: 'टेम्पलेट सामग्री',
+                      ),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                     ),
                     const SizedBox(height: 4),
@@ -474,7 +599,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogCtx),
-                  child: Text(isMr ? 'रद्द करा' : 'Cancel'),
+                  child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
                 ),
                 ElevatedButton(
                   onPressed: isSubmitting
@@ -483,7 +608,16 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                           final name = nameCtrl.text.trim();
                           if (name.isEmpty) {
                             ScaffoldMessenger.of(dialogCtx).showSnackBar(
-                              SnackBar(content: Text(isMr ? 'कृपया नाव प्रविष्ट करा' : 'Name is required')),
+                              SnackBar(
+                                content: Text(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Name is required',
+                                    mr: 'कृपया नाव प्रविष्ट करा',
+                                    hi: 'कृपया नाम दर्ज करें',
+                                  ),
+                                ),
+                              ),
                             );
                             return;
                           }
@@ -521,7 +655,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                   ),
                   child: isSubmitting
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(isMr ? 'सेव्ह करा' : 'Save'),
+                      : Text(AppTranslations.pick(lang, en: 'Save', mr: 'सेव्ह करा', hi: 'सहेजें')),
                 ),
               ],
             );
@@ -548,7 +682,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
 
   // --- Delete Modal (matching LetterTypeManager.tsx lines 363-395) ---
   Future<void> _deleteType(LetterTypeModel type) async {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final isDesktop = _checkIsDesktop(context);
 
     bool? confirm;
@@ -587,14 +721,23 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  isMr ? 'पत्राचा प्रकार हटवायचा का?' : 'Delete Letter Type?',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Delete Letter Type?',
+                    mr: 'पत्राचा प्रकार हटवायचा का?',
+                    hi: 'पत्र प्रकार हटाएँ?',
+                  ),
                   style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  isMr
-                      ? '"${type.name}" हा प्रकार कायमचा काढला जाईल. ही कृती पूर्ववत केली जाऊ शकत नाही.'
-                      : 'Are you sure you want to delete "${type.name}"? This action cannot be undone.',
+                AppTranslatedText(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Are you sure you want to delete "${type.name}"? This action cannot be undone.',
+                    mr: '"${type.name}" हा प्रकार कायमचा काढला जाईल. ही कृती पूर्ववत केली जाऊ शकत नाही.',
+                    hi: 'क्या आप वाकई "${type.name}" को हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।',
+                  ),
+                  targetLanguage: lang,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
                 ),
@@ -609,7 +752,10 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 11),
                         ),
-                        child: Text(isMr ? 'रद्द करा' : 'Cancel', style: const TextStyle(color: Color(0xFF475569))),
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                          style: const TextStyle(color: Color(0xFF475569)),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -623,7 +769,10 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                           padding: const EdgeInsets.symmetric(vertical: 11),
                           elevation: 0,
                         ),
-                        child: Text(isMr ? 'हटवा' : 'Delete', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ'),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ],
@@ -638,14 +787,32 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
       confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(isMr ? 'प्रकार हटवायचा का?' : 'Delete Letter Type?'),
-          content: Text(isMr ? '${type.name} हा प्रकार कायमचा काढला जाईल.' : 'Are you sure you want to delete ${type.name}?'),
+          title: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Delete Letter Type?',
+              mr: 'प्रकार हटवायचा का?',
+              hi: 'पत्र प्रकार हटाएँ?',
+            ),
+          ),
+          content: AppTranslatedText(
+            AppTranslations.pick(
+              lang,
+              en: 'Are you sure you want to delete ${type.name}?',
+              mr: '${type.name} हा प्रकार कायमचा काढला जाईल.',
+              hi: 'क्या आप वाकई ${type.name} को हटाना चाहते हैं?',
+            ),
+            targetLanguage: lang,
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(isMr ? 'रद्द' : 'Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द', hi: 'रद्द करें')),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text(isMr ? 'हटवा' : 'Delete'),
+              child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ')),
             ),
           ],
         ),
@@ -661,7 +828,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final isDesktop = _checkIsDesktop(context);
 
     // --- Desktop Layout (matching LetterTypeManager.tsx 100%) ---
@@ -710,12 +877,22 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isMr ? 'पत्रांचे प्रकार व्यवस्थापन' : 'Letter Types Manager',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Letter Types Manager',
+                              mr: 'पत्रांचे प्रकार व्यवस्थापन',
+                              hi: 'पत्र प्रकार प्रबंधन',
+                            ),
                             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            isMr ? 'Supabase DB (letter_types)' : 'Synchronized with Supabase DB',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Synchronized with Supabase DB',
+                              mr: 'Supabase DB (letter_types) शी जोडलेले',
+                              hi: 'Supabase DB से सिंक किया गया',
+                            ),
                             style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                           ),
                         ],
@@ -729,7 +906,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                         onPressed: () => _showEditModal(),
                         icon: const Icon(Icons.add_rounded, size: 16),
                         label: Text(
-                          isMr ? 'नवीन प्रकार जोडा' : 'Add New Type',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Add New Type',
+                            mr: 'नवीन प्रकार जोडा',
+                            hi: 'नया प्रकार जोड़ें',
+                          ),
                           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -744,7 +926,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                       IconButton(
                         icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B), size: 20),
                         onPressed: () => Navigator.pop(context),
-                        tooltip: 'Close',
+                        tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                       ),
                     ],
                   ),
@@ -764,7 +946,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                               const Icon(Icons.folder_open_rounded, size: 48, color: Color(0xFF94A3B8)),
                               const SizedBox(height: 10),
                               Text(
-                                isMr ? 'कोणतेही प्रकार आढळले नाहीत' : 'No custom letter types found',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'No custom letter types found',
+                                  mr: 'कोणतेही प्रकार आढळले नाहीत',
+                                  hi: 'कोई कस्टम पत्र प्रकार नहीं मिला',
+                                ),
                                 style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                               ),
                             ],
@@ -784,17 +971,59 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                               horizontalMargin: 20,
                               columnSpacing: 24,
                               columns: [
-                                DataColumn(label: Text(isMr ? 'प्रकार नाव (इंग्रजी)' : 'Type Name (English)', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF475569)))),
-                                DataColumn(label: Text(isMr ? 'प्रकार नाव (मराठी)' : 'Type Name (Marathi)', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF475569)))),
-                                DataColumn(label: Text(isMr ? 'साचा' : 'Template', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF475569)))),
-                                DataColumn(label: Text(isMr ? 'कृती' : 'Actions', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF475569)))),
+                                DataColumn(
+                                  label: Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Type Name (English)',
+                                      mr: 'प्रकार नाव (इंग्रजी)',
+                                      hi: 'प्रकार नाम (अंग्रेज़ी)',
+                                    ),
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF475569)),
+                                  ),
+                                ),
+                                DataColumn(
+                                  label: Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Type Name (Marathi)',
+                                      mr: 'प्रकार नाव (मराठी)',
+                                      hi: 'प्रकार नाम (मराठी)',
+                                    ),
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF475569)),
+                                  ),
+                                ),
+                                DataColumn(
+                                  label: Text(
+                                    AppTranslations.pick(lang, en: 'Template', mr: 'साचा', hi: 'टेम्पलेट'),
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF475569)),
+                                  ),
+                                ),
+                                DataColumn(
+                                  label: Text(
+                                    AppTranslations.pick(lang, en: 'Actions', mr: 'कृती', hi: 'कार्रवाई'),
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Color(0xFF475569)),
+                                  ),
+                                ),
                               ],
                               rows: _types.map((type) {
                                 final hasTemplate = type.templateContent != null && type.templateContent!.trim().isNotEmpty;
                                 return DataRow(
                                   cells: [
-                                    DataCell(Text(type.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A)))),
-                                    DataCell(Text(type.nameMarathi ?? '-', style: const TextStyle(fontSize: 13, color: Color(0xFF475569)))),
+                                    DataCell(
+                                      AppTranslatedText(
+                                        type.name,
+                                        targetLanguage: lang,
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A)),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      AppTranslatedText(
+                                        type.nameMarathi ?? '-',
+                                        targetLanguage: lang,
+                                        style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                                      ),
+                                    ),
                                     DataCell(
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -809,7 +1038,9 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                             Icon(hasTemplate ? Icons.check_circle_rounded : Icons.info_outline_rounded, size: 12, color: hasTemplate ? const Color(0xFF16A34A) : const Color(0xFFCA8A04)),
                                             const SizedBox(width: 4),
                                             Text(
-                                              hasTemplate ? (isMr ? 'होय' : 'Yes') : (isMr ? 'नाही' : 'No'),
+                                              hasTemplate
+                                                  ? AppTranslations.pick(lang, en: 'Yes', mr: 'होय', hi: 'हाँ')
+                                                  : AppTranslations.pick(lang, en: 'No', mr: 'नाही', hi: 'नहीं'),
                                               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: hasTemplate ? const Color(0xFF16A34A) : const Color(0xFFCA8A04)),
                                             ),
                                           ],
@@ -822,12 +1053,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                                         children: [
                                           IconButton(
                                             icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0284C7)),
-                                            tooltip: isMr ? 'संपादित करा' : 'Edit',
+                                            tooltip: AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें'),
                                             onPressed: () => _showEditModal(existingType: type),
                                           ),
                                           IconButton(
                                             icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
-                                            tooltip: isMr ? 'हटवा' : 'Delete',
+                                            tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ'),
                                             onPressed: () => _deleteType(type),
                                           ),
                                         ],
@@ -889,13 +1120,23 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        isMr ? 'पत्रांचे प्रकार व्यवस्थापन' : 'Letter Types Manager',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Letter Types Manager',
+                          mr: 'पत्रांचे प्रकार व्यवस्थापन',
+                          hi: 'पत्र प्रकार प्रबंधन',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        isMr ? 'Supabase DB (letter_types)' : 'Synchronized with Supabase DB',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Synchronized with Supabase DB',
+                          mr: 'Supabase DB (letter_types) शी जोडलेले',
+                          hi: 'Supabase DB से सिंक किया गया',
+                        ),
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -905,6 +1146,7 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -922,7 +1164,12 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                 onPressed: () => _showEditModal(),
                 icon: const Icon(Icons.add_rounded, size: 18),
                 label: Text(
-                  isMr ? 'नवीन पत्र प्रकार जोडा' : 'Add New Letter Type',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Add New Letter Type',
+                    mr: 'नवीन पत्र प्रकार जोडा',
+                    hi: 'नया पत्र प्रकार जोड़ें',
+                  ),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -946,12 +1193,22 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                             const Icon(Icons.folder_open_rounded, size: 48, color: Color(0xFF94A3B8)),
                             const SizedBox(height: 8),
                             Text(
-                              isMr ? 'कोणतेही प्रकार आढळले नाहीत' : 'No custom letter types found',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'No custom letter types found',
+                                mr: 'कोणतेही प्रकार आढळले नाहीत',
+                                hi: 'कोई कस्टम पत्र प्रकार नहीं मिला',
+                              ),
                               style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              isMr ? 'सिस्टीमचे डीफॉल्ट प्रकार वापरले जात आहेत' : 'Standard defaults are currently active',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Standard defaults are currently active',
+                                mr: 'सिस्टीमचे डीफॉल्ट प्रकार वापरले जात आहेत',
+                                hi: 'मानक डिफ़ॉल्ट प्रकार वर्तमान में सक्रिय हैं',
+                              ),
                               style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                             ),
                           ],
@@ -963,6 +1220,9 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                         separatorBuilder: (_, _) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final item = _types[index];
+                          final primaryLabel = lang == 'mr' && item.nameMarathi?.isNotEmpty == true
+                              ? item.nameMarathi!
+                              : item.name;
                           return Container(
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
@@ -971,22 +1231,35 @@ class _LetterTypeManagerSheetState extends ConsumerState<LetterTypeManagerSheet>
                             ),
                             child: ListTile(
                               dense: true,
-                              title: Text(
-                                isMr && item.nameMarathi?.isNotEmpty == true ? item.nameMarathi! : item.name,
+                              title: AppTranslatedText(
+                                primaryLabel,
+                                targetLanguage: lang,
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                               ),
                               subtitle: item.description != null && item.description!.isNotEmpty
-                                  ? Text(item.description!, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))
-                                  : (item.nameMarathi != null ? Text(item.name, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))) : null),
+                                  ? AppTranslatedText(
+                                      item.description!,
+                                      targetLanguage: lang,
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    )
+                                  : (item.nameMarathi != null
+                                      ? AppTranslatedText(
+                                          item.name,
+                                          targetLanguage: lang,
+                                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                        )
+                                      : null),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF0284C7)),
+                                    tooltip: AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें'),
                                     onPressed: () => _showEditModal(existingType: item),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
+                                    tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ'),
                                     onPressed: () => _deleteType(item),
                                   ),
                                 ],

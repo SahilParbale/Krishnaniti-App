@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
 import '../../../data/models/scheme_model.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/schemes_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'scheme_report_generator.dart';
@@ -37,6 +37,29 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
     _scheme = widget.scheme;
   }
 
+  String _categoryLabel(String categoryId, String lang) {
+    switch (categoryId.trim().toLowerCase()) {
+      case 'all':
+        return AppTranslations.pick(lang, en: 'All', mr: 'सर्व', hi: 'सभी');
+      case 'women':
+        return AppTranslations.pick(lang, en: 'Women', mr: 'महिला', hi: 'महिला');
+      case 'student':
+        return AppTranslations.pick(lang, en: 'Student', mr: 'विद्यार्थी', hi: 'विद्यार्थी');
+      case 'senior citizen':
+        return AppTranslations.pick(lang, en: 'Senior Citizen', mr: 'ज्येष्ठ नागरिक', hi: 'वरिष्ठ नागरिक');
+      case 'farmer':
+        return AppTranslations.pick(lang, en: 'Farmer', mr: 'शेतकरी', hi: 'किसान');
+      case 'health':
+        return AppTranslations.pick(lang, en: 'Health', mr: 'आरोग्य', hi: 'स्वास्थ्य');
+      case 'youth':
+        return AppTranslations.pick(lang, en: 'Youth', mr: 'तरुण / युवक', hi: 'युवा');
+      case 'housing':
+        return AppTranslations.pick(lang, en: 'Housing', mr: 'घरकुल / आवास', hi: 'आवास');
+      default:
+        return categoryId;
+    }
+  }
+
   void _showApplyModal() {
     showModalBottomSheet(
       context: context,
@@ -45,10 +68,18 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
       builder: (sheetCtx) => _SchemeApplicationSheet(
         scheme: _scheme,
         onApplied: () {
+          final lang = ref.read(appLanguageProvider);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Application registered successfully!'),
-              backgroundColor: Color(0xFF16A34A),
+            SnackBar(
+              content: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Application registered successfully!',
+                  mr: 'अर्ज यशस्वीरित्या नोंदवला गेला!',
+                  hi: 'आवेदन सफलतापूर्वक दर्ज किया गया!',
+                ),
+              ),
+              backgroundColor: const Color(0xFF16A34A),
             ),
           );
           if (widget.onSchemeUpdated != null) widget.onSchemeUpdated!();
@@ -58,7 +89,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
   }
 
   void _showEditSchemeSheet() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameCtrl = TextEditingController(text: _scheme.name);
     final descCtrl = TextEditingController(text: _scheme.description);
     final eligCtrl = TextEditingController(text: _scheme.eligibility);
@@ -77,8 +108,8 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
           builder: (stCtx, setModalState) {
             return Container(
               constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.88,
-        ),
+                maxHeight: MediaQuery.of(context).size.height * 0.88,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -94,13 +125,18 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                 children: [
                   AppModalHeader(
                     icon: Icons.edit_note_rounded,
-                    title: isMr ? 'योजनेचा तपशील सुधारा' : 'Edit Scheme Details',
-                    subtitle: isMr ? 'शासकीय योजनेचे निकष व तपशील अद्यतनित करा' : 'Update government scheme criteria and details',
+                    title: AppTranslations.pick(lang, en: 'Edit Scheme Details', mr: 'योजनेचा तपशील सुधारा', hi: 'योजना विवरण संपादित करें'),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Update government scheme criteria and details',
+                      mr: 'शासकीय योजनेचे निकष व तपशील अद्यतनित करा',
+                      hi: 'सरकारी योजना के मानदंड और विवरण अपडेट करें',
+                    ),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
                   Flexible(
-              child: ListView(
-                shrinkWrap: true,
+                    child: ListView(
+                      shrinkWrap: true,
                       padding: EdgeInsets.only(
                         left: 20,
                         right: 20,
@@ -118,12 +154,12 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'योजनेचे नाव' : 'Scheme Name',
+                                    label: AppTranslations.pick(lang, en: 'Scheme Name', mr: 'योजनेचे नाव', hi: 'योजना का नाम'),
                                     isRequired: true,
                                   ),
                                   TextField(
                                     controller: nameCtrl,
-                                    decoration: appInputDecoration(hint: isMr ? 'उदा. प्रधानमंत्री आवास योजना' : 'e.g. PM Awas Yojana'),
+                                    decoration: appInputDecoration(hint: AppTranslations.pick(lang, en: 'e.g. PM Awas Yojana', mr: 'उदा. प्रधानमंत्री आवास योजना', hi: 'उदा. प्रधानमंत्री आवास योजना')),
                                   ),
                                 ],
                               ),
@@ -135,10 +171,10 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppDropdownFormField<String>(
-                                label: isMr ? 'वर्ग / विभाग' : 'Category',
-                                isRequired: true,
-                                value: categories.contains(selectedCat) ? selectedCat : 'All',
-                                    items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                                    label: AppTranslations.pick(lang, en: 'Category', mr: 'वर्ग / विभाग', hi: 'श्रेणी / विभाग'),
+                                    isRequired: true,
+                                    value: categories.contains(selectedCat) ? selectedCat : 'All',
+                                    items: categories.map((c) => DropdownMenuItem(value: c, child: Text(_categoryLabel(c, lang)))).toList(),
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => selectedCat = val);
                                     },
@@ -159,13 +195,18 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'आर्थिक लाभ व अनुदान' : 'Benefits & Entitlements',
+                                    label: AppTranslations.pick(lang, en: 'Benefits & Entitlements', mr: 'आर्थिक लाभ व अनुदान', hi: 'वित्तीय लाभ और पात्रता'),
                                     isRequired: true,
                                   ),
                                   TextField(
                                     controller: benCtrl,
                                     maxLines: 2,
-                                    decoration: appInputDecoration(hint: isMr ? 'उदा. ₹२.५ लाख अनुदान...' : 'e.g. ₹2.5 Lakhs grant...'),
+                                    decoration: appInputDecoration(
+                                      hint: AppTranslations.formatDigits(
+                                        AppTranslations.pick(lang, en: 'e.g. ₹2.5 Lakhs grant...', mr: 'उदा. ₹2.5 लाख अनुदान...', hi: 'उदा. ₹2.5 लाख अनुदान...'),
+                                        lang,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -176,13 +217,13 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'पात्रता अटी' : 'Eligibility Criteria',
+                                    label: AppTranslations.pick(lang, en: 'Eligibility Criteria', mr: 'पात्रता अटी', hi: 'पात्रता मानदंड'),
                                     isRequired: true,
                                   ),
                                   TextField(
                                     controller: eligCtrl,
                                     maxLines: 2,
-                                    decoration: appInputDecoration(hint: isMr ? 'उत्पन्न मर्यादा, वय...' : 'Income limit, age...'),
+                                    decoration: appInputDecoration(hint: AppTranslations.pick(lang, en: 'Income limit, age...', mr: 'उत्पन्न मर्यादा, वय...', hi: 'आय सीमा, आयु...')),
                                   ),
                                 ],
                               ),
@@ -193,25 +234,25 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
 
                         // Documents
                         AppFieldLabel(
-                          label: isMr ? 'आवश्यक कागदपत्रे' : 'Required Documents Checklist',
+                          label: AppTranslations.pick(lang, en: 'Required Documents Checklist', mr: 'आवश्यक कागदपत्रे', hi: 'आवश्यक दस्तावेज़ सूची'),
                           isRequired: true,
                         ),
                         TextField(
                           controller: docCtrl,
                           maxLines: 2,
-                          decoration: appInputDecoration(hint: isMr ? 'आधार कार्ड, रेशन कार्ड, उत्पन्न दाखला...' : 'Aadhaar, Ration card, Income proof...'),
+                          decoration: appInputDecoration(hint: AppTranslations.pick(lang, en: 'Aadhaar, Ration card, Income proof...', mr: 'आधार कार्ड, रेशन कार्ड, उत्पन्न दाखला...', hi: 'आधार कार्ड, राशन कार्ड, आय प्रमाणपत्र...')),
                         ),
                         const SizedBox(height: 14),
 
                         // Description
                         AppFieldLabel(
-                          label: isMr ? 'योजनेचा तपशील व उद्दिष्ट' : 'Description & Objectives',
+                          label: AppTranslations.pick(lang, en: 'Description & Objectives', mr: 'योजनेचा तपशील व उद्दिष्ट', hi: 'विवरण और उद्देश्य'),
                           isRequired: true,
                         ),
                         TextField(
                           controller: descCtrl,
                           maxLines: 2,
-                          decoration: appInputDecoration(hint: isMr ? 'योजनेची संक्षिप्त उद्दिष्टे...' : 'Brief objective and overview...'),
+                          decoration: appInputDecoration(hint: AppTranslations.pick(lang, en: 'Brief objective and overview...', mr: 'योजनेची संक्षिप्त उद्दिष्टे...', hi: 'योजना का संक्षिप्त विवरण...')),
                         ),
                         const SizedBox(height: 24),
 
@@ -246,7 +287,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                                       setState(() => _isSaving = false);
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                          content: Text(isMr ? 'योजना माहिती अद्यतनित केली!' : 'Scheme updated successfully!'),
+                                          content: Text(AppTranslations.pick(lang, en: 'Scheme updated successfully!', mr: 'योजना माहिती अद्यतनित केली!', hi: 'योजना विवरण सफलतापूर्वक अपडेट किया गया!')),
                                           backgroundColor: const Color(0xFF16A34A),
                                         ),
                                       );
@@ -254,7 +295,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                                     }
                                   },
                             child: Text(
-                              isMr ? 'बदल जतन करा' : 'Save Changes',
+                              AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल जतन करा', hi: 'परिवर्तन सहेजें'),
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -273,15 +314,28 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
   }
 
   void _confirmDelete() {
+    final lang = ref.read(appLanguageProvider);
+    final rawTitle = _scheme.localizedNameFor(lang);
     showDialog(
       context: context,
       builder: (dlgCtx) => AlertDialog(
-        title: const Text('Delete Scheme?'),
-        content: Text('Are you sure you want to delete "${_scheme.name}"? This cannot be undone.'),
+        title: Text(AppTranslations.pick(lang, en: 'Delete Scheme?', mr: 'योजना हटवायची का?', hi: 'योजना हटाएँ?')),
+        content: AppTranslatedText(
+          rawTitle,
+          targetLanguage: lang,
+          builder: (_, translatedTitle) => Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Are you sure you want to delete "$translatedTitle"? This cannot be undone.',
+              mr: 'तुम्हाला "$translatedTitle" ही योजना कायमची हटवायची आहे का? ही कृती पूर्ववत करता येणार नाही.',
+              hi: 'क्या आप वाकई "$translatedTitle" को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।',
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dlgCtx),
-            child: const Text('Cancel'),
+            child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white),
@@ -290,13 +344,13 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
               await ref.read(schemesRepoProvider).deleteScheme(_scheme.id);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Scheme deleted.')),
+                  SnackBar(content: Text(AppTranslations.pick(lang, en: 'Scheme deleted.', mr: 'योजना हटवली.', hi: 'योजना हटाई गई।'))),
                 );
                 if (widget.onSchemeUpdated != null) widget.onSchemeUpdated!();
                 Navigator.pop(context);
               }
             },
-            child: const Text('Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ')),
           ),
         ],
       ),
@@ -305,7 +359,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -323,11 +377,12 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
           scrolledUnderElevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'पीछे'),
             onPressed: () => Navigator.pop(context),
           ),
           titleSpacing: 0,
           title: Text(
-            isMr ? 'योजनेचा तपशील' : 'Scheme Details',
+            AppTranslations.pick(lang, en: 'Scheme Details', mr: 'योजनेचा तपशील', hi: 'योजना विवरण'),
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -339,11 +394,12 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                  tooltip: AppTranslations.pick(lang, en: 'Download Report', mr: 'अहवाल डाउनलोड करा', hi: 'रिपोर्ट डाउनलोड करें'),
                   onPressed: () {
                     SchemeReportGenerator.generateAndPrintSingleSchemeFlyer(
                       scheme: _scheme,
-                      isMarathi: isMr,
+                      isMarathi: lang == 'mr',
+                      lang: lang,
                     );
                   },
                 ),
@@ -351,12 +407,12 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 22),
-              tooltip: 'Edit Scheme',
+              tooltip: AppTranslations.pick(lang, en: 'Edit Scheme', mr: 'योजना संपादित करा', hi: 'योजना संपादित करें'),
               onPressed: _showEditSchemeSheet,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
-              tooltip: 'Delete Scheme',
+              tooltip: AppTranslations.pick(lang, en: 'Delete Scheme', mr: 'योजना हटवा', hi: 'योजना हटाएँ'),
               onPressed: _confirmDelete,
             ),
           ],
@@ -409,8 +465,9 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                                   color: _scheme.color.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: Text(
-                                  _scheme.category.toUpperCase(),
+                                child: AppTranslatedText(
+                                  _categoryLabel(_scheme.category, lang).toUpperCase(),
+                                  targetLanguage: lang,
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
@@ -420,7 +477,8 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                               ),
                               const SizedBox(height: 8),
                               AppTranslatedText(
-                                _scheme.localizedName(isMr),
+                                _scheme.localizedNameFor(lang),
+                                targetLanguage: lang,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
@@ -435,7 +493,8 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                     ),
                     const SizedBox(height: 14),
                     AppTranslatedText(
-                      _scheme.localizedDescription(isMr),
+                      _scheme.localizedDescriptionFor(lang),
+                      targetLanguage: lang,
                       style: const TextStyle(
                         fontSize: 13.5,
                         color: Color(0xFF475569),
@@ -454,8 +513,8 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                 iconColor: const Color(0xFF16A34A),
                 borderColor: const Color(0xFFBBF7D0),
                 bgColor: const Color(0xFFF0FDF4),
-                title: isMr ? 'योजनेचे लाभ व अनुदान' : 'Financial Benefits & Entitlements',
-                content: _scheme.localizedBenefits(isMr),
+                title: AppTranslations.pick(lang, en: 'Financial Benefits & Entitlements', mr: 'योजनेचे लाभ व अनुदान', hi: 'वित्तीय लाभ और पात्रता'),
+                content: _scheme.localizedBenefitsFor(lang),
               ),
 
               const SizedBox(height: 14),
@@ -466,8 +525,8 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                 iconColor: const Color(0xFF0284C7),
                 borderColor: const Color(0xFFBAE6FD),
                 bgColor: const Color(0xFFF0F9FF),
-                title: isMr ? 'पात्रता निकष' : 'Eligibility Criteria',
-                content: _scheme.localizedEligibility(isMr),
+                title: AppTranslations.pick(lang, en: 'Eligibility Criteria', mr: 'पात्रता निकष', hi: 'पात्रता मानदंड'),
+                content: _scheme.localizedEligibilityFor(lang),
               ),
 
               const SizedBox(height: 14),
@@ -478,8 +537,8 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                 iconColor: const Color(0xFFD97706),
                 borderColor: const Color(0xFFFDE68A),
                 bgColor: const Color(0xFFFFFBEB),
-                title: isMr ? 'आवश्यक कागदपत्रे' : 'Required Documents Checklist',
-                content: _scheme.localizedDocuments(isMr),
+                title: AppTranslations.pick(lang, en: 'Required Documents Checklist', mr: 'आवश्यक कागदपत्रे', hi: 'आवश्यक दस्तावेज़ सूची'),
+                content: _scheme.localizedDocumentsFor(lang),
               ),
 
               const SizedBox(height: 16),
@@ -509,12 +568,25 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isMr ? 'नगरसेवक कार्यालय सहाय्यता कक्ष' : 'Ward Office Citizen Helpdesk',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Ward Office Citizen Helpdesk',
+                              mr: 'नगरसेवक कार्यालय सहाय्यता कक्ष',
+                              hi: 'वार्ड कार्यालय नागरिक सहायता केंद्र',
+                            ),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            isMr ? 'प्रभाग १२ कार्यालय | सोमवार - शनिवार, स. १० ते सायं. ६' : 'Ward 12 Office | Mon - Sat, 10:00 AM - 6:00 PM',
+                            AppTranslations.formatDigits(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Ward 12 Office | Mon - Sat, 10:00 AM - 6:00 PM',
+                                mr: 'प्रभाग 12 कार्यालय | सोमवार - शनिवार, स. 10 ते सायं. 6',
+                                hi: 'वार्ड 12 कार्यालय | सोमवार - शनिवार, सुबह 10 से शाम 6 बजे',
+                              ),
+                              lang,
+                            ),
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                           ),
                         ],
@@ -553,12 +625,13 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                   onPressed: () {
                     SchemeReportGenerator.generateAndPrintSingleSchemeFlyer(
                       scheme: _scheme,
-                      isMarathi: isMr,
+                      isMarathi: lang == 'mr',
+                      lang: lang,
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 20),
                   label: Text(
-                    isMr ? 'अहवाल' : 'Download Report',
+                    AppTranslations.pick(lang, en: 'Download Report', mr: 'अहवाल', hi: 'रिपोर्ट'),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -577,7 +650,7 @@ class _SchemeDetailScreenState extends ConsumerState<SchemeDetailScreen> {
                   onPressed: _showApplyModal,
                   icon: const Icon(Icons.assignment_ind_rounded, size: 20),
                   label: Text(
-                    isMr ? 'नागरिकाचा अर्ज भरा' : 'Apply for Citizen',
+                    AppTranslations.pick(lang, en: 'Apply for Citizen', mr: 'नागरिकाचा अर्ज भरा', hi: 'नागरिक आवेदन भरें'),
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -714,10 +787,11 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
       builder: (bCtx) {
         return StatefulBuilder(
           builder: (stCtx, setModalState) {
+            final lang = ref.watch(appLanguageProvider);
             return Container(
               constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -733,8 +807,8 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                 children: [
                   AppModalHeader(
                     icon: Icons.person_search_rounded,
-                    title: 'Select Citizen / Voter',
-                    subtitle: 'Search and link voter to scheme',
+                    title: AppTranslations.pick(lang, en: 'Select Citizen / Voter', mr: 'नागरिक / मतदार निवडा', hi: 'नागरिक / मतदाता चुनें'),
+                    subtitle: AppTranslations.pick(lang, en: 'Search and link voter to scheme', mr: 'मतदार शोधून योजनेशी जोडा', hi: 'मतदाता खोजकर योजना से जोड़ें'),
                     onClose: () => Navigator.pop(bCtx),
                   ),
                   Padding(
@@ -742,7 +816,12 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                     child: TextField(
                       controller: voterSearchCtrl,
                       decoration: appInputDecoration(
-                        hint: 'Search voter by name or EPIC ID...',
+                        hint: AppTranslations.pick(
+                          lang,
+                          en: 'Search voter by name or EPIC ID...',
+                          mr: 'नाव किंवा EPIC क्रमांकाने शोधा...',
+                          hi: 'नाम या EPIC नंबर से खोजें...',
+                        ),
                         prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
                       ),
                       onChanged: (_) => setModalState(() {}),
@@ -760,30 +839,70 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                         }
                         final voters = snapshot.data ?? [];
                         if (voters.isEmpty) {
-                          return const Center(child: Text('No voters found in database'));
+                          return Center(
+                            child: Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'No voters found in database',
+                                mr: 'डेटाबेसमध्ये कोणतेही मतदार सापडले नाहीत',
+                                hi: 'डेटाबेस में कोई मतदाता नहीं मिला',
+                              ),
+                              style: const TextStyle(color: Color(0xFF64748B)),
+                            ),
+                          );
                         }
                         return ListView.separated(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           itemCount: voters.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (ctx, idx) {
                             final v = voters[idx];
+                            final vName = lang == 'en'
+                                ? (v.nameEnglish.isNotEmpty ? v.nameEnglish : v.nameMarathi)
+                                : (v.nameMarathi.isNotEmpty ? v.nameMarathi : v.nameEnglish);
                             return ListTile(
                               contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                               leading: CircleAvatar(
                                 backgroundColor: const Color(0xFFF0F9FF),
-                                child: Text(
-                                  v.displayName.isNotEmpty ? v.displayName[0] : 'V',
-                                  style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
+                                child: AppTranslatedText(
+                                  vName.isNotEmpty ? vName : 'V',
+                                  isName: true,
+                                  targetLanguage: lang,
+                                  builder: (_, tName) => Text(
+                                    tName.trim().isNotEmpty ? tName.trim()[0].toUpperCase() : 'V',
+                                    style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                               ),
-                              title: Text(v.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              subtitle: Text('${v.epicNo.isNotEmpty ? "EPIC: ${v.epicNo} | " : ""}${v.address}', style: const TextStyle(fontSize: 12)),
+                              title: AppTranslatedText(
+                                vName,
+                                isName: true,
+                                targetLanguage: lang,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              subtitle: Row(
+                                children: [
+                                  if (v.epicNo.isNotEmpty)
+                                    Text(
+                                      AppTranslations.formatDigits('EPIC: ${v.epicNo} | ', lang),
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  Expanded(
+                                    child: AppTranslatedText(
+                                      v.address,
+                                      targetLanguage: lang,
+                                      style: const TextStyle(fontSize: 12),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                               trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF0284C7)),
                               onTap: () {
                                 Navigator.pop(bCtx);
                                 setState(() {
-                                  _nameCtrl.text = v.displayName;
+                                  _nameCtrl.text = vName;
                                   if (v.mobile != null && v.mobile!.isNotEmpty) {
                                     _mobileCtrl.text = v.mobile!;
                                   }
@@ -810,12 +929,15 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final rawSchemeTitle = widget.scheme.localizedNameFor(lang);
+    final subtitleScheme = DynamicTranslationService.getCachedTranslation(rawSchemeTitle, lang) ??
+        rawSchemeTitle;
 
     return Container(
       constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.88,
-        ),
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -831,13 +953,13 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
         children: [
           AppModalHeader(
             icon: Icons.person_add_alt_1_rounded,
-            title: isMr ? 'नागरिक योजना अर्ज' : 'Citizen Scheme Application',
-            subtitle: widget.scheme.name,
+            title: AppTranslations.pick(lang, en: 'Citizen Scheme Application', mr: 'नागरिक योजना अर्ज', hi: 'नागरिक योजना आवेदन'),
+            subtitle: subtitleScheme,
             onClose: () => Navigator.pop(context),
           ),
           Flexible(
-              child: ListView(
-                shrinkWrap: true,
+            child: ListView(
+              shrinkWrap: true,
               padding: EdgeInsets.only(
                 left: 20,
                 right: 20,
@@ -855,7 +977,7 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AppFieldLabel(
-                            label: isMr ? 'अर्जदाराचे नाव' : 'Applicant Name',
+                            label: AppTranslations.pick(lang, en: 'Applicant Name', mr: 'अर्जदाराचे नाव', hi: 'आवेदक का नाम'),
                             isRequired: true,
                           ),
                           Row(
@@ -863,7 +985,9 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                               Expanded(
                                 child: TextField(
                                   controller: _nameCtrl,
-                                  decoration: appInputDecoration(hint: isMr ? 'पूर्ण नाव प्रविष्ट करा...' : 'Enter full name...'),
+                                  decoration: appInputDecoration(
+                                    hint: AppTranslations.pick(lang, en: 'Enter full name...', mr: 'पूर्ण नाव प्रविष्ट करा...', hi: 'पूरा नाम दर्ज करें...'),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 6),
@@ -879,10 +1003,13 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
-                                    children: const [
-                                      Icon(Icons.person_search_rounded, size: 16, color: Color(0xFF0284C7)),
-                                      SizedBox(width: 3),
-                                      Text('Voters', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                                    children: [
+                                      const Icon(Icons.person_search_rounded, size: 16, color: Color(0xFF0284C7)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        AppTranslations.pick(lang, en: 'Voters', mr: 'मतदार', hi: 'मतदाता'),
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -899,7 +1026,7 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AppFieldLabel(
-                            label: isMr ? 'मोबाईल नंबर' : 'Mobile Number',
+                            label: AppTranslations.pick(lang, en: 'Mobile Number', mr: 'मोबाईल नंबर', hi: 'मोबाइल नंबर'),
                             isRequired: true,
                           ),
                           TextField(
@@ -907,7 +1034,10 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                             keyboardType: TextInputType.phone,
                             maxLength: 10,
                             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                            decoration: appInputDecoration(prefixText: '+91 ', hint: '98xxxxxxxx'),
+                            decoration: appInputDecoration(
+                              prefixText: AppTranslations.formatDigits('+91 ', lang),
+                              hint: AppTranslations.formatDigits('98xxxxxxxx', lang),
+                            ),
                           ),
                         ],
                       ),
@@ -925,12 +1055,14 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AppFieldLabel(
-                            label: isMr ? 'पत्ता / प्रभाग क्षेत्र' : 'Address / Prabhag Area',
+                            label: AppTranslations.pick(lang, en: 'Address / Prabhag Area', mr: 'पत्ता / प्रभाग क्षेत्र', hi: 'पता / वार्ड क्षेत्र'),
                             isRequired: true,
                           ),
                           TextField(
                             controller: _addressCtrl,
-                            decoration: appInputDecoration(hint: isMr ? 'घर क्र., लेन, प्रभाग...' : 'House no, lane, prabhag area...'),
+                            decoration: appInputDecoration(
+                              hint: AppTranslations.pick(lang, en: 'House no, lane, prabhag area...', mr: 'घर क्र., लेन, प्रभाग...', hi: 'मकान नं., गली, वार्ड...'),
+                            ),
                           ),
                         ],
                       ),
@@ -940,10 +1072,17 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppFieldLabel(label: isMr ? 'अपेक्षित लाभ / मंजुरी टीप' : 'Expected Benefit / Note'),
+                          AppFieldLabel(
+                            label: AppTranslations.pick(lang, en: 'Expected Benefit / Note', mr: 'अपेक्षित लाभ / मंजुरी टीप', hi: 'अपेक्षित लाभ / टिप्पणी'),
+                          ),
                           TextField(
                             controller: _benefitCtrl,
-                            decoration: appInputDecoration(hint: isMr ? 'उदा. ₹१,५००/महिना...' : 'e.g. ₹1,500/month...'),
+                            decoration: appInputDecoration(
+                              hint: AppTranslations.formatDigits(
+                                AppTranslations.pick(lang, en: 'e.g. ₹1,500/month...', mr: 'उदा. ₹1,500/महिना...', hi: 'उदा. ₹1,500/माह...'),
+                                lang,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -953,11 +1092,15 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                 const SizedBox(height: 14),
 
                 // Officer Remarks / Follow-up notes
-                AppFieldLabel(label: isMr ? 'अधिकारी / कार्यालयीन टीप' : 'Officer / Office Notes'),
+                AppFieldLabel(
+                  label: AppTranslations.pick(lang, en: 'Officer / Office Notes', mr: 'अधिकारी / कार्यालयीन टीप', hi: 'अधिकारी / कार्यालय नोट'),
+                ),
                 TextField(
                   controller: _notesCtrl,
                   maxLines: 2,
-                  decoration: appInputDecoration(hint: isMr ? 'कागदपत्रे तपासली, टोकन क्रमांक...' : 'Documents verified, verification token...'),
+                  decoration: appInputDecoration(
+                    hint: AppTranslations.pick(lang, en: 'Documents verified, verification token...', mr: 'कागदपत्रे तपासली, टोकन क्रमांक...', hi: 'दस्तावेज़ सत्यापित, टोकन क्रमांक...'),
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -977,13 +1120,21 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                         : () async {
                             if (_nameCtrl.text.trim().isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(isMr ? 'कृपया अर्जदाराचे नाव प्रविष्ट करा' : 'Please enter applicant name')),
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.pick(lang, en: 'Please enter applicant name', mr: 'कृपया अर्जदाराचे नाव प्रविष्ट करा', hi: 'कृपया आवेदक का नाम दर्ज करें'),
+                                  ),
+                                ),
                               );
                               return;
                             }
                             if (_mobileCtrl.text.trim().isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(isMr ? 'कृपया मोबाईल नंबर प्रविष्ट करा' : 'Please enter applicant mobile number')),
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.pick(lang, en: 'Please enter applicant mobile number', mr: 'कृपया मोबाईल नंबर प्रविष्ट करा', hi: 'कृपया आवेदक का मोबाइल नंबर दर्ज करें'),
+                                  ),
+                                ),
                               );
                               return;
                             }
@@ -1013,7 +1164,7 @@ class _SchemeApplicationSheetState extends ConsumerState<_SchemeApplicationSheet
                     child: _isSubmitting
                         ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : Text(
-                            isMr ? 'अर्ज सादर करा' : 'Submit Application',
+                            AppTranslations.pick(lang, en: 'Submit Application', mr: 'अर्ज सादर करा', hi: 'आवेदन जमा करें'),
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                   ),

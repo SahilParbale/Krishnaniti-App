@@ -2,9 +2,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/opposition_model.dart';
 import '../../../data/repositories/opposition_repository.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -104,7 +106,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
 
   Future<void> _makePhoneCall(String? phone) async {
     if (phone == null || phone.isEmpty) return;
-    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final clean = AppTranslations.normalizeAsciiDigits(phone).replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -113,7 +115,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
 
   Future<void> _openWhatsApp(String? phone) async {
     if (phone == null || phone.isEmpty) return;
-    final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final clean = AppTranslations.normalizeAsciiDigits(phone).replaceAll(RegExp(r'[^0-9]'), '');
     final uri = Uri.parse('https://wa.me/$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -124,7 +126,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
   // ADD / EDIT OPPOSITION MEMBER MODAL
   // ===========================================================================
   void _showMemberForm({OppositionMemberModel? memberToEdit}) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameCtrl = TextEditingController(text: memberToEdit?.name ?? '');
     final phoneCtrl = TextEditingController(text: memberToEdit?.mobile ?? '');
     final roleCtrl = TextEditingController(text: memberToEdit?.role ?? '');
@@ -135,8 +137,24 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
     bool isCandidate = memberToEdit?.isCandidate ?? false;
     String party = memberToEdit?.party ?? 'INC';
     String candidacyStatus = memberToEdit?.candidacyStatus ?? 'Declared';
-    final constCtrl = TextEditingController(text: memberToEdit?.constituency ?? 'Ward 12 (Pune PMC)');
-    final oppCtrl = TextEditingController(text: memberToEdit?.opposingCandidate ?? 'Sitting Corporator');
+    final constCtrl = TextEditingController(
+      text: memberToEdit?.constituency ??
+          AppTranslations.pick(
+            lang,
+            en: 'Ward 12 (Pune PMC)',
+            mr: 'प्रभाग १२ (पुणे मनपा)',
+            hi: 'वार्ड १२ (पुणे मनपा)',
+          ),
+    );
+    final oppCtrl = TextEditingController(
+      text: memberToEdit?.opposingCandidate ??
+          AppTranslations.pick(
+            lang,
+            en: 'Sitting Corporator',
+            mr: 'विद्यमान नगरसेवक',
+            hi: 'वर्तमान पार्षद',
+          ),
+    );
     String? selectedCandidateId = memberToEdit?.candidateId;
 
     final repo = ref.read(oppositionRepoProvider);
@@ -196,11 +214,14 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
               AppModalHeader(
                 icon: Icons.group_add_rounded,
                 title: memberToEdit == null
-                    ? (isMr ? 'नवीन विरोधी सदस्य' : 'Add Opposition Member')
-                    : (isMr ? 'विरोधी सदस्य संपादित करा' : 'Edit Opposition Member'),
-                subtitle: isMr
-                    ? 'प्रभागातील विरोधी पक्षांचे उमेदवार व कार्यकर्ते नोंदवा'
-                    : 'Track opposition candidates, workers and political presence',
+                    ? AppTranslations.pick(lang, en: 'Add Opposition Member', mr: 'नवीन विरोधी सदस्य', hi: 'नया विपक्षी सदस्य जोड़ें')
+                    : AppTranslations.pick(lang, en: 'Edit Opposition Member', mr: 'विरोधी सदस्य संपादित करा', hi: 'विपक्षी सदस्य संपादित करें'),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Track opposition candidates, workers and political presence',
+                  mr: 'प्रभागातील विरोधी पक्षांचे उमेदवार व कार्यकर्ते नोंदवा',
+                  hi: 'वार्ड के विपक्षी उम्मीदवारों व कार्यकर्ताओं का विवरण दर्ज करें',
+                ),
                 onClose: () => Navigator.pop(ctx),
               ),
 
@@ -235,7 +256,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                                   boxShadow: !isCandidate ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
                                 ),
                                 child: Text(
-                                  isMr ? 'विरोधी कार्यकर्ता' : 'Opposition Cadre',
+                                  AppTranslations.pick(lang, en: 'Opposition Cadre', mr: 'विरोधी कार्यकर्ता', hi: 'विपक्षी कार्यकर्ता'),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -253,7 +274,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                                   boxShadow: isCandidate ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null,
                                 ),
                                 child: Text(
-                                  isMr ? 'विरोधी उमेदवार' : 'Opposition Candidate',
+                                  AppTranslations.pick(lang, en: 'Opposition Candidate', mr: 'विरोधी उमेदवार', hi: 'विपक्षी उम्मीदवार'),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -273,11 +294,19 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'पूर्ण नाव' : 'Full Name', isRequired: true),
+                              fieldLabel(
+                                AppTranslations.pick(lang, en: 'Full Name', mr: 'पूर्ण नाव', hi: 'पूरा नाम'),
+                                isRequired: true,
+                              ),
                               TextField(
                                 controller: nameCtrl,
                                 decoration: inputDec(
-                                  hintText: isMr ? 'उदा. ॲड. रमेश शिंदे' : 'e.g. Adv. Ramesh Shinde',
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Adv. Ramesh Shinde',
+                                    mr: 'उदा. ॲड. रमेश शिंदे',
+                                    hi: 'उदा. एड. रमेश शिंदे',
+                                  ),
                                 ),
                               ),
                             ],
@@ -290,16 +319,16 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppDropdownFormField<String>(
-                                label: isMr ? 'पक्ष' : 'Party',
+                                label: AppTranslations.pick(lang, en: 'Party', mr: 'पक्ष', hi: 'पार्टी'),
                                 isRequired: true,
                                 value: party,
-                                items: const [
-                                  DropdownMenuItem(value: 'INC', child: Text('Congress (INC)')),
-                                  DropdownMenuItem(value: 'NCP', child: Text('NCP')),
-                                  DropdownMenuItem(value: 'UBT', child: Text('Shiv Sena (UBT)')),
-                                  DropdownMenuItem(value: 'MNS', child: Text('MNS')),
-                                  DropdownMenuItem(value: 'BJP', child: Text('BJP')),
-                                  DropdownMenuItem(value: 'Independent', child: Text('Independent (Ind)')),
+                                items: [
+                                  DropdownMenuItem(value: 'INC', child: Text(AppTranslations.pick(lang, en: 'Congress (INC)', mr: 'काँग्रेस (INC)', hi: 'कांग्रेस (INC)'))),
+                                  DropdownMenuItem(value: 'NCP', child: Text(AppTranslations.pick(lang, en: 'NCP', mr: 'राष्ट्रवादी (NCP)', hi: 'राकांपा (NCP)'))),
+                                  DropdownMenuItem(value: 'UBT', child: Text(AppTranslations.pick(lang, en: 'Shiv Sena (UBT)', mr: 'शिवसेना (UBT)', hi: 'शिवसेना (UBT)'))),
+                                  DropdownMenuItem(value: 'MNS', child: Text(AppTranslations.pick(lang, en: 'MNS', mr: 'मनसे (MNS)', hi: 'मनसे (MNS)'))),
+                                  DropdownMenuItem(value: 'BJP', child: Text(AppTranslations.pick(lang, en: 'BJP', mr: 'भाजप (BJP)', hi: 'भाजपा (BJP)'))),
+                                  DropdownMenuItem(value: 'Independent', child: Text(AppTranslations.pick(lang, en: 'Independent (Ind)', mr: 'अपक्ष (Independent)', hi: 'निर्दलीय (Ind)'))),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => party = val);
@@ -320,12 +349,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number'),
+                              fieldLabel(AppTranslations.pick(lang, en: 'Mobile Number', mr: 'मोबाईल नंबर', hi: 'मोबाइल नंबर')),
                               TextField(
                                 controller: phoneCtrl,
                                 keyboardType: TextInputType.phone,
                                 decoration: inputDec(
-                                  hintText: '98220xxxxx',
+                                  hintText: AppTranslations.formatDigits('98220xxxxx', lang),
                                 ),
                               ),
                             ],
@@ -336,11 +365,16 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'पद / हुद्दा' : 'Role / Designation'),
+                              fieldLabel(AppTranslations.pick(lang, en: 'Role / Designation', mr: 'पद / हुद्दा', hi: 'पद / भूमिका')),
                               TextField(
                                 controller: roleCtrl,
                                 decoration: inputDec(
-                                  hintText: isMr ? 'उदा. माजी नगरसेवक, प्रभाग अध्यक्ष' : 'e.g. Ex-Corporator, Ward President',
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Ex-Corporator, Ward President',
+                                    mr: 'उदा. माजी नगरसेवक, प्रभाग अध्यक्ष',
+                                    hi: 'उदा. पूर्व पार्षद, वार्ड अध्यक्ष',
+                                  ),
                                 ),
                               ),
                             ],
@@ -358,11 +392,16 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'कार्यक्षेत्र / परिसर' : 'Primary Work Area'),
+                              fieldLabel(AppTranslations.pick(lang, en: 'Primary Work Area', mr: 'कार्यक्षेत्र / परिसर', hi: 'मुख्य कार्यक्षेत्र / क्षेत्र')),
                               TextField(
                                 controller: areaCtrl,
                                 decoration: inputDec(
-                                  hintText: isMr ? 'उदा. टिळक चौक, सेक्टर ३' : 'e.g. Tilak Chowk, Sector 3',
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Tilak Chowk, Sector 3',
+                                    mr: 'उदा. टिळक चौक, सेक्टर ३',
+                                    hi: 'उदा. तिलक चौक, सेक्टर ३',
+                                  ),
                                 ),
                               ),
                             ],
@@ -373,11 +412,16 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              fieldLabel(isMr ? 'प्रभाव क्षेत्रे' : 'Strongholds / Booths'),
+                              fieldLabel(AppTranslations.pick(lang, en: 'Strongholds / Booths', mr: 'प्रभाव क्षेत्रे', hi: 'प्रभाव क्षेत्र / बूथ')),
                               TextField(
                                 controller: strongholdsCtrl,
                                 decoration: inputDec(
-                                  hintText: isMr ? 'उदा. बूथ ४-६, शांति नगर' : 'e.g. Booth 4-6, Shanti Nagar',
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Booth 4-6, Shanti Nagar',
+                                    mr: 'उदा. बूथ ४-६, शांति नगर',
+                                    hi: 'उदा. बूथ ४-६, शांति नगर',
+                                  ),
                                 ),
                               ),
                             ],
@@ -396,11 +440,16 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'मतदारसंघ / प्रभाग' : 'Constituency / Ward'),
+                                fieldLabel(AppTranslations.pick(lang, en: 'Constituency / Ward', mr: 'मतदारसंघ / प्रभाग', hi: 'निर्वाचन क्षेत्र / वार्ड')),
                                 TextField(
                                   controller: constCtrl,
                                   decoration: inputDec(
-                                    hintText: 'Ward 12 (Pune PMC)',
+                                    hintText: AppTranslations.pick(
+                                      lang,
+                                      en: 'Ward 12 (Pune PMC)',
+                                      mr: 'प्रभाग १२ (पुणे मनपा)',
+                                      hi: 'वार्ड १२ (पुणे मनपा)',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -411,11 +460,16 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'विरोधी उमेदवार' : 'Opposing Candidate'),
+                                fieldLabel(AppTranslations.pick(lang, en: 'Opposing Candidate', mr: 'विरोधी उमेदवार', hi: 'प्रतिद्वंद्वी उम्मीदवार')),
                                 TextField(
                                   controller: oppCtrl,
                                   decoration: inputDec(
-                                    hintText: 'Sitting Corporator',
+                                    hintText: AppTranslations.pick(
+                                      lang,
+                                      en: 'Sitting Corporator',
+                                      mr: 'विद्यमान नगरसेवक',
+                                      hi: 'वर्तमान पार्षद',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -425,14 +479,14 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       ),
                       const SizedBox(height: 14),
                       AppDropdownFormField<String>(
-                                label: isMr ? 'उमेदवारी स्थिती' : 'Candidacy Status',
-                                value: candidacyStatus,
-                        items: const [
-                          DropdownMenuItem(value: 'Declared', child: Text('Declared')),
-                          DropdownMenuItem(value: 'Contesting', child: Text('Contesting')),
-                          DropdownMenuItem(value: 'Withdrawn', child: Text('Withdrawn')),
-                          DropdownMenuItem(value: 'Won', child: Text('Won')),
-                          DropdownMenuItem(value: 'Lost', child: Text('Lost')),
+                        label: AppTranslations.pick(lang, en: 'Candidacy Status', mr: 'उमेदवारी स्थिती', hi: 'उम्मीदवारी स्थिति'),
+                        value: candidacyStatus,
+                        items: [
+                          DropdownMenuItem(value: 'Declared', child: Text(AppTranslations.pick(lang, en: 'Declared', mr: 'घोषित', hi: 'घोषित'))),
+                          DropdownMenuItem(value: 'Contesting', child: Text(AppTranslations.pick(lang, en: 'Contesting', mr: 'लढत असलेले', hi: 'चुनाव लड़ रहे'))),
+                          DropdownMenuItem(value: 'Withdrawn', child: Text(AppTranslations.pick(lang, en: 'Withdrawn', mr: 'मागे घेतलेले', hi: 'नाम वापस'))),
+                          DropdownMenuItem(value: 'Won', child: Text(AppTranslations.pick(lang, en: 'Won', mr: 'विजयी', hi: 'विजयी'))),
+                          DropdownMenuItem(value: 'Lost', child: Text(AppTranslations.pick(lang, en: 'Lost', mr: 'पराजित', hi: 'पराजित'))),
                         ],
                         onChanged: (val) {
                           if (val != null) setModalState(() => candidacyStatus = val);
@@ -443,11 +497,25 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       // If Worker: Option to link to candidate
                       if (candidatesList.isNotEmpty) ...[
                         AppDropdownFormField<String>(
-                                label: isMr ? 'उमेदवाराशी जोडा (पर्यायी)' : 'Link to Candidate (Optional)',
-                                value: selectedCandidateId,
+                          label: AppTranslations.pick(lang, en: 'Link to Candidate (Optional)', mr: 'उमेदवाराशी जोडा (पर्यायी)', hi: 'उम्मीदवार से जोड़ें (वैकल्पिक)'),
+                          value: selectedCandidateId,
                           items: [
-                            DropdownMenuItem(value: null, child: Text(isMr ? 'कोणाशीही जोडलेले नाही' : 'Not linked to any candidate')),
-                            ...candidatesList.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.party})'))),
+                            DropdownMenuItem(
+                              value: null,
+                              child: Text(AppTranslations.pick(lang, en: 'Not linked to any candidate', mr: 'कोणाशीही जोडलेले नाही', hi: 'किसी भी उम्मीदवार से नहीं जुड़ा')),
+                            ),
+                            ...candidatesList.map(
+                              (c) => DropdownMenuItem(
+                                value: c.id,
+                                child: AppTranslatedText(
+                                  '${c.name} (${c.party})',
+                                  targetLanguage: lang,
+                                  isName: true,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
                           ],
                           onChanged: (val) => setModalState(() => selectedCandidateId = val),
                         ),
@@ -456,12 +524,17 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     ],
 
                     // Notes / Strategy
-                    fieldLabel(isMr ? 'नोंदी व रणनीती' : 'Notes & Strategy'),
+                    fieldLabel(AppTranslations.pick(lang, en: 'Notes & Strategy', mr: 'नोंदी व रणनीती', hi: 'टिप्पणियाँ और रणनीति')),
                     TextField(
                       controller: notesCtrl,
                       maxLines: 2,
                       decoration: inputDec(
-                        hintText: isMr ? 'स्थानिक प्रभाव, राजकीय निरीक्षणे...' : 'Local influence, outreach, and political observations...',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'Local influence, outreach, and political observations...',
+                          mr: 'स्थानिक प्रभाव, राजकीय निरीक्षणे...',
+                          hi: 'स्थानीय प्रभाव, जनसंपर्क और राजनीतिक टिप्पणियाँ...',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -482,8 +555,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                         label: Text(
                           memberToEdit == null
-                              ? (isMr ? 'सदस्य जतन करा' : 'Add Member')
-                              : (isMr ? 'बदल जतन करा' : 'Save Changes'),
+                              ? AppTranslations.pick(lang, en: 'Add Member', mr: 'सदस्य जतन करा', hi: 'सदस्य जोड़ें')
+                              : AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल जतन करा', hi: 'बदलाव सहेजें'),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         onPressed: () async {
@@ -491,9 +564,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  isMr
-                                      ? 'कृपया विरोधी सदस्याचे नाव प्रविष्ट करा.'
-                                      : 'Please enter opposition member name.',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Please enter opposition member name.',
+                                    mr: 'कृपया विरोधी सदस्याचे नाव प्रविष्ट करा.',
+                                    hi: 'कृपया विपक्षी सदस्य का नाम दर्ज करें।',
+                                  ),
                                 ),
                               ),
                             );
@@ -506,10 +582,11 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                               .where((s) => s.isNotEmpty)
                               .toList();
 
+                          final cleanMobile = AppTranslations.normalizeAsciiDigits(phoneCtrl.text.trim());
                           final newMember = OppositionMemberModel(
                             id: memberToEdit?.id ?? 'opp-${isCandidate ? "cand" : "wrk"}-${DateTime.now().millisecondsSinceEpoch}',
                             name: nameCtrl.text.trim(),
-                            mobile: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : null,
+                            mobile: cleanMobile.isNotEmpty ? cleanMobile : null,
                             party: party,
                             role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : null,
                             area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : null,
@@ -541,8 +618,8 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                               SnackBar(
                                 content: Text(
                                   memberToEdit == null
-                                      ? (isMr ? 'विरोधी सदस्य यशस्वीरित्या जोडला!' : 'Opposition member added successfully!')
-                                      : (isMr ? 'तपशील अद्यतनित केले!' : 'Details updated!'),
+                                      ? AppTranslations.pick(lang, en: 'Opposition member added successfully!', mr: 'विरोधी सदस्य यशस्वीरित्या जोडला!', hi: 'विपक्षी सदस्य सफलतापूर्वक जोड़ा गया!')
+                                      : AppTranslations.pick(lang, en: 'Details updated!', mr: 'तपशील अद्यतनित केले!', hi: 'विवरण अपडेट किए गए!'),
                                 ),
                                 backgroundColor: const Color(0xFF16A34A),
                               ),
@@ -566,15 +643,24 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
   // DELETE CONFIRMATION DIALOG
   // ===========================================================================
   void _confirmDeleteMember(OppositionMemberModel member) {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Opposition Record?'),
-        content: Text('Are you sure you want to delete record for "${member.name}"? This action cannot be undone.'),
+        title: Text(AppTranslations.pick(lang, en: 'Delete Opposition Record?', mr: 'विरोधी नोंद हटवायची का?', hi: 'विपक्षी रिकॉर्ड हटाएँ?')),
+        content: AppTranslatedText(
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to delete record for "${member.name}"? This action cannot be undone.',
+            mr: '"${member.name}" यांची नोंद हटवायची आहे का? ही कृती पूर्ववत करता येणार नाही.',
+            hi: 'क्या आप वाकई "${member.name}" का रिकॉर्ड हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।',
+          ),
+          targetLanguage: lang,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -584,12 +670,15 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
               _loadOppositionData();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Record deleted successfully!'), backgroundColor: Color(0xFFDC2626)),
+                  SnackBar(
+                    content: Text(AppTranslations.pick(lang, en: 'Record deleted successfully!', mr: 'नोंद यशस्वीरित्या हटवली!', hi: 'रिकॉर्ड सफलतापूर्वक हटाया गया!')),
+                    backgroundColor: const Color(0xFFDC2626),
+                  ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white),
-            child: const Text('Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ')),
           ),
         ],
       ),
@@ -599,6 +688,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
   @override
   Widget build(BuildContext context) {
     final repo = ref.read(oppositionRepoProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -609,25 +699,25 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
-            ),
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(lang, en: 'Open Menu Drawer', mr: 'मेनू उघडा', hi: 'मेनू खोलें'),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'Opposition Information',
+              AppTranslations.pick(lang, en: 'Opposition Information', mr: 'विरोधी पक्ष माहिती', hi: 'विपक्ष की जानकारी'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -635,10 +725,15 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
               ),
             ),
             Text(
-              'Opposition candidate profiles, past records and public claims',
+              AppTranslations.pick(
+                lang,
+                en: 'Opposition candidate profiles, past records and public claims',
+                mr: 'विरोधी उमेदवारांची माहिती, मागील नोंदी व दावे',
+                hi: 'विपक्षी उम्मीदवारों की प्रोफ़ाइल, पिछले रिकॉर्ड और दावे',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -646,7 +741,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
             ),
           ],
         ),
-        actions: const [],
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: AppLanguageSegmentedSelector(isCompact: true),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadOppositionData,
@@ -672,7 +772,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         controller: _searchController,
                         onChanged: (_) => _loadOppositionData(),
                         decoration: InputDecoration(
-                          hintText: 'Search name, role, strongholds or keywords...',
+                          hintText: AppTranslations.pick(
+                            lang,
+                            en: 'Search name, role, strongholds or keywords...',
+                            mr: 'नाव, पद, प्रभाव क्षेत्र किंवा कीवर्ड शोधा...',
+                            hi: 'नाम, पद, प्रभाव क्षेत्र या कीवर्ड खोजें...',
+                          ),
                           hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                           prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF0284C7)),
                           suffixIcon: _searchController.text.isNotEmpty
@@ -705,21 +810,23 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         IconButton(
                           icon: Icon(Icons.grid_view_rounded, size: 20, color: _viewMode == 0 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 0),
-                          tooltip: 'Card View',
+                          tooltip: AppTranslations.pick(lang, en: 'Card View', mr: 'कार्ड दृश्य', hi: 'कार्ड दृश्य'),
                         ),
                         IconButton(
                           icon: Icon(Icons.table_rows_rounded, size: 20, color: _viewMode == 1 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 1),
-                          tooltip: 'Table View',
+                          tooltip: AppTranslations.pick(lang, en: 'Table View', mr: 'तक्ता दृश्य', hi: 'तालिका दृश्य'),
                         ),
                         Container(width: 1, height: 20, color: const Color(0xFFE2E8F0)),
                         const SizedBox(width: 4),
                         AppPdfButton.icon(
-                          tooltip: 'Download Report',
+                          tooltip: AppTranslations.pick(lang, en: 'Download Report', mr: 'अहवाल डाउनलोड करा', hi: 'रिपोर्ट डाउनलोड करें'),
                           onPressed: () {
                             OppositionReportGenerator.generateAndPrintReport(
+                              context: context,
                               members: _members,
                               getCandidateName: repo.getCandidateName,
+                              lang: lang,
                             );
                           },
                         ),
@@ -738,38 +845,53 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('All (${_stats['total']})', 'all', _selectedType, (val) {
-                      setState(() => _selectedType = val);
-                      _loadOppositionData();
-                    }),
+                    _buildFilterChip(
+                      '${AppTranslations.pick(lang, en: 'All', mr: 'सर्व', hi: 'सभी')} (${AppTranslations.formatDigits('${_stats['total'] ?? 0}', lang)})',
+                      'all',
+                      _selectedType,
+                      (val) {
+                        setState(() => _selectedType = val);
+                        _loadOppositionData();
+                      },
+                    ),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Candidates (${_stats['candidates']})', 'candidate', _selectedType, (val) {
-                      setState(() => _selectedType = val);
-                      _loadOppositionData();
-                    }),
+                    _buildFilterChip(
+                      '${AppTranslations.pick(lang, en: 'Candidates', mr: 'उमेदवार', hi: 'उम्मीदवार')} (${AppTranslations.formatDigits('${_stats['candidates'] ?? 0}', lang)})',
+                      'candidate',
+                      _selectedType,
+                      (val) {
+                        setState(() => _selectedType = val);
+                        _loadOppositionData();
+                      },
+                    ),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Cadre (${_stats['workers']})', 'worker', _selectedType, (val) {
-                      setState(() => _selectedType = val);
-                      _loadOppositionData();
-                    }),
+                    _buildFilterChip(
+                      '${AppTranslations.pick(lang, en: 'Cadre', mr: 'कार्यकर्ते', hi: 'कार्यकर्ता')} (${AppTranslations.formatDigits('${_stats['workers'] ?? 0}', lang)})',
+                      'worker',
+                      _selectedType,
+                      (val) {
+                        setState(() => _selectedType = val);
+                        _loadOppositionData();
+                      },
+                    ),
                     const SizedBox(width: 14),
 
                     // Party Filters
                     Container(height: 18, width: 1, color: const Color(0xFFCBD5E1)),
                     const SizedBox(width: 14),
-                    _buildPartyFilterChip('All Parties', 'all'),
+                    _buildPartyFilterChip(AppTranslations.pick(lang, en: 'All Parties', mr: 'सर्व पक्ष', hi: 'सभी दल'), 'all'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('Congress', 'INC'),
+                    _buildPartyFilterChip(AppTranslations.pick(lang, en: 'Congress', mr: 'काँग्रेस', hi: 'कांग्रेस'), 'INC'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('NCP', 'NCP'),
+                    _buildPartyFilterChip(AppTranslations.pick(lang, en: 'NCP', mr: 'राष्ट्रवादी', hi: 'राकांपा'), 'NCP'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('Shiv Sena (UBT)', 'UBT'),
+                    _buildPartyFilterChip(AppTranslations.pick(lang, en: 'Shiv Sena (UBT)', mr: 'शिवसेना (UBT)', hi: 'शिवसेना (UBT)'), 'UBT'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('MNS', 'MNS'),
+                    _buildPartyFilterChip(AppTranslations.pick(lang, en: 'MNS', mr: 'मनसे', hi: 'मनसे'), 'MNS'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('BJP', 'BJP'),
+                    _buildPartyFilterChip(AppTranslations.pick(lang, en: 'BJP', mr: 'भाजप', hi: 'भाजपा'), 'BJP'),
                     const SizedBox(width: 6),
-                    _buildPartyFilterChip('Independent', 'Independent'),
+                    _buildPartyFilterChip(AppTranslations.pick(lang, en: 'Independent', mr: 'अपक्ष', hi: 'निर्दलीय'), 'Independent'),
                   ],
                 ),
               ),
@@ -799,20 +921,31 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     children: [
                       const Icon(Icons.person_off_outlined, size: 48, color: Color(0xFF94A3B8)),
                       const SizedBox(height: 12),
-                      const Text(
-                        'No opposition members found.',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'No opposition members found.',
+                          mr: 'कोणतेही विरोधी सदस्य आढळले नाहीत.',
+                          hi: 'कोई विपक्षी सदस्य नहीं मिला।',
+                        ),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Use the "+ Add Member" button above to create a record.',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Use the "+ Add Member" button below to create a record.',
+                          mr: 'नोंद तयार करण्यासाठी खालील "+ सदस्य जोडा" बटण वापरा.',
+                          hi: 'रिकॉर्ड बनाने के लिए नीचे "+ सदस्य जोड़ें" बटन का उपयोग करें।',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: () => _showMemberForm(),
                         icon: const Icon(Icons.add, size: 16),
-                        label: const Text('Add Opposition Member'),
+                        label: Text(AppTranslations.pick(lang, en: 'Add Opposition Member', mr: 'विरोधी सदस्य जोडा', hi: 'विपक्षी सदस्य जोड़ें')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
@@ -830,12 +963,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (ctx, idx) {
                     final member = _members[idx];
-                    return _buildMemberCard(member, repo);
+                    return _buildMemberCard(member, repo, lang);
                   },
                 )
               else
                 // SPREADSHEET TABLE VIEW
-                _buildSpreadsheetTable(repo),
+                _buildSpreadsheetTable(repo, lang),
 
               const SizedBox(height: 30),
             ],
@@ -846,7 +979,10 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
         onPressed: () => _showMemberForm(),
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Add Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(
+          AppTranslations.pick(lang, en: 'Add Member', mr: 'सदस्य जोडा', hi: 'सदस्य जोड़ें'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -903,7 +1039,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
     );
   }
 
-  Widget _buildMemberCard(OppositionMemberModel member, OppositionRepository repo) {
+  Widget _buildMemberCard(OppositionMemberModel member, OppositionRepository repo, String lang) {
     final partyColor = _getPartyColor(member.party);
 
     return InkWell(
@@ -961,8 +1097,10 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(
+                            child: AppTranslatedText(
                               member.name,
+                              targetLanguage: lang,
+                              isName: true,
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                           ),
@@ -975,10 +1113,19 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        member.role ?? (member.isCandidate ? 'Candidate' : 'Cadre'),
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                      ),
+                      if (member.role != null && member.role!.trim().isNotEmpty)
+                        AppTranslatedText(
+                          member.role!,
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                        )
+                      else
+                        Text(
+                          member.isCandidate
+                              ? AppTranslations.pick(lang, en: 'Candidate', mr: 'उमेदवार', hi: 'उम्मीदवार')
+                              : AppTranslations.pick(lang, en: 'Cadre', mr: 'कार्यकर्ता', hi: 'कार्यकर्ता'),
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                        ),
                       const SizedBox(height: 6),
 
                       // Badges
@@ -994,7 +1141,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                               border: Border.all(color: partyColor.withValues(alpha: 0.3)),
                             ),
                             child: Text(
-                              member.partyFullLabel,
+                              member.partyFullLabelFor(lang),
                               style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: partyColor),
                             ),
                           ),
@@ -1005,7 +1152,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              member.typeLabelMarathi,
+                              member.typeLabel(lang),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -1021,7 +1168,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                member.candidacyStatusLabelMarathi,
+                                member.candidacyStatusLabel(lang),
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -1046,23 +1193,26 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     }
                   },
                   itemBuilder: (ctx) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0284C7)),
-                          SizedBox(width: 8),
-                          Text('Edit'),
+                          const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0284C7)),
+                          const SizedBox(width: 8),
+                          Text(AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें')),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Color(0xFFDC2626))),
+                          const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 8),
+                          Text(
+                            AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ'),
+                            style: const TextStyle(color: Color(0xFFDC2626)),
+                          ),
                         ],
                       ),
                     ),
@@ -1083,7 +1233,10 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                     children: [
                       const Icon(Icons.phone_outlined, size: 13, color: Color(0xFF64748B)),
                       const SizedBox(width: 4),
-                      Text(member.mobile!, style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155), fontWeight: FontWeight.w600)),
+                      Text(
+                        AppTranslations.formatDigits(member.mobile!, lang),
+                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                      ),
                     ],
                   ),
                   const SizedBox(width: 6),
@@ -1113,9 +1266,11 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(
+                          child: AppTranslatedText(
                             member.area!,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -1138,7 +1293,11 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Text(s, style: const TextStyle(fontSize: 10, color: Color(0xFF475569))),
+                    child: AppTranslatedText(
+                      s,
+                      targetLanguage: lang,
+                      style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
+                    ),
                   );
                 }).toList(),
               ),
@@ -1150,43 +1309,51 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    if (member.negativeStories.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: const Color(0xFFFECACA)),
+                Flexible(
+                  child: Row(
+                    children: [
+                      if (member.negativeStories.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: const Color(0xFFFECACA)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, size: 12, color: Color(0xFFDC2626)),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${AppTranslations.formatDigits('${member.negativeStories.length}', lang)} ${AppTranslations.pick(lang, en: 'Controversies', mr: 'वादग्रस्त प्रकरणे', hi: 'विवाद')}',
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.warning_amber_rounded, size: 12, color: Color(0xFFDC2626)),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${member.negativeStories.length} Controversies',
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
-                            ),
-                          ],
+                        const SizedBox(width: 6),
+                      ],
+                      if (member.activities.isNotEmpty)
+                        Flexible(
+                          child: Text(
+                            '${AppTranslations.formatDigits('${member.activities.length}', lang)} ${AppTranslations.pick(lang, en: 'Activities', mr: 'उपक्रम', hi: 'गतिविधियाँ')}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
                     ],
-                    if (member.activities.isNotEmpty)
-                      Text(
-                        '${member.activities.length} Activities',
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                      ),
-                  ],
+                  ),
                 ),
-                const Row(
+                const SizedBox(width: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Detailed Profile',
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                      AppTranslations.pick(lang, en: 'Detailed Profile', mr: 'सविस्तर माहिती', hi: 'विस्तृत प्रोफ़ाइल'),
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                     ),
-                    Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF0284C7)),
+                    const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF0284C7)),
                   ],
                 ),
               ],
@@ -1200,7 +1367,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
   // ===========================================================================
   // SPREADSHEET TABLE VIEW
   // ===========================================================================
-  Widget _buildSpreadsheetTable(OppositionRepository repo) {
+  Widget _buildSpreadsheetTable(OppositionRepository repo, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1213,35 +1380,34 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
           scrollDirection: Axis.horizontal,
           child: DataTable(
             headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
-            columns: const [
-              DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Party', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Role / Designation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Work Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Strongholds', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Status / Candidate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Issues', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            columns: [
+              DataColumn(label: Text(AppTranslations.pick(lang, en: '#', mr: 'क्र.', hi: 'क्र.'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Name', mr: 'नाव', hi: 'नाम'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Party', mr: 'पक्ष', hi: 'पार्टी'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Type', mr: 'प्रकार', hi: 'प्रकार'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Role / Designation', mr: 'पद / हुद्दा', hi: 'पद / भूमिका'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Work Area', mr: 'कार्यक्षेत्र', hi: 'कार्यक्षेत्र'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Strongholds', mr: 'प्रभाव क्षेत्रे', hi: 'प्रभाव क्षेत्र'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Status / Candidate', mr: 'स्थिती / उमेदवार', hi: 'स्थिति / उम्मीदवार'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Issues', mr: 'प्रकरणे', hi: 'विवाद'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Action', mr: 'कृती', hi: 'कार्रवाई'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
             rows: List.generate(_members.length, (index) {
               final m = _members[index];
               final partyColor = _getPartyColor(m.party);
 
-              String statusOrCand = '-';
-              if (m.isCandidate) {
-                statusOrCand = m.candidacyStatusLabelMarathi;
-              } else if (m.candidateId != null && m.candidateId!.isNotEmpty) {
-                statusOrCand = repo.getCandidateName(m.candidateId!);
-              }
+              final bool isCandStatus = m.isCandidate;
+              final bool hasLinkedCand = !m.isCandidate && m.candidateId != null && m.candidateId!.isNotEmpty;
+              final String linkedCandName = hasLinkedCand ? repo.getCandidateName(m.candidateId!) : '';
 
               return DataRow(
                 cells: [
-                  DataCell(Text((index + 1).toString(), style: const TextStyle(fontSize: 11))),
+                  DataCell(Text(AppTranslations.formatDigits('${index + 1}', lang), style: const TextStyle(fontSize: 11))),
                   DataCell(
-                    Text(
+                    AppTranslatedText(
                       m.name,
+                      targetLanguage: lang,
+                      isName: true,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
                     ),
                   ),
@@ -1252,12 +1418,12 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                         color: partyColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(m.party, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: partyColor)),
+                      child: Text(m.partyFullLabelFor(lang), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: partyColor)),
                     ),
                   ),
                   DataCell(
                     Text(
-                      m.typeLabelMarathi,
+                      m.typeLabel(lang),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -1265,13 +1431,31 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                       ),
                     ),
                   ),
-                  DataCell(Text(m.role ?? '-', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(m.area ?? '-', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(m.strongholds.take(2).join(', '), style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(statusOrCand, style: const TextStyle(fontSize: 11))),
+                  DataCell(
+                    m.role != null && m.role!.trim().isNotEmpty
+                        ? AppTranslatedText(m.role!, targetLanguage: lang, style: const TextStyle(fontSize: 11))
+                        : const Text('-', style: TextStyle(fontSize: 11)),
+                  ),
+                  DataCell(
+                    m.area != null && m.area!.trim().isNotEmpty
+                        ? AppTranslatedText(m.area!, targetLanguage: lang, style: const TextStyle(fontSize: 11))
+                        : const Text('-', style: TextStyle(fontSize: 11)),
+                  ),
+                  DataCell(
+                    m.strongholds.isNotEmpty
+                        ? AppTranslatedText(m.strongholds.take(2).join(', '), targetLanguage: lang, style: const TextStyle(fontSize: 11))
+                        : const Text('-', style: TextStyle(fontSize: 11)),
+                  ),
+                  DataCell(
+                    isCandStatus
+                        ? Text(m.candidacyStatusLabel(lang), style: const TextStyle(fontSize: 11))
+                        : (linkedCandName.isNotEmpty
+                            ? AppTranslatedText(linkedCandName, targetLanguage: lang, isName: true, style: const TextStyle(fontSize: 11))
+                            : const Text('-', style: TextStyle(fontSize: 11))),
+                  ),
                   DataCell(
                     Text(
-                      m.negativeStories.length.toString(),
+                      AppTranslations.formatDigits('${m.negativeStories.length}', lang),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -1282,6 +1466,7 @@ class _OppositionScreenState extends ConsumerState<OppositionScreen> {
                   DataCell(
                     IconButton(
                       icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
+                      tooltip: AppTranslations.pick(lang, en: 'View Profile', mr: 'प्रोफाईल पहा', hi: 'प्रोफ़ाइल देखें'),
                       onPressed: () async {
                         await Navigator.push(
                           context,

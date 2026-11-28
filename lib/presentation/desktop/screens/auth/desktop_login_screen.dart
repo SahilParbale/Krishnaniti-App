@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/widgets/krishnaniti_logo.dart';
 import 'package:nagarsevak_mobile/presentation/providers/auth_provider.dart';
+import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
 import 'package:nagarsevak_mobile/presentation/navigation/adaptive_scaffold.dart';
 
 /// Desktop Login Screen matching Nagarsevak-Managment/src/pages/Login.tsx exactly 1:1
@@ -33,12 +36,20 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
+    final lang = ref.read(appLanguageProvider);
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both email and password.'),
-          backgroundColor: Color(0xFFDC2626),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please enter both email and password.',
+              mr: 'कृपया ईमेल आणि पासवर्ड दोन्ही प्रविष्ट करा.',
+              hi: 'कृपया ईमेल और पासवर्ड दोनों दर्ज करें।',
+            ),
+          ),
+          backgroundColor: const Color(0xFFDC2626),
         ),
       );
       return;
@@ -62,9 +73,19 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
       if (mounted) {
         setState(() => _loading = false);
         final rawMsg = e.toString().replaceFirst('Exception: ', '');
+        final prefix = AppTranslations.pick(
+          lang,
+          en: 'Sign in failed: ',
+          mr: 'लॉगिन अयशस्वी: ',
+          hi: 'साइन इन विफल: ',
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sign in failed: $rawMsg'),
+            content: AppTranslatedText(
+              '$prefix$rawMsg',
+              targetLanguage: lang,
+              style: const TextStyle(color: Colors.white),
+            ),
             backgroundColor: const Color(0xFFDC2626),
           ),
         );
@@ -90,10 +111,21 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
+        final lang = ref.read(appLanguageProvider);
         final rawMsg = e.toString().replaceFirst('Exception: ', '');
+        final prefix = AppTranslations.pick(
+          lang,
+          en: 'Demo sign-in failed: ',
+          mr: 'डेमो लॉगिन अयशस्वी: ',
+          hi: 'डेमो साइन इन विफल: ',
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Demo sign-in failed: $rawMsg'),
+            content: AppTranslatedText(
+              '$prefix$rawMsg',
+              targetLanguage: lang,
+              style: const TextStyle(color: Colors.white),
+            ),
             backgroundColor: const Color(0xFFDC2626),
           ),
         );
@@ -103,6 +135,7 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // #f8fafc matching Login.tsx
       body: Center(
@@ -163,27 +196,10 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
                     child: Stack(
                       children: [
-                        // Language Switch Button (top-6 right-6 matching Login.tsx)
-                        Align(
+                        // 3-Language Switcher (top-right)
+                        const Align(
                           alignment: Alignment.topRight,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.language_rounded, size: 18, color: Color(0xFF64748B)),
-                                SizedBox(width: 6),
-                                Text(
-                                  'English',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF475569),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          child: AppLanguageSegmentedSelector(isCompact: true),
                         ),
 
                         // Form Content (max-w-sm mx-auto w-full mt-14 matching Login.tsx)
@@ -197,9 +213,9 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                                   // Logo + Title Header
                                   const KrishnanitiLogo(size: 60),
                                   const SizedBox(height: 12),
-                                  const Text(
-                                    'Krishnaniti',
-                                    style: TextStyle(
+                                  Text(
+                                    AppTranslations.pick(lang, en: 'Krishnaniti', mr: 'कृष्णनीती', hi: 'कृष्णनीति'),
+                                    style: const TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.w800,
                                       color: Color(0xFF0F172A), // slate-900
@@ -207,9 +223,14 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  const Text(
-                                    'Sign in to access your administrative portal',
-                                    style: TextStyle(
+                                  Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Sign in to access your administrative portal',
+                                      mr: 'तुमच्या प्रशासकीय पोर्टलवर प्रवेश करण्यासाठी साइन इन करा',
+                                      hi: 'अपने प्रशासनिक पोर्टल तक पहुँचने के लिए साइन इन करें',
+                                    ),
+                                    style: const TextStyle(
                                       fontSize: 13,
                                       color: Color(0xFF64748B), // slate-500
                                     ),
@@ -228,10 +249,10 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                                       childAspectRatio: 1.45,
                                       physics: const NeverScrollableScrollPhysics(),
                                       children: [
-                                        _buildRoleButton('nagarsevak', 'Nagarsevak'),
-                                        _buildRoleButton('amdar', 'Amdar'),
-                                        _buildRoleButton('khasdar', 'Khasdar'),
-                                        _buildRoleButton('minister', 'Minister'),
+                                        _buildRoleButton('nagarsevak', AppTranslations.getRoleName('nagarsevak', lang)),
+                                        _buildRoleButton('amdar', AppTranslations.getRoleName('amdar', lang)),
+                                        _buildRoleButton('khasdar', AppTranslations.getRoleName('khasdar', lang)),
+                                        _buildRoleButton('minister', AppTranslations.getRoleName('minister', lang)),
                                       ],
                                     ),
                                     const SizedBox(height: 16),
@@ -241,9 +262,14 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                                       child: ElevatedButton.icon(
                                         onPressed: _loading ? null : () => _signInDemo('nagarsevak'),
                                         icon: const Icon(Icons.flash_on_rounded, size: 18),
-                                        label: const Text(
-                                          'Instant Demo Login (demo_nagarsevak@demo.com)',
-                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                                        label: Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Instant Demo Login (demo_nagarsevak@demo.com)',
+                                            mr: 'त्वरित डेमो लॉगिन (demo_nagarsevak@demo.com)',
+                                            hi: 'तुरंत डेमो लॉगिन (demo_nagarsevak@demo.com)',
+                                          ),
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                                         ),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(0xFF0284C7),
@@ -255,7 +281,7 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                                     ),
                                   ] else ...[
                                     // STEP 2: Login Form (matching Login.tsx lines 240-340)
-                                    _buildLoginForm(),
+                                    _buildLoginForm(lang),
                                   ],
 
                                   const SizedBox(height: 24),
@@ -268,9 +294,14 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                                         top: BorderSide(color: Color(0xFFF1F5F9)), // border-slate-100
                                       ),
                                     ),
-                                    child: const Text(
-                                      'Protected by enterprise-grade security.\nUnauthorized access is strictly prohibited.',
-                                      style: TextStyle(
+                                    child: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Protected by enterprise-grade security.\nUnauthorized access is strictly prohibited.',
+                                        mr: 'उच्च-स्तरीय सुरक्षिततेने संरक्षित.\nअनधिकृत प्रवेश सक्त निषिद्ध आहे.',
+                                        hi: 'एंटरप्राइज़-स्तरीय सुरक्षा द्वारा सुरक्षित।\nअनधिकृत पहुँच सख्ती से वर्जित है।',
+                                      ),
+                                      style: const TextStyle(
                                         fontSize: 11,
                                         color: Color(0xFF94A3B8), // slate-400
                                         height: 1.35,
@@ -333,7 +364,7 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
     );
   }
 
-  Widget _buildLoginForm() {
+  Widget _buildLoginForm(String lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -341,16 +372,21 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
         InkWell(
           onTap: () => setState(() => _activeTab = null),
           borderRadius: BorderRadius.circular(6),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.arrow_back_rounded, size: 16, color: Color(0xFF94A3B8)),
-                SizedBox(width: 6),
+                const Icon(Icons.arrow_back_rounded, size: 16, color: Color(0xFF94A3B8)),
+                const SizedBox(width: 6),
                 Text(
-                  'Back to Role Selection',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Back to Role Selection',
+                    mr: 'भूमिका निवडीकडे परत जा',
+                    hi: 'भूमिका चयन पर वापस जाएँ',
+                  ),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -390,7 +426,7 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          'Nagarsevak',
+                          AppTranslations.getRoleName('nagarsevak', lang),
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -423,7 +459,7 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          'Staff',
+                          AppTranslations.pick(lang, en: 'Staff', mr: 'कर्मचारी', hi: 'स्टाफ'),
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -441,9 +477,9 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
         ],
 
         // Email Label & Input (matching Login.tsx lines 285-305)
-        const Text(
-          'Email / Username',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+        Text(
+          AppTranslations.pick(lang, en: 'Email / Username', mr: 'ईमेल / युझरनेम', hi: 'ईमेल / उपयोगकर्ता नाम'),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
         ),
         const SizedBox(height: 6),
         Container(
@@ -463,11 +499,16 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                 child: TextField(
                   controller: _emailController,
                   style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
-                    hintText: 'Enter email or username',
-                    hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Enter email or username',
+                      mr: 'ईमेल किंवा युझरनेम प्रविष्ट करा',
+                      hi: 'ईमेल या उपयोगकर्ता नाम दर्ज करें',
+                    ),
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                   ),
                 ),
               ),
@@ -478,9 +519,9 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
         const SizedBox(height: 12),
 
         // Password Label & Input (matching Login.tsx lines 310-335)
-        const Text(
-          'Password',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+        Text(
+          AppTranslations.pick(lang, en: 'Password', mr: 'पासवर्ड', hi: 'पासवर्ड'),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
         ),
         const SizedBox(height: 6),
         Container(
@@ -501,11 +542,16 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                   controller: _passwordController,
                   obscureText: !_showPassword,
                   style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
-                    hintText: 'Enter password',
-                    hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Enter password',
+                      mr: 'पासवर्ड प्रविष्ट करा',
+                      hi: 'पासवर्ड दर्ज करें',
+                    ),
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                   ),
                 ),
               ),
@@ -542,15 +588,15 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Row(
+                : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Sign In',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                        AppTranslations.pick(lang, en: 'Sign In', mr: 'लॉगिन करा', hi: 'साइन इन करें'),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                       ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 16),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 16),
                     ],
                   ),
           ),
@@ -562,9 +608,14 @@ class _DesktopLoginScreenState extends ConsumerState<DesktopLoginScreen> {
           child: TextButton.icon(
             onPressed: _loading ? null : () => _signInDemo(_activeTab ?? 'nagarsevak'),
             icon: const Icon(Icons.flash_on_rounded, size: 16, color: Color(0xFF0284C7)),
-            label: const Text(
-              'One-Click Demo Access (Skip Server)',
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+            label: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'One-Click Demo Access (Skip Server)',
+                mr: 'एक-क्लिक डेमो प्रवेश (सर्व्हर वगळून)',
+                hi: 'एक-क्लिक डेमो एक्सेस (सर्वर छोड़कर)',
+              ),
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
             ),
           ),
         ),

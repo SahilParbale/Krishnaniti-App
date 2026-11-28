@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_translations.dart';
 
 /// Supported Gallery Categories matching Nagarsevak-Managment
 enum GalleryCategory {
@@ -48,6 +49,22 @@ extension GalleryCategoryX on GalleryCategory {
         return 'Campaigns';
     }
   }
+
+  String get titleHi {
+    switch (this) {
+      case GalleryCategory.event:
+        return 'कार्यक्रम';
+      case GalleryCategory.work:
+        return 'विकास कार्य';
+      case GalleryCategory.award:
+        return 'पुरस्कार';
+      case GalleryCategory.campaign:
+        return 'अभियान / जनसंपर्क';
+    }
+  }
+
+  String title(String lang) =>
+      lang == 'mr' ? titleMr : (lang == 'hi' ? titleHi : titleEn);
 
   IconData get icon {
     switch (this) {
@@ -112,6 +129,12 @@ class GalleryItemModel {
 
   String get formattedDateFull => DateFormat('d MMMM yyyy').format(date);
 
+  String formattedDateFor(String lang) =>
+      AppTranslations.formatDate(date, lang, pattern: 'dd/MM/yyyy');
+
+  String formattedDateFullFor(String lang) =>
+      AppTranslations.formatDate(date, lang, pattern: 'd MMMM yyyy');
+
   String get relativeTime {
     final diff = DateTime.now().difference(date);
     if (diff.inDays == 0) return 'आज';
@@ -120,6 +143,44 @@ class GalleryItemModel {
     if (diff.inDays < 30) return '${(diff.inDays / 7).round()} आठवड्यांपूर्वी';
     if (diff.inDays < 365) return '${(diff.inDays / 30).round()} महिन्यांपूर्वी';
     return '${date.year}';
+  }
+
+  String relativeTimeFor(String lang) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays == 0) {
+      return AppTranslations.pick(lang, en: 'Today', mr: 'आज', hi: 'आज');
+    }
+    if (diff.inDays == 1) {
+      return AppTranslations.pick(lang, en: 'Yesterday', mr: 'काल', hi: 'कल');
+    }
+    if (diff.inDays < 7) {
+      final d = AppTranslations.formatDigits(diff.inDays, lang);
+      return AppTranslations.pick(
+        lang,
+        en: '$d days ago',
+        mr: '$d दिवसांपूर्वी',
+        hi: '$d दिन पहले',
+      );
+    }
+    if (diff.inDays < 30) {
+      final w = AppTranslations.formatDigits((diff.inDays / 7).round(), lang);
+      return AppTranslations.pick(
+        lang,
+        en: '$w weeks ago',
+        mr: '$w आठवड्यांपूर्वी',
+        hi: '$w सप्ताह पहले',
+      );
+    }
+    if (diff.inDays < 365) {
+      final m = AppTranslations.formatDigits((diff.inDays / 30).round(), lang);
+      return AppTranslations.pick(
+        lang,
+        en: '$m months ago',
+        mr: '$m महिन्यांपूर्वी',
+        hi: '$m महीने पहले',
+      );
+    }
+    return AppTranslations.formatDigits(date.year, lang);
   }
 
   GalleryItemModel copyWith({

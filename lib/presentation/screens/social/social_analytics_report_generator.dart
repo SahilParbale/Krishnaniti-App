@@ -1,22 +1,113 @@
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/social_post_model.dart';
 import '../../../data/repositories/social_analytics_repository.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pdf_report_theme.dart';
+import '../../widgets/app_report_preview_modal.dart';
 
 class SocialAnalyticsReportGenerator {
   SocialAnalyticsReportGenerator._();
 
+  static final RegExp _emojiRegex = RegExp(
+    r'[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]',
+    unicode: true,
+  );
+
   static Future<void> generateAndPrintReport({
+    BuildContext? context,
     required List<SocialPostModel> posts,
     required SocialAnalyticsSummary summary,
     required List<VoterBirthdayModel> birthdays,
     String? platformFilter,
+    String? lang,
   }) async {
-    final pdf = pw.Document();
-    final nowStr = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+    final activeLang =
+        (lang != null && lang.isNotEmpty) ? lang : appLanguageValueNotifier.value;
+    final pdf = await WebReportTheme.createDocument(lang: activeLang);
+    final nowStr = PdfTranslationHelper.formatDateTime(DateTime.now(), activeLang);
+
+    final toTranslate = <String>[];
+    final namesToTransliterate = <String>[];
+
+    for (final p in posts) {
+      if (_knownPlatform(p.platform, activeLang) == null &&
+          p.platform.trim().isNotEmpty) {
+        toTranslate.add(p.platform);
+      }
+      if (!_hasDirectMarathi(p.contentMarathi, activeLang)) {
+        final rawContent =
+            p.content.trim().isNotEmpty ? p.content : p.contentMarathi;
+        final cleaned = _sanitizeForPdf(rawContent);
+        if (cleaned.isNotEmpty) toTranslate.add(cleaned);
+      }
+    }
+
+    for (final b in birthdays) {
+      if (!_hasDirectMarathi(b.nameMarathi, activeLang)) {
+        final rawName = b.displayName.trim();
+        if (rawName.isNotEmpty) namesToTransliterate.add(rawName);
+      }
+      if (b.area.trim().isNotEmpty) toTranslate.add(b.area);
+    }
+
+    if (platformFilter != null &&
+        platformFilter.trim().isNotEmpty &&
+        platformFilter.trim().toLowerCase() != 'all' &&
+        _knownPlatform(platformFilter, activeLang) == null) {
+      toTranslate.add(platformFilter);
+    }
+
+    final results = await Future.wait([
+      PdfTranslationHelper.batchText(toTranslate, activeLang),
+      PdfTranslationHelper.batchNames(namesToTransliterate, activeLang),
+    ]);
+    final textCache = results[0];
+    final nameCache = results[1];
+
+    final reportTitle = AppTranslations.pick(
+      activeLang,
+      en: 'Social Media Analytics',
+      mr: 'सोशल मीडिया विश्लेषण',
+      hi: 'सोशल मीडिया विश्लेषण',
+    );
+    final reportSubtitle = AppTranslations.pick(
+      activeLang,
+      en: 'Social Media Reach & Voter Engagement Audit Report',
+      mr: 'सोशल मीडिया पोहोच व मतदार प्रतिसाद विश्लेषण अहवाल',
+      hi: 'सोशल मीडिया पहुंच एवं मतदाता सहभागिता ऑडिट रिपोर्ट',
+    );
+    final foundLabel = AppTranslations.pick(
+      activeLang,
+      en: 'Posts',
+      mr: 'एकूण पोस्ट',
+      hi: 'कुल पोस्ट',
+    );
+
+    final hasPlatformFilter = platformFilter != null &&
+        platformFilter.trim().isNotEmpty &&
+        platformFilter.trim().toLowerCase() != 'all';
+    final metaLines = <String>[];
+    if (hasPlatformFilter) {
+      final datePrefix =
+          AppTranslations.pick(activeLang, en: 'Date:', mr: 'दिनांक:', hi: 'दिनांक:');
+      final platformPrefix = AppTranslations.pick(
+        activeLang,
+        en: 'Platform:',
+        mr: 'माध्यम:',
+        hi: 'प्लेटफ़ॉर्म:',
+      );
+      final resolvedPlatform = _knownPlatform(platformFilter, activeLang) ??
+          PdfTranslationHelper.resolve(textCache, platformFilter, activeLang);
+      metaLines.add('$datePrefix $nowStr');
+      metaLines.add('$platformPrefix $resolvedPlatform');
+      metaLines.add('$foundLabel: ${PdfTranslationHelper.formatNumber(posts.length, activeLang)}');
+    }
 
     pdf.addPage(
       pw.MultiPage(
@@ -26,18 +117,22 @@ class SocialAnalyticsReportGenerator {
           if (context.pageNumber == 1) return pw.SizedBox.shrink();
           return WebReportTheme.buildContinuationHeader(
             context,
-            title: 'Social Media Analytics (Continued)',
+            title: reportTitle,
+            lang: activeLang,
           );
         },
-        footer: (pw.Context context) => WebReportTheme.buildFooter(context),
+        footer: (pw.Context context) =>
+            WebReportTheme.buildFooter(context, lang: activeLang),
         build: (pw.Context context) {
           return [
             WebReportTheme.buildHeader(
-              title: 'Social Media Analytics',
-              subtitle: 'Social Media Reach & Voter Engagement Audit Report',
-              dateFormatted: nowStr,
-              totalCount: posts.length,
-              foundLabel: 'Posts',
+              title: reportTitle,
+              subtitle: reportSubtitle,
+              dateFormatted: metaLines.isEmpty ? nowStr : null,
+              totalCount: metaLines.isEmpty ? posts.length : null,
+              foundLabel: foundLabel,
+              metaLines: metaLines.isNotEmpty ? metaLines : null,
+              lang: activeLang,
             ),
             pw.SizedBox(height: 12),
 
@@ -51,10 +146,25 @@ class SocialAnalyticsReportGenerator {
               ),
               child: pw.Row(
                 children: [
-                  _buildSummaryItem('Total Reach', summary.totalReach.toLocaleString()),
-                  _buildSummaryItem('Total Likes', summary.totalLikes.toLocaleString(), highlightColor: PdfColors.pink700),
-                  _buildSummaryItem('Comments', summary.totalComments.toLocaleString(), highlightColor: WebReportTheme.brand700),
-                  _buildSummaryItem('Shares', summary.totalShares.toLocaleString(), highlightColor: PdfColors.green700),
+                  _buildSummaryItem(
+                    AppTranslations.pick(activeLang, en: 'Total Reach', mr: 'एकूण पोहोच (Reach)', hi: 'कुल पहुंच (Reach)'),
+                    PdfTranslationHelper.formatNumber(summary.totalReach.toLocaleString(), activeLang),
+                  ),
+                  _buildSummaryItem(
+                    AppTranslations.pick(activeLang, en: 'Total Likes', mr: 'एकूण लाईक्स', hi: 'कुल लाइक्स'),
+                    PdfTranslationHelper.formatNumber(summary.totalLikes.toLocaleString(), activeLang),
+                    highlightColor: PdfColors.pink700,
+                  ),
+                  _buildSummaryItem(
+                    AppTranslations.pick(activeLang, en: 'Comments', mr: 'प्रतिक्रिया (Comments)', hi: 'टिप्पणियां (Comments)'),
+                    PdfTranslationHelper.formatNumber(summary.totalComments.toLocaleString(), activeLang),
+                    highlightColor: WebReportTheme.brand700,
+                  ),
+                  _buildSummaryItem(
+                    AppTranslations.pick(activeLang, en: 'Shares', mr: 'शेअर्स', hi: 'शेयर'),
+                    PdfTranslationHelper.formatNumber(summary.totalShares.toLocaleString(), activeLang),
+                    highlightColor: PdfColors.green700,
+                  ),
                 ],
               ),
             ),
@@ -65,7 +175,12 @@ class SocialAnalyticsReportGenerator {
                 alignment: pw.Alignment.center,
                 padding: const pw.EdgeInsets.all(40),
                 child: pw.Text(
-                  'No social media post records found.',
+                  AppTranslations.pick(
+                    activeLang,
+                    en: 'No social media post records found.',
+                    mr: 'कोणत्याही सोशल मीडिया पोस्टची नोंद आढळली नाही.',
+                    hi: 'कोई सोशल मीडिया पोस्ट रिकॉर्ड नहीं मिला।',
+                  ),
                   style: const pw.TextStyle(fontSize: 11, color: WebReportTheme.slate500),
                 ),
               )
@@ -87,38 +202,189 @@ class SocialAnalyticsReportGenerator {
                   4: pw.FlexColumnWidth(1.6),
                   5: pw.FlexColumnWidth(1.6),
                 },
-                headers: const [
+                headers: [
                   '#',
-                  'Date',
-                  'Platform',
-                  'Post Content & Updates',
-                  'Reach',
-                  'Eng. %',
+                  AppTranslations.getReportColumn('date', activeLang),
+                  AppTranslations.pick(activeLang, en: 'Platform', mr: 'माध्यम', hi: 'प्लेटफ़ॉर्म'),
+                  AppTranslations.pick(activeLang, en: 'Post Content & Updates', mr: 'पोस्ट मजकूर व माहिती', hi: 'पोस्ट सामग्री एवं अपडेट'),
+                  AppTranslations.pick(activeLang, en: 'Reach', mr: 'पोहोच', hi: 'पहुंच'),
+                  AppTranslations.pick(activeLang, en: 'Eng. %', mr: 'प्रतिसाद %', hi: 'सहभागिता %'),
                 ],
                 data: posts.asMap().entries.map((entry) {
                   final idx = entry.key + 1;
                   final p = entry.value;
 
-                  return [
-                    '$idx',
-                    p.date,
-                    p.platform.toUpperCase(),
-                    p.content,
+                  final dateStr =
+                      PdfTranslationHelper.parseAndFormatDateString(p.date, activeLang);
+                  final platformStr = _knownPlatform(p.platform, activeLang) ??
+                      PdfTranslationHelper.resolve(textCache, p.platform, activeLang);
+
+                  final contentStr = _hasDirectMarathi(p.contentMarathi, activeLang)
+                      ? AppTranslations.formatDigits(
+                          _sanitizeForPdf(p.contentMarathi),
+                          activeLang,
+                        )
+                      : PdfTranslationHelper.resolve(
+                          textCache,
+                          _sanitizeForPdf(
+                            p.content.trim().isNotEmpty ? p.content : p.contentMarathi,
+                          ),
+                          activeLang,
+                        );
+
+                  final reachStr = PdfTranslationHelper.formatNumber(
                     p.reach.toLocaleString(),
-                    '${p.engagementRate.toStringAsFixed(1)}%',
+                    activeLang,
+                  );
+                  final engStr =
+                      '${PdfTranslationHelper.formatNumber(p.engagementRate.toStringAsFixed(1), activeLang)}%';
+
+                  return [
+                    PdfTranslationHelper.formatNumber(idx, activeLang),
+                    dateStr,
+                    platformStr,
+                    contentStr,
+                    reachStr,
+                    engStr,
                   ];
                 }).toList(),
                 oddRowDecoration: WebReportTheme.oddRowDecoration,
               ),
+
+            if (birthdays.isNotEmpty) ...[
+              pw.SizedBox(height: 16),
+              pw.Text(
+                AppTranslations.pick(
+                  activeLang,
+                  en: 'UPCOMING VOTER BIRTHDAYS',
+                  mr: 'आगामी मतदार वाढदिवस सूची',
+                  hi: 'आगामी मतदाता जन्मदिन सूची',
+                ),
+                style: pw.TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: pw.FontWeight.bold,
+                  color: WebReportTheme.brand700,
+                ),
+              ),
+              pw.SizedBox(height: 6),
+              pw.TableHelper.fromTextArray(
+                border: WebReportTheme.tableBorder,
+                headerCount: 1,
+                headerStyle: WebReportTheme.tableHeaderStyle,
+                headerDecoration: WebReportTheme.tableHeaderDecoration,
+                headerHeight: 22,
+                cellHeight: 20,
+                cellAlignment: pw.Alignment.centerLeft,
+                cellStyle: WebReportTheme.tableCellStyle,
+                columnWidths: const {
+                  0: pw.FixedColumnWidth(24),
+                  1: pw.FlexColumnWidth(2.6),
+                  2: pw.FlexColumnWidth(1.8),
+                  3: pw.FlexColumnWidth(2.4),
+                  4: pw.FlexColumnWidth(1.8),
+                },
+                headers: [
+                  '#',
+                  AppTranslations.getReportColumn('name', activeLang),
+                  AppTranslations.getReportColumn('mobile', activeLang),
+                  AppTranslations.getReportColumn('area', activeLang),
+                  AppTranslations.pick(activeLang, en: 'Booth / Age', mr: 'बूथ / वय', hi: 'बूथ / आयु'),
+                ],
+                data: birthdays.asMap().entries.map((entry) {
+                  final idx = entry.key + 1;
+                  final b = entry.value;
+                  final voterName = _hasDirectMarathi(b.nameMarathi, activeLang)
+                      ? AppTranslations.formatDigits(b.nameMarathi.trim(), activeLang)
+                      : PdfTranslationHelper.resolveName(
+                          nameCache,
+                          b.displayName,
+                          activeLang,
+                        );
+                  final mobileStr = b.mobile.trim().isNotEmpty
+                      ? PdfTranslationHelper.formatNumber(b.mobile.trim(), activeLang)
+                      : '-';
+                  final areaStr = _resolveArea(b.area, textCache, activeLang);
+                  final boothPrefix =
+                      AppTranslations.pick(activeLang, en: 'Booth', mr: 'बूथ', hi: 'बूथ');
+                  final ageSuffix =
+                      AppTranslations.pick(activeLang, en: 'yrs', mr: 'वर्षे', hi: 'वर्ष');
+                  final boothAge =
+                      '$boothPrefix ${PdfTranslationHelper.formatNumber(b.boothNumber, activeLang)} • ${PdfTranslationHelper.formatNumber(b.age, activeLang)} $ageSuffix';
+
+                  return [
+                    PdfTranslationHelper.formatNumber(idx, activeLang),
+                    voterName,
+                    mobileStr,
+                    areaStr,
+                    boothAge,
+                  ];
+                }).toList(),
+                oddRowDecoration: WebReportTheme.oddRowDecoration,
+              ),
+            ],
           ];
         },
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Social_Analytics_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
-    );
+    final fileName = 'Social_Analytics_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    if (context != null) {
+      if (!context.mounted) return;
+      await AppReportPreviewModal.show(
+        context: context,
+        title: reportTitle,
+        subtitle: reportSubtitle,
+        fileName: fileName,
+        onBuildPdf: () async => pdf.save(),
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: '$fileName.pdf',
+      );
+    }
+  }
+
+  static bool _hasDirectMarathi(String? text, String lang) {
+    if (lang != 'mr' || text == null || text.trim().isEmpty) return false;
+    return DynamicTranslationService.containsDevanagari(text.trim());
+  }
+
+  static String _sanitizeForPdf(String raw) {
+    return raw.replaceAll(_emojiRegex, '').replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  static String? _knownPlatform(String raw, String lang) {
+    switch (raw.trim().toLowerCase()) {
+      case 'facebook':
+        return AppTranslations.pick(lang, en: 'Facebook', mr: 'फेसबुक', hi: 'फेसबुक');
+      case 'instagram':
+        return AppTranslations.pick(lang, en: 'Instagram', mr: 'इन्स्टाग्राम', hi: 'इंस्टाग्राम');
+      case 'twitter':
+      case 'x':
+        return AppTranslations.pick(lang, en: 'Twitter (X)', mr: 'ट्विटर (X)', hi: 'ट्विटर (X)');
+      case 'youtube':
+        return AppTranslations.pick(lang, en: 'YouTube', mr: 'यूट्यूब', hi: 'यूट्यूब');
+      case 'whatsapp':
+        return AppTranslations.pick(lang, en: 'WhatsApp', mr: 'व्हॉट्सॲप', hi: 'व्हाट्सएप');
+      default:
+        return null;
+    }
+  }
+
+  static String _resolveArea(
+    String raw,
+    Map<String, String> cache,
+    String lang,
+  ) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return '-';
+    final dictArea = AppTranslations.getAreaName(trimmed, lang);
+    if (AppTranslations.normalizeAsciiDigits(dictArea) !=
+        AppTranslations.normalizeAsciiDigits(trimmed)) {
+      return dictArea;
+    }
+    return PdfTranslationHelper.resolve(cache, trimmed, lang);
   }
 
   static pw.Widget _buildSummaryItem(String label, String value, {PdfColor? highlightColor}) {

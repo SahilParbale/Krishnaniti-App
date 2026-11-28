@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/social_organization_model.dart';
 import '../../../data/repositories/social_organization_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_load_more_footer.dart';
@@ -54,6 +56,82 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
     super.dispose();
   }
 
+  String _pickOrgName(SocialOrganizationModel org, String lang) {
+    if (lang == 'en') {
+      if (org.nameEnglish != null && org.nameEnglish!.trim().isNotEmpty) {
+        return org.nameEnglish!.trim();
+      }
+      return org.name.trim();
+    }
+    if (org.nameMarathi != null && org.nameMarathi!.trim().isNotEmpty) {
+      return org.nameMarathi!.trim();
+    }
+    if (org.nameEnglish != null && org.nameEnglish!.trim().isNotEmpty) {
+      return org.nameEnglish!.trim();
+    }
+    return org.name.trim();
+  }
+
+  String _pickOrgTypeLabel(String type, String lang) {
+    switch (type) {
+      case 'ngo':
+        return AppTranslations.pick(
+          lang,
+          en: 'NGO / Social Foundation',
+          mr: 'एन.जी.ओ / सामाजिक संस्था',
+          hi: 'एनजीओ / सामाजिक संस्था',
+        );
+      case 'sports_cricket':
+        return AppTranslations.pick(
+          lang,
+          en: 'Cricket & Sports Club',
+          mr: 'क्रीडा व क्रिकेट क्लब',
+          hi: 'क्रिकेट एवं स्पोर्ट्स क्लब',
+        );
+      case 'ganpati_mandal':
+        return AppTranslations.pick(
+          lang,
+          en: 'Ganpati Mandal',
+          mr: 'गणपती मंडळ',
+          hi: 'गणपति मंडल',
+        );
+      case 'navratri_mandal':
+        return AppTranslations.pick(
+          lang,
+          en: 'Navratri Mandal',
+          mr: 'नवरात्रौत्सव मंडळ',
+          hi: 'नवरात्रोत्सव मंडल',
+        );
+      default:
+        return AppTranslations.pick(
+          lang,
+          en: 'Other Organization',
+          mr: 'इतर संस्था व मंडळ',
+          hi: 'अन्य संगठन एवं मंडल',
+        );
+    }
+  }
+
+  String _pickEventTitle(SocialOrgEventModel evt, String lang) {
+    if (lang == 'en') {
+      return evt.title.trim().isNotEmpty ? evt.title.trim() : (evt.titleMr?.trim() ?? '');
+    }
+    return (evt.titleMr != null && evt.titleMr!.trim().isNotEmpty)
+        ? evt.titleMr!.trim()
+        : evt.title.trim();
+  }
+
+  String _pickEventDescription(SocialOrgEventModel evt, String lang) {
+    if (lang == 'en') {
+      return evt.description.trim().isNotEmpty
+          ? evt.description.trim()
+          : (evt.descriptionMr?.trim() ?? '');
+    }
+    return (evt.descriptionMr != null && evt.descriptionMr!.trim().isNotEmpty)
+        ? evt.descriptionMr!.trim()
+        : evt.description.trim();
+  }
+
   Future<void> _loadOrganizations() async {
     setState(() => _isLoading = true);
     final repo = ref.read(socialOrgRepoProvider);
@@ -61,7 +139,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
     final orgs = await repo.getOrganizations(
       type: _selectedType == 'all' ? null : _selectedType,
       status: _selectedStatus == 'all' ? null : _selectedStatus,
-      query: _searchController.text.trim(),
+      query: AppTranslations.normalizeAsciiDigits(_searchController.text.trim()),
     );
 
     final stats = await repo.getOrganizationStats();
@@ -77,7 +155,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
 
   Future<void> _makePhoneCall(String phone) async {
     if (phone.isEmpty) return;
-    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final clean = AppTranslations.normalizeAsciiDigits(phone).replaceAll(RegExp(r'[^0-9+]'), '');
     final uri = Uri.parse('tel:$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -86,7 +164,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
 
   Future<void> _openWhatsApp(String phone) async {
     if (phone.isEmpty) return;
-    final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    var clean = AppTranslations.normalizeAsciiDigits(phone).replaceAll(RegExp(r'[^0-9]'), '');
+    if (clean.length == 10) clean = '91$clean';
     final uri = Uri.parse('https://wa.me/$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -94,9 +173,21 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
   }
 
   void _copyToClipboard(String text) {
-    Clipboard.setData(ClipboardData(text: text));
+    final lang = ref.read(appLanguageProvider);
+    final clean = AppTranslations.normalizeAsciiDigits(text);
+    Clipboard.setData(ClipboardData(text: clean));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mobile number copied!'), duration: Duration(seconds: 2)),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Mobile number copied!',
+            mr: 'मोबाईल क्रमांक कॉपी केला!',
+            hi: 'मोबाइल नंबर कॉपी किया गया!',
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
@@ -144,7 +235,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
   // ADD / EDIT ORGANIZATION MODAL
   // ===========================================================================
   void _showOrgForm({SocialOrganizationModel? orgToEdit}) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameEnCtrl = TextEditingController(text: orgToEdit?.nameEnglish ?? orgToEdit?.name ?? '');
     final nameMrCtrl = TextEditingController(text: orgToEdit?.nameMarathi ?? orgToEdit?.name ?? '');
     String type = orgToEdit?.type ?? 'ngo';
@@ -211,11 +302,24 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               AppModalHeader(
                 icon: Icons.apartment_rounded,
                 title: orgToEdit == null
-                    ? (isMr ? 'नवीन संस्था / मंडळ नोंदवा' : 'Log New Organization / Mandal')
-                    : (isMr ? 'संस्थेची माहिती सुधारा' : 'Edit Organization Info'),
-                subtitle: isMr
-                    ? 'प्रभागातील गणेश मंडळे, क्रीडा क्लब व एनजीओ नोंदवा'
-                    : 'Register mandals, sports clubs and social NGOs',
+                    ? AppTranslations.pick(
+                        lang,
+                        en: 'Log New Organization / Mandal',
+                        mr: 'नवीन संस्था / मंडळ नोंदवा',
+                        hi: 'नया संगठन / मंडल दर्ज करें',
+                      )
+                    : AppTranslations.pick(
+                        lang,
+                        en: 'Edit Organization Info',
+                        mr: 'संस्थेची माहिती सुधारा',
+                        hi: 'संगठन जानकारी संपादित करें',
+                      ),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Register mandals, sports clubs and social NGOs',
+                  mr: 'प्रभागातील गणेश मंडळे, क्रीडा क्लब व एनजीओ नोंदवा',
+                  hi: 'वार्ड में मंडल, खेल क्लब और सामाजिक एनजीओ दर्ज करें',
+                ),
                 onClose: () => Navigator.pop(ctx),
               ),
 
@@ -231,529 +335,790 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   children: [
                     // Row 1: Name English & Name Marathi
                     Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'संस्थेचे नाव (इंग्रजी)' : 'Organization Name (English)'),
-                                TextField(
-                                  controller: nameEnCtrl,
-                                  decoration: inputDec(hint: 'e.g. Shivtej Sports Club'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Organization Name (English)',
+                                  mr: 'संस्थेचे नाव (इंग्रजी)',
+                                  hi: 'संगठन का नाम (अंग्रेजी)',
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'संस्थेचे नाव (मराठी)' : 'Organization Name (Marathi)', isRequired: true),
-                                TextField(
-                                  controller: nameMrCtrl,
-                                  decoration: inputDec(hint: 'उदा. शिवतेज क्रीडा मंडळ'),
+                              ),
+                              TextField(
+                                controller: nameEnCtrl,
+                                decoration: inputDec(
+                                  hint: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Shivtej Sports Club',
+                                    mr: 'उदा. Shivtej Sports Club',
+                                    hi: 'उदा. Shivtej Sports Club',
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Organization Name (Marathi)',
+                                  mr: 'संस्थेचे नाव (मराठी)',
+                                  hi: 'संगठन का नाम (मराठी)',
+                                ),
+                                isRequired: true,
+                              ),
+                              TextField(
+                                controller: nameMrCtrl,
+                                decoration: inputDec(
+                                  hint: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. शिवतेज क्रीडा मंडळ',
+                                    mr: 'उदा. शिवतेज क्रीडा मंडळ',
+                                    hi: 'उदा. शिवतेज खेल मंडल',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
 
-                      // Row 2: Organization Type & Area
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AppDropdownFormField<String>(
-                                label: isMr ? 'संस्थेचा प्रकार' : 'Organization Type',
+                    // Row 2: Organization Type & Area
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppDropdownFormField<String>(
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Organization Type',
+                                  mr: 'संस्थेचा प्रकार',
+                                  hi: 'संगठन का प्रकार',
+                                ),
                                 isRequired: true,
                                 value: type,
-                                  isExpanded: true,
-                                  items: [
-                                    DropdownMenuItem(value: 'ngo', child: Text(isMr ? 'एन.जी.ओ / सामाजिक संस्था' : 'NGO / Social Foundation', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'sports_cricket', child: Text(isMr ? 'क्रीडा व क्रिकेट क्लब' : 'Cricket & Sports Club', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'ganpati_mandal', child: Text(isMr ? 'सार्वजनिक गणेश उत्सव मंडळ' : 'Ganpati Mandal', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'navratri_mandal', child: Text(isMr ? 'सार्वजनिक नवरात्र उत्सव मंडळ' : 'Navratri Mandal', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'other', child: Text(isMr ? 'इतर संस्था व मंडळ' : 'Other', style: const TextStyle(fontSize: 12.5))),
-                                  ],
-                                  onChanged: (val) {
-                                    if (val != null) setModalState(() => type = val);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'परिसर / प्रभाग क्षेत्र' : 'Area / Ward', isRequired: true),
-                                TextField(
-                                  controller: areaCtrl,
-                                  decoration: inputDec(hint: isMr ? 'उदा. नेहरू चौक' : 'e.g. Nehru Chowk'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Row 3: President / Contact Person & Mobile Number
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'प्रमुख व्यक्ती / अध्यक्ष नाव' : 'President / Contact Person', isRequired: true),
-                                TextField(
-                                  controller: presNameCtrl,
-                                  decoration: inputDec(hint: isMr ? 'उदा. सचिन कदम' : 'e.g. Sachin Kadam'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
-                                TextField(
-                                  controller: presPhoneCtrl,
-                                  keyboardType: TextInputType.phone,
-                                  maxLength: 10,
-                                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                                  decoration: inputDec(prefixText: '+91 ', hint: '98xxxxxxxx'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Row 4: Members Count & Established Year
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'सदस्य संख्या (अंदाजे)' : 'Members Count (Approx)'),
-                                TextField(
-                                  controller: membersCtrl,
-                                  keyboardType: TextInputType.number,
-                                  decoration: inputDec(hint: 'e.g. 50'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                fieldLabel(isMr ? 'स्थापना वर्ष' : 'Established Year'),
-                                TextField(
-                                  controller: estCtrl,
-                                  keyboardType: TextInputType.number,
-                                  decoration: inputDec(hint: 'e.g. 2020'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Support Provided by You (Nagar Sevak Support)
-                      fieldLabel(
-                        isMr
-                            ? 'आपल्या वतीने मिळालेली मदत / प्रायोजकत्व (Nagar Sevak Support History)'
-                            : 'Support Provided by You (Nagar Sevak Support)',
-                      ),
-                      TextField(
-                        controller: supportCtrl,
-                        maxLines: 2,
-                        decoration: inputDec(
-                          hint: isMr
-                              ? 'उदा. क्रिकेट किट वाटप केले किंवा मंडप घालण्यास आर्थिक मदत पुरवली...'
-                              : 'e.g. Funded Ganesh pandal sound system, distributed cricket kits, etc.',
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // General Notes / Description
-                      fieldLabel(isMr ? 'संस्थेची थोडक्यात माहिती / टिपण' : 'General Notes / Description'),
-                      TextField(
-                        controller: descCtrl,
-                        maxLines: 2,
-                        decoration: inputDec(
-                          hint: isMr
-                              ? 'संस्थेचे सामाजिक उद्देश किंवा इतर माहिती...'
-                              : 'A brief description of goals, works or comments...',
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Status Radio Selection
-                      fieldLabel(isMr ? 'संस्थेची स्थिती' : 'Status'),
-                      Row(
-                        children: [
-                          InkWell(
-                            onTap: () => setModalState(() => status = 'Active'),
-                            child: Row(
-                              children: [
-                                Radio<String>(
-                                  value: 'Active',
-                                  groupValue: status,
-                                  activeColor: const Color(0xFF0284C7),
-                                  onChanged: (val) {
-                                    if (val != null) setModalState(() => status = val);
-                                  },
-                                ),
-                                Text(
-                                  isMr ? 'सक्रिय (Active)' : 'Active',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          InkWell(
-                            onTap: () => setModalState(() => status = 'Inactive'),
-                            child: Row(
-                              children: [
-                                Radio<String>(
-                                  value: 'Inactive',
-                                  groupValue: status,
-                                  activeColor: const Color(0xFF0284C7),
-                                  onChanged: (val) {
-                                    if (val != null) setModalState(() => status = val);
-                                  },
-                                ),
-                                Text(
-                                  isMr ? 'निष्क्रिय (Inactive)' : 'Inactive',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Log Major Events & Programs (Events Conducted)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.calendar_month_rounded, size: 16, color: Color(0xFF64748B)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isMr ? 'प्रमुख उपक्रम / उत्सव लॉग करा (Events Conducted)' : 'Log Major Events & Programs',
-                                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            // List of already logged events
-                            if (tempEvents.isNotEmpty) ...[
-                              ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: tempEvents.length,
-                                separatorBuilder: (_, index) => const SizedBox(height: 6),
-                                itemBuilder: (context, idx) {
-                                  final evt = tempEvents[idx];
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                                isExpanded: true,
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'ngo',
+                                    child: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'NGO / Social Foundation',
+                                        mr: 'एन.जी.ओ / सामाजिक संस्था',
+                                        hi: 'एनजीओ / सामाजिक संस्था',
+                                      ),
+                                      style: const TextStyle(fontSize: 12.5),
                                     ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    evt.displayTitle,
-                                                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFFF1F5F9),
-                                                      borderRadius: BorderRadius.circular(4),
-                                                    ),
-                                                    child: Text(
-                                                      '${evt.year}',
-                                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              if (evt.displayDescription.isNotEmpty) ...[
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  evt.displayDescription,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFFEF4444)),
-                                          onPressed: () {
-                                            setModalState(() {
-                                              tempEvents.removeAt(idx);
-                                            });
-                                          },
-                                        ),
-                                      ],
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'sports_cricket',
+                                    child: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Cricket & Sports Club',
+                                        mr: 'क्रीडा व क्रिकेट क्लब',
+                                        hi: 'क्रिकेट एवं स्पोर्ट्स क्लब',
+                                      ),
+                                      style: const TextStyle(fontSize: 12.5),
                                     ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-
-                            // Add Event Input Box
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextField(
-                                          controller: evtTitleEnCtrl,
-                                          style: const TextStyle(fontSize: 12),
-                                          decoration: inputDec(hint: isMr ? 'कार्यक्रमाचे नाव (इंग्रजी)' : 'Event Title (Eng)'),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: TextField(
-                                          controller: evtTitleMrCtrl,
-                                          style: const TextStyle(fontSize: 12),
-                                          decoration: inputDec(hint: isMr ? 'कार्यक्रमाचे नाव (मराठी)' : 'Event Title (Mar)'),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      SizedBox(
-                                        width: 70,
-                                        child: TextField(
-                                          controller: evtYearCtrl,
-                                          keyboardType: TextInputType.number,
-                                          style: const TextStyle(fontSize: 12),
-                                          decoration: inputDec(hint: 'Year'),
-                                        ),
-                                      ),
-                                    ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    controller: evtDescCtrl,
-                                    style: const TextStyle(fontSize: 12),
-                                    decoration: inputDec(hint: isMr ? 'उदा. ५० संघांचा सहभाग, स्थानिक चषक...' : 'Brief description of program...'),
+                                  DropdownMenuItem(
+                                    value: 'ganpati_mandal',
+                                    child: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Ganpati Mandal',
+                                        mr: 'सार्वजनिक गणेश उत्सव मंडळ',
+                                        hi: 'सार्वजनिक गणेश उत्सव मंडल',
+                                      ),
+                                      style: const TextStyle(fontSize: 12.5),
+                                    ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(
-                                        visualDensity: VisualDensity.compact,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  DropdownMenuItem(
+                                    value: 'navratri_mandal',
+                                    child: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Navratri Mandal',
+                                        mr: 'सार्वजनिक नवरात्र उत्सव मंडळ',
+                                        hi: 'सार्वजनिक नवरात्र उत्सव मंडल',
                                       ),
-                                      icon: const Icon(Icons.add_rounded, size: 16),
-                                      label: Text(
-                                        isMr ? 'हा कार्यक्रम जोडा' : 'Add Event',
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(fontSize: 12.5),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'other',
+                                    child: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Other',
+                                        mr: 'इतर संस्था व मंडळ',
+                                        hi: 'अन्य संगठन एवं मंडल',
                                       ),
-                                      onPressed: () {
-                                        final titleEn = evtTitleEnCtrl.text.trim();
-                                        final titleMr = evtTitleMrCtrl.text.trim();
-                                        if (titleEn.isEmpty && titleMr.isEmpty) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text(isMr ? 'कृपया कार्यक्रमाचे नाव टाका' : 'Please enter event title')),
-                                          );
-                                          return;
-                                        }
-                                        final year = int.tryParse(evtYearCtrl.text.trim()) ?? DateTime.now().year;
-                                        final desc = evtDescCtrl.text.trim();
-                                        setModalState(() {
-                                          tempEvents.add(
-                                            SocialOrgEventModel(
-                                              id: 'evt-${DateTime.now().millisecondsSinceEpoch}',
-                                              title: titleEn.isNotEmpty ? titleEn : titleMr,
-                                              titleMr: titleMr.isNotEmpty ? titleMr : titleEn,
-                                              year: year,
-                                              description: desc,
-                                              descriptionMr: desc,
-                                            ),
-                                          );
-                                          evtTitleEnCtrl.clear();
-                                          evtTitleMrCtrl.clear();
-                                          evtDescCtrl.clear();
-                                        });
-                                      },
+                                      style: const TextStyle(fontSize: 12.5),
                                     ),
                                   ),
                                 ],
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => type = val);
+                                },
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Area / Ward',
+                                  mr: 'परिसर / प्रभाग क्षेत्र',
+                                  hi: 'क्षेत्र / वार्ड',
+                                ),
+                                isRequired: true,
+                              ),
+                              TextField(
+                                controller: areaCtrl,
+                                decoration: inputDec(
+                                  hint: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Nehru Chowk',
+                                    mr: 'उदा. नेहरू चौक',
+                                    hi: 'उदा. नेहरू चौक',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Row 3: President / Contact Person & Mobile Number
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'President / Contact Person',
+                                  mr: 'प्रमुख व्यक्ती / अध्यक्ष नाव',
+                                  hi: 'प्रमुख व्यक्ति / अध्यक्ष का नाम',
+                                ),
+                                isRequired: true,
+                              ),
+                              TextField(
+                                controller: presNameCtrl,
+                                decoration: inputDec(
+                                  hint: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Sachin Kadam',
+                                    mr: 'उदा. सचिन कदम',
+                                    hi: 'उदा. सचिन कदम',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Mobile Number',
+                                  mr: 'मोबाईल नंबर',
+                                  hi: 'मोबाइल नंबर',
+                                ),
+                                isRequired: true,
+                              ),
+                              TextField(
+                                controller: presPhoneCtrl,
+                                keyboardType: TextInputType.phone,
+                                maxLength: 10,
+                                buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                                decoration: inputDec(
+                                  prefixText: AppTranslations.formatDigits('+91 ', lang),
+                                  hint: AppTranslations.formatDigits('98xxxxxxxx', lang),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Row 4: Members Count & Established Year
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Members Count (Approx)',
+                                  mr: 'सदस्य संख्या (अंदाजे)',
+                                  hi: 'सदस्य संख्या (अनुमानित)',
+                                ),
+                              ),
+                              TextField(
+                                controller: membersCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: inputDec(
+                                  hint: AppTranslations.pick(lang, en: 'e.g. 50', mr: 'उदा. ५०', hi: 'उदा. ५०'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fieldLabel(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Established Year',
+                                  mr: 'स्थापना वर्ष',
+                                  hi: 'स्थापना वर्ष',
+                                ),
+                              ),
+                              TextField(
+                                controller: estCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: inputDec(
+                                  hint: AppTranslations.pick(lang, en: 'e.g. 2020', mr: 'उदा. २०२०', hi: 'उदा. २०२०'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Support Provided by You (Nagar Sevak Support)
+                    fieldLabel(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Support Provided by You (Nagar Sevak Support)',
+                        mr: 'आपल्या वतीने मिळालेली मदत / प्रायोजकत्व',
+                        hi: 'आपकी ओर से दी गई सहायता / प्रायोजन',
+                      ),
+                    ),
+                    TextField(
+                      controller: supportCtrl,
+                      maxLines: 2,
+                      decoration: inputDec(
+                        hint: AppTranslations.pick(
+                          lang,
+                          en: 'e.g. Funded Ganesh pandal sound system, distributed cricket kits, etc.',
+                          mr: 'उदा. क्रिकेट किट वाटप केले किंवा मंडप घालण्यास आर्थिक मदत पुरवली...',
+                          hi: 'उदा. क्रिकेट किट वितरित की या मंडप के लिए आर्थिक सहायता दी...',
                         ),
                       ),
-                      const SizedBox(height: 20),
+                    ),
+                    const SizedBox(height: 14),
 
-                      // Form Action Buttons: Cancel & Save Details
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 13),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    // General Notes / Description
+                    fieldLabel(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'General Notes / Description',
+                        mr: 'संस्थेची थोडक्यात माहिती / टिपण',
+                        hi: 'संगठन के बारे में संक्षिप्त जानकारी / विवरण',
+                      ),
+                    ),
+                    TextField(
+                      controller: descCtrl,
+                      maxLines: 2,
+                      decoration: inputDec(
+                        hint: AppTranslations.pick(
+                          lang,
+                          en: 'A brief description of goals, works or comments...',
+                          mr: 'संस्थेचे सामाजिक उद्देश किंवा इतर माहिती...',
+                          hi: 'संगठन के सामाजिक उद्देश्य, कार्य या टिप्पणी...',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Status Radio Selection
+                    fieldLabel(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Status',
+                        mr: 'संस्थेची स्थिती',
+                        hi: 'संगठन की स्थिति',
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        InkWell(
+                          onTap: () => setModalState(() => status = 'Active'),
+                          child: Row(
+                            children: [
+                              Radio<String>(
+                                value: 'Active',
+                                groupValue: status,
+                                activeColor: const Color(0xFF0284C7),
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => status = val);
+                                },
                               ),
-                              onPressed: () => Navigator.pop(ctx),
-                              child: Text(
-                                isMr ? 'रद्द करा' : 'Cancel',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Active', mr: 'सक्रिय', hi: 'सक्रिय'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                               ),
-                            ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
-                                if (name.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isMr ? 'कृपया संस्थेचे नाव टाका.' : 'Please enter organization name.')),
-                                  );
-                                  return;
-                                }
+                        ),
+                        const SizedBox(width: 24),
+                        InkWell(
+                          onTap: () => setModalState(() => status = 'Inactive'),
+                          child: Row(
+                            children: [
+                              Radio<String>(
+                                value: 'Inactive',
+                                groupValue: status,
+                                activeColor: const Color(0xFF0284C7),
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => status = val);
+                                },
+                              ),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Inactive', mr: 'निष्क्रिय', hi: 'निष्क्रिय'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
-                                final newOrg = SocialOrganizationModel(
-                                  id: orgToEdit?.id ?? 'org-${DateTime.now().millisecondsSinceEpoch}',
-                                  name: name,
-                                  nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : name,
-                                  nameEnglish: nameEnCtrl.text.trim().isNotEmpty ? nameEnCtrl.text.trim() : name,
-                                  type: type,
-                                  presidentName: presNameCtrl.text.trim(),
-                                  presidentMobile: presPhoneCtrl.text.trim(),
-                                  membersCount: int.tryParse(membersCtrl.text.trim()) ?? 0,
-                                  area: areaCtrl.text.trim(),
-                                  establishedYear: estCtrl.text.trim(),
-                                  supportReceived: supportCtrl.text.trim(),
-                                  eventsConducted: tempEvents,
-                                  description: descCtrl.text.trim(),
-                                  status: status,
-                                  createdAt: orgToEdit?.createdAt ?? DateTime.now(),
-                                );
+                    // Log Major Events & Programs (Events Conducted)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_month_rounded, size: 16, color: Color(0xFF64748B)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Log Major Events & Programs',
+                                    mr: 'प्रमुख उपक्रम / उत्सव नोंदवा',
+                                    hi: 'प्रमुख कार्यक्रम / उत्सव दर्ज करें',
+                                  ),
+                                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
 
-                                final messenger = ScaffoldMessenger.of(context);
-                                final repo = ref.read(socialOrgRepoProvider);
-                                if (orgToEdit == null) {
-                                  await repo.addOrganization(newOrg);
-                                } else {
-                                  await repo.updateOrganization(newOrg);
-                                }
-
-                                if (ctx.mounted) Navigator.pop(ctx);
-                                if (!mounted) return;
-                                _loadOrganizations();
-
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      orgToEdit == null
-                                          ? (isMr ? 'नवीन संस्था नोंदणी यशस्वी झाली!' : 'Organization registered successfully!')
-                                          : (isMr ? 'संस्थेची माहिती अद्यतनित केली!' : 'Details updated successfully!'),
-                                    ),
-                                    backgroundColor: const Color(0xFF16A34A),
+                          // List of already logged events
+                          if (tempEvents.isNotEmpty) ...[
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: tempEvents.length,
+                              separatorBuilder: (_, index) => const SizedBox(height: 6),
+                              itemBuilder: (context, idx) {
+                                final evt = tempEvents[idx];
+                                final evtTitle = _pickEventTitle(evt, lang);
+                                final evtDesc = _pickEventDescription(evt, lang);
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Flexible(
+                                                  child: AppTranslatedText(
+                                                    evtTitle,
+                                                    targetLanguage: lang,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFF1F5F9),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text(
+                                                    AppTranslations.formatDigits(evt.year, lang),
+                                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (evtDesc.isNotEmpty) ...[
+                                              const SizedBox(height: 2),
+                                              AppTranslatedText(
+                                                evtDesc,
+                                                targetLanguage: lang,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFFEF4444)),
+                                        onPressed: () {
+                                          setModalState(() {
+                                            tempEvents.removeAt(idx);
+                                          });
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 );
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 13),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                elevation: 0,
-                              ),
-                              child: Text(
-                                orgToEdit == null
-                                    ? (isMr ? 'माहिती जतन करा' : 'Save Details')
-                                    : (isMr ? 'बदल जतन करा' : 'Save Changes'),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+
+                          // Add Event Input Box
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: evtTitleEnCtrl,
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: inputDec(
+                                          hint: AppTranslations.pick(
+                                            lang,
+                                            en: 'Event Title (Eng)',
+                                            mr: 'कार्यक्रमाचे नाव (इंग्रजी)',
+                                            hi: 'कार्यक्रम का नाम (अंग्रेजी)',
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: evtTitleMrCtrl,
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: inputDec(
+                                          hint: AppTranslations.pick(
+                                            lang,
+                                            en: 'Event Title (Mar)',
+                                            mr: 'कार्यक्रमाचे नाव (मराठी)',
+                                            hi: 'कार्यक्रम का नाम (मराठी)',
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    SizedBox(
+                                      width: 70,
+                                      child: TextField(
+                                        controller: evtYearCtrl,
+                                        keyboardType: TextInputType.number,
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: inputDec(
+                                          hint: AppTranslations.pick(lang, en: 'Year', mr: 'वर्ष', hi: 'वर्ष'),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller: evtDescCtrl,
+                                  style: const TextStyle(fontSize: 12),
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'Brief description of program...',
+                                      mr: 'उदा. ५० संघांचा सहभाग, स्थानिक चषक...',
+                                      hi: 'उदा. ५० टीमों की भागीदारी, स्थानीय टूर्नामेंट...',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    icon: const Icon(Icons.add_rounded, size: 16),
+                                    label: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Add Event',
+                                        mr: 'हा कार्यक्रम जोडा',
+                                        hi: 'कार्यक्रम जोड़ें',
+                                      ),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                    ),
+                                    onPressed: () {
+                                      final titleEn = evtTitleEnCtrl.text.trim();
+                                      final titleMr = evtTitleMrCtrl.text.trim();
+                                      if (titleEn.isEmpty && titleMr.isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              AppTranslations.pick(
+                                                lang,
+                                                en: 'Please enter event title',
+                                                mr: 'कृपया कार्यक्रमाचे नाव टाका',
+                                                hi: 'कृपया कार्यक्रम का नाम दर्ज करें',
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      final year = int.tryParse(AppTranslations.normalizeAsciiDigits(evtYearCtrl.text.trim())) ?? DateTime.now().year;
+                                      final desc = evtDescCtrl.text.trim();
+                                      setModalState(() {
+                                        tempEvents.add(
+                                          SocialOrgEventModel(
+                                            id: 'evt-${DateTime.now().millisecondsSinceEpoch}',
+                                            title: titleEn.isNotEmpty ? titleEn : titleMr,
+                                            titleMr: titleMr.isNotEmpty ? titleMr : titleEn,
+                                            year: year,
+                                            description: desc,
+                                            descriptionMr: desc,
+                                          ),
+                                        );
+                                        evtTitleEnCtrl.clear();
+                                        evtTitleMrCtrl.clear();
+                                        evtDescCtrl.clear();
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Form Action Buttons: Cancel & Save Details
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text(
+                              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final name = nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : nameEnCtrl.text.trim();
+                              if (name.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Please enter organization name.',
+                                        mr: 'कृपया संस्थेचे नाव टाका.',
+                                        hi: 'कृपया संगठन का नाम दर्ज करें।',
+                                      ),
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final newOrg = SocialOrganizationModel(
+                                id: orgToEdit?.id ?? 'org-${DateTime.now().millisecondsSinceEpoch}',
+                                name: name,
+                                nameMarathi: nameMrCtrl.text.trim().isNotEmpty ? nameMrCtrl.text.trim() : name,
+                                nameEnglish: nameEnCtrl.text.trim().isNotEmpty ? nameEnCtrl.text.trim() : name,
+                                type: type,
+                                presidentName: presNameCtrl.text.trim(),
+                                presidentMobile: AppTranslations.normalizeAsciiDigits(presPhoneCtrl.text.trim()),
+                                membersCount: int.tryParse(AppTranslations.normalizeAsciiDigits(membersCtrl.text.trim())) ?? 0,
+                                area: areaCtrl.text.trim(),
+                                establishedYear: AppTranslations.normalizeAsciiDigits(estCtrl.text.trim()),
+                                supportReceived: supportCtrl.text.trim(),
+                                eventsConducted: tempEvents,
+                                description: descCtrl.text.trim(),
+                                status: status,
+                                createdAt: orgToEdit?.createdAt ?? DateTime.now(),
+                              );
+
+                              final messenger = ScaffoldMessenger.of(context);
+                              final repo = ref.read(socialOrgRepoProvider);
+                              if (orgToEdit == null) {
+                                await repo.addOrganization(newOrg);
+                              } else {
+                                await repo.updateOrganization(newOrg);
+                              }
+
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              if (!mounted) return;
+                              _loadOrganizations();
+
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    orgToEdit == null
+                                        ? AppTranslations.pick(
+                                            lang,
+                                            en: 'Organization registered successfully!',
+                                            mr: 'नवीन संस्था नोंदणी यशस्वी झाली!',
+                                            hi: 'संगठन सफलतापूर्वक पंजीकृत हो गया!',
+                                          )
+                                        : AppTranslations.pick(
+                                            lang,
+                                            en: 'Details updated successfully!',
+                                            mr: 'संस्थेची माहिती अद्यतनित केली!',
+                                            hi: 'विवरण सफलतापूर्वक अपडेट किया गया!',
+                                          ),
+                                  ),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              orgToEdit == null
+                                  ? AppTranslations.pick(lang, en: 'Save Details', mr: 'माहिती जतन करा', hi: 'विवरण सहेजें')
+                                  : AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल जतन करा', hi: 'बदलाव सहेजें'),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
   // ===========================================================================
   // DELETE CONFIRMATION DIALOG
   // ===========================================================================
   void _confirmDeleteOrg(SocialOrganizationModel org) {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Organization?'),
-        content: Text('Are you sure you want to delete record for "${org.displayName}"? This action cannot be undone.'),
+        title: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Delete Organization?',
+            mr: 'संस्था हटवायची का?',
+            hi: 'संगठन हटाएं?',
+          ),
+        ),
+        content: AppTranslatedText(
+          _pickOrgName(org, lang),
+          isName: true,
+          targetLanguage: lang,
+          builder: (context, translatedName) => Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Are you sure you want to delete record for "$translatedName"? This action cannot be undone.',
+              mr: 'तुम्ही "$translatedName" ची नोंद हटवू इच्छिता का? ही कृती पूर्ववत करता येणार नाही.',
+              hi: 'क्या आप वाकई "$translatedName" का रिकॉर्ड हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।',
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -763,12 +1128,22 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               _loadOrganizations();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Record deleted successfully!'), backgroundColor: Color(0xFFDC2626)),
+                  SnackBar(
+                    content: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Record deleted successfully!',
+                        mr: 'नोंद यशस्वीरित्या हटवली!',
+                        hi: 'रिकॉर्ड सफलतापूर्वक हटा दिया गया!',
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFFDC2626),
+                  ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white),
-            child: const Text('Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं')),
           ),
         ],
       ),
@@ -777,7 +1152,9 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
 
   @override
   Widget build(BuildContext context) {
-    final isMarathi = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final totalFmt = AppTranslations.formatDigits(_stats['total'] ?? 0, lang);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: const NagarsevakAppDrawer(),
@@ -787,25 +1164,35 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Open Menu Drawer',
+              mr: 'मेनू उघडा',
+              hi: 'मेनू खोलें',
             ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'NGO & Mandals Info',
+              AppTranslations.pick(
+                lang,
+                en: 'NGO & Mandals Info',
+                mr: 'NGO व मंडळ माहिती',
+                hi: 'एनजीओ और मंडल जानकारी',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -813,10 +1200,15 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
               ),
             ),
             Text(
-              'Social organizations, youth mandals and trust directory',
+              AppTranslations.pick(
+                lang,
+                en: 'Social organizations, youth mandals and trust directory',
+                mr: 'सामाजिक संस्था, युवक मंडळे व ट्रस्ट निर्देशिका',
+                hi: 'सामाजिक संगठन, युवा मंडल और ट्रस्ट निर्देशिका',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -824,7 +1216,12 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
             ),
           ],
         ),
-        actions: const [],
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: AppLanguageSegmentedSelector(isCompact: true),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadOrganizations,
@@ -841,8 +1238,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 children: [
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'Total Registered',
-                      value: _stats['total']?.toString() ?? '0',
+                      title: AppTranslations.pick(lang, en: 'Total Registered', mr: 'एकूण नोंदणी', hi: 'कुल पंजीकृत'),
+                      value: AppTranslations.formatDigits(_stats['total'] ?? 0, lang),
                       icon: Icons.layers_rounded,
                       color: const Color(0xFF0284C7),
                       bg: const Color(0xFFF0F9FF),
@@ -851,8 +1248,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'NGOs',
-                      value: _stats['ngos']?.toString() ?? '0',
+                      title: AppTranslations.pick(lang, en: 'NGOs', mr: 'एनजीओ', hi: 'एनजीओ'),
+                      value: AppTranslations.formatDigits(_stats['ngos'] ?? 0, lang),
                       icon: Icons.apartment_rounded,
                       color: const Color(0xFF4338CA),
                       bg: const Color(0xFFEEF2FF),
@@ -861,8 +1258,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'Sports Clubs',
-                      value: _stats['sports']?.toString() ?? '0',
+                      title: AppTranslations.pick(lang, en: 'Sports Clubs', mr: 'क्रीडा क्लब', hi: 'खेल क्लब'),
+                      value: AppTranslations.formatDigits(_stats['sports'] ?? 0, lang),
                       icon: Icons.sports_cricket_rounded,
                       color: const Color(0xFF059669),
                       bg: const Color(0xFFECFDF5),
@@ -871,8 +1268,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildKpiCard(
-                      title: 'Festival Mandals',
-                      value: _stats['mandals']?.toString() ?? '0',
+                      title: AppTranslations.pick(lang, en: 'Festival Mandals', mr: 'उत्सव मंडळे', hi: 'उत्सव मंडल'),
+                      value: AppTranslations.formatDigits(_stats['mandals'] ?? 0, lang),
                       icon: Icons.auto_awesome_rounded,
                       color: const Color(0xFFD97706),
                       bg: const Color(0xFFFFFBEB),
@@ -902,7 +1299,12 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                           _loadOrganizations();
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search by name, president, or area...',
+                          hintText: AppTranslations.pick(
+                            lang,
+                            en: 'Search by name, president, or area...',
+                            mr: 'नाव, अध्यक्ष किंवा परिसरावरून शोधा...',
+                            hi: 'नाम, अध्यक्ष या क्षेत्र से खोजें...',
+                          ),
                           hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                           prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF0284C7)),
                           suffixIcon: _searchController.text.isNotEmpty
@@ -936,22 +1338,24 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         IconButton(
                           icon: Icon(Icons.grid_view_rounded, size: 20, color: _viewMode == 0 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 0),
-                          tooltip: 'Card View',
+                          tooltip: AppTranslations.pick(lang, en: 'Card View', mr: 'कार्ड दृश्य', hi: 'कार्ड दृश्य'),
                         ),
                         IconButton(
                           icon: Icon(Icons.table_rows_rounded, size: 20, color: _viewMode == 1 ? const Color(0xFF0284C7) : const Color(0xFF94A3B8)),
                           onPressed: () => setState(() => _viewMode = 1),
-                          tooltip: 'Table View',
+                          tooltip: AppTranslations.pick(lang, en: 'Table View', mr: 'तक्ता दृश्य', hi: 'तालिका दृश्य'),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 6),
                   AppPdfButton.icon(
-                    tooltip: 'Download Report',
+                    tooltip: AppTranslations.getDownloadReport(lang),
                     onPressed: () {
                       SocialOrgReportGenerator.generateAndPrintReport(
+                        context: context,
                         organizations: _organizations,
+                        lang: lang,
                       );
                     },
                   ),
@@ -967,45 +1371,75 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('All Types (${_stats['total']})', 'all', _selectedType, (val) {
-                      setState(() {
-                        _selectedType = val;
-                        _displayedLimit = 20;
-                      });
-                      _loadOrganizations();
-                    }),
+                    _buildFilterChip(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'All Types ($totalFmt)',
+                        mr: 'सर्व प्रकार ($totalFmt)',
+                        hi: 'सभी प्रकार ($totalFmt)',
+                      ),
+                      'all',
+                      _selectedType,
+                      (val) {
+                        setState(() {
+                          _selectedType = val;
+                          _displayedLimit = 20;
+                        });
+                        _loadOrganizations();
+                      },
+                    ),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Ganesh Mandals', 'ganpati_mandal', _selectedType, (val) {
-                      setState(() {
-                        _selectedType = val;
-                        _displayedLimit = 20;
-                      });
-                      _loadOrganizations();
-                    }),
+                    _buildFilterChip(
+                      AppTranslations.pick(lang, en: 'Ganesh Mandals', mr: 'गणेश मंडळे', hi: 'गणेश मंडल'),
+                      'ganpati_mandal',
+                      _selectedType,
+                      (val) {
+                        setState(() {
+                          _selectedType = val;
+                          _displayedLimit = 20;
+                        });
+                        _loadOrganizations();
+                      },
+                    ),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Navratri Mandals', 'navratri_mandal', _selectedType, (val) {
-                      setState(() {
-                        _selectedType = val;
-                        _displayedLimit = 20;
-                      });
-                      _loadOrganizations();
-                    }),
+                    _buildFilterChip(
+                      AppTranslations.pick(lang, en: 'Navratri Mandals', mr: 'नवरात्र मंडळे', hi: 'नवरात्र मंडल'),
+                      'navratri_mandal',
+                      _selectedType,
+                      (val) {
+                        setState(() {
+                          _selectedType = val;
+                          _displayedLimit = 20;
+                        });
+                        _loadOrganizations();
+                      },
+                    ),
                     const SizedBox(width: 6),
-                    _buildFilterChip('Sports Clubs', 'sports_cricket', _selectedType, (val) {
-                      setState(() {
-                        _selectedType = val;
-                        _displayedLimit = 20;
-                      });
-                      _loadOrganizations();
-                    }),
+                    _buildFilterChip(
+                      AppTranslations.pick(lang, en: 'Sports Clubs', mr: 'क्रीडा क्लब', hi: 'खेल क्लब'),
+                      'sports_cricket',
+                      _selectedType,
+                      (val) {
+                        setState(() {
+                          _selectedType = val;
+                          _displayedLimit = 20;
+                        });
+                        _loadOrganizations();
+                      },
+                    ),
                     const SizedBox(width: 6),
-                    _buildFilterChip('NGOs & Trusts', 'ngo', _selectedType, (val) {
-                      setState(() {
-                        _selectedType = val;
-                        _displayedLimit = 20;
-                      });
-                      _loadOrganizations();
-                    }),
+                    _buildFilterChip(
+                      AppTranslations.pick(lang, en: 'NGOs & Trusts', mr: 'एनजीओ व ट्रस्ट', hi: 'एनजीओ और ट्रस्ट'),
+                      'ngo',
+                      _selectedType,
+                      (val) {
+                        setState(() {
+                          _selectedType = val;
+                          _displayedLimit = 20;
+                        });
+                        _loadOrganizations();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -1030,20 +1464,39 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     children: [
                       const Icon(Icons.apartment_outlined, size: 48, color: Color(0xFF94A3B8)),
                       const SizedBox(height: 12),
-                      const Text(
-                        'No organizations or mandals found.',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'No organizations or mandals found.',
+                          mr: 'कोणत्याही संस्था किंवा मंडळे आढळली नाहीत.',
+                          hi: 'कोई संगठन या मंडल नहीं मिला।',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Use the "+ Add Organization" button above to register.',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Use the "+ Add Organization" button below to register.',
+                          mr: 'नोंदणी करण्यासाठी खालील "+ संस्था जोडा" बटण वापरा.',
+                          hi: 'पंजीकरण के लिए नीचे "+ संगठन जोड़ें" बटन का उपयोग करें।',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: () => _showOrgForm(),
                         icon: const Icon(Icons.add, size: 16),
-                        label: const Text('Register Organization'),
+                        label: Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Register Organization',
+                            mr: 'संस्था नोंदवा',
+                            hi: 'संगठन पंजीकृत करें',
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0284C7),
                           foregroundColor: Colors.white,
@@ -1062,19 +1515,24 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     separatorBuilder: (context, index) => const SizedBox(height: 12),
                     itemBuilder: (ctx, idx) {
                       final org = _visibleOrgs[idx];
-                      return _buildOrgCard(org);
+                      return _buildOrgCard(org, lang);
                     },
                   )
                 else
                   // SPREADSHEET TABLE VIEW
-                  _buildSpreadsheetTable(),
+                  _buildSpreadsheetTable(lang),
                 AppLoadMoreFooter(
                   currentCount: _visibleOrgs.length,
                   totalCount: _organizations.length,
                   pageSize: 20,
                   onLoadMore: () => setState(() => _displayedLimit += 20),
-                  label: isMarathi ? 'संस्था' : 'organizations',
-                  isMarathi: isMarathi,
+                  label: AppTranslations.pick(
+                    lang,
+                    en: 'organizations',
+                    mr: 'संस्था',
+                    hi: 'संगठन',
+                  ),
+                  isMarathi: lang == 'mr',
                 ),
               ],
 
@@ -1087,7 +1545,15 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
         onPressed: () => _showOrgForm(),
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Add Organization', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Add Organization',
+            mr: 'संस्था जोडा',
+            hi: 'संगठन जोड़ें',
+          ),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -1165,9 +1631,13 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
     );
   }
 
-  Widget _buildOrgCard(SocialOrganizationModel org) {
+  Widget _buildOrgCard(SocialOrganizationModel org, String lang) {
     final theme = _getTheme(org.type);
     final isExpanded = _expandedOrgId == org.id;
+    final isActive = org.status == 'Active';
+    final statusLabel = isActive
+        ? AppTranslations.pick(lang, en: 'Active', mr: 'सक्रिय', hi: 'सक्रिय')
+        : AppTranslations.pick(lang, en: 'Inactive', mr: 'निष्क्रिय', hi: 'निष्क्रिय');
 
     return InkWell(
       onTap: () async {
@@ -1214,13 +1684,15 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        org.displayName,
+                      AppTranslatedText(
+                        _pickOrgName(org, lang),
+                        isName: true,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        org.typeLabelMarathi,
+                        _pickOrgTypeLabel(org.type, lang),
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme['color'] as Color),
                       ),
                       const SizedBox(height: 6),
@@ -1233,18 +1705,18 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
-                              color: org.status == 'Active' ? const Color(0xFFECFDF5) : const Color(0xFFF1F5F9),
+                              color: isActive ? const Color(0xFFECFDF5) : const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: org.status == 'Active' ? const Color(0xFFA7F3D0) : const Color(0xFFCBD5E1),
+                                color: isActive ? const Color(0xFFA7F3D0) : const Color(0xFFCBD5E1),
                               ),
                             ),
                             child: Text(
-                              org.status == 'Active' ? 'Active' : 'Inactive',
+                              statusLabel,
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: org.status == 'Active' ? const Color(0xFF047857) : const Color(0xFF64748B),
+                                color: isActive ? const Color(0xFF047857) : const Color(0xFF64748B),
                               ),
                             ),
                           ),
@@ -1255,7 +1727,12 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              '${org.membersCount} Members',
+                              AppTranslations.pick(
+                                lang,
+                                en: '${AppTranslations.formatDigits(org.membersCount, lang)} Members',
+                                mr: '${AppTranslations.formatDigits(org.membersCount, lang)} सदस्य',
+                                hi: '${AppTranslations.formatDigits(org.membersCount, lang)} सदस्य',
+                              ),
                               style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                             ),
                           ),
@@ -1267,7 +1744,12 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                'Est: ${org.establishedYear}',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Est: ${AppTranslations.formatDigits(org.establishedYear, lang)}',
+                                  mr: 'स्थापना: ${AppTranslations.formatDigits(org.establishedYear, lang)}',
+                                  hi: 'स्थापना: ${AppTranslations.formatDigits(org.establishedYear, lang)}',
+                                ),
                                 style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                               ),
                             ),
@@ -1288,23 +1770,26 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     }
                   },
                   itemBuilder: (ctx) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0284C7)),
-                          SizedBox(width: 8),
-                          Text('Edit'),
+                          const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0284C7)),
+                          const SizedBox(width: 8),
+                          Text(AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें')),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Color(0xFFDC2626))),
+                          const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 8),
+                          Text(
+                            AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                            style: const TextStyle(color: Color(0xFFDC2626)),
+                          ),
                         ],
                       ),
                     ),
@@ -1326,11 +1811,18 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                       const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 4),
                       Expanded(
-                        child: Text(
-                          org.presidentName.isNotEmpty ? org.presidentName : '-',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: org.presidentName.isNotEmpty
+                            ? AppTranslatedText(
+                                org.presidentName,
+                                isName: true,
+                                targetLanguage: lang,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            : const Text(
+                                '-',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                              ),
                       ),
                     ],
                   ),
@@ -1341,11 +1833,14 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(color: const Color(0xFFE0F2FE), borderRadius: BorderRadius.circular(6)),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.phone, size: 12, color: Color(0xFF0284C7)),
-                          SizedBox(width: 4),
-                          Text('Call', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                          const Icon(Icons.phone, size: 12, color: Color(0xFF0284C7)),
+                          const SizedBox(width: 4),
+                          Text(
+                            AppTranslations.pick(lang, en: 'Call', mr: 'कॉल', hi: 'कॉल'),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                          ),
                         ],
                       ),
                     ),
@@ -1379,8 +1874,9 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(
-                      org.area,
+                    child: AppTranslatedText(
+                      AppTranslations.getAreaName(org.area, lang),
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1406,8 +1902,9 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                     const Icon(Icons.workspace_premium_rounded, size: 13, color: Color(0xFF7C3AED)),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(
+                      child: AppTranslatedText(
                         org.supportReceived,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 11, color: Color(0xFF5B21B6), fontWeight: FontWeight.w500),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1433,15 +1930,25 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.event_note_rounded, size: 14, color: Color(0xFF0284C7)),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Key Events / Festivals (${org.eventsConducted.length})',
-                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                          ),
-                        ],
+                      Flexible(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.event_note_rounded, size: 14, color: Color(0xFF0284C7)),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Key Events / Festivals (${AppTranslations.formatDigits(org.eventsConducted.length, lang)})',
+                                  mr: 'प्रमुख उपक्रम / उत्सव (${AppTranslations.formatDigits(org.eventsConducted.length, lang)})',
+                                  hi: 'प्रमुख कार्यक्रम / उत्सव (${AppTranslations.formatDigits(org.eventsConducted.length, lang)})',
+                                ),
+                                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       Icon(
                         isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
@@ -1462,6 +1969,8 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: org.eventsConducted.map((evt) {
+                      final evtTitle = _pickEventTitle(evt, lang);
+                      final evtDesc = _pickEventDescription(evt, lang);
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Column(
@@ -1469,21 +1978,28 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  evt.displayTitle,
-                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                Flexible(
+                                  child: AppTranslatedText(
+                                    evtTitle,
+                                    targetLanguage: lang,
+                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                  ),
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                   decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(3)),
-                                  child: Text(evt.year.toString(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                                  child: Text(
+                                    AppTranslations.formatDigits(evt.year, lang),
+                                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                               ],
                             ),
-                            if (evt.displayDescription.isNotEmpty)
-                              Text(
-                                evt.displayDescription,
+                            if (evtDesc.isNotEmpty)
+                              AppTranslatedText(
+                                evtDesc,
+                                targetLanguage: lang,
                                 style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                               ),
                           ],
@@ -1498,16 +2014,21 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
             const SizedBox(height: 10),
 
             // Bottom action
-            const Align(
+            Align(
               alignment: Alignment.centerRight,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'View Detailed Profile',
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                    AppTranslations.pick(
+                      lang,
+                      en: 'View Detailed Profile',
+                      mr: 'सविस्तर माहिती पहा',
+                      hi: 'विस्तृत प्रोफ़ाइल देखें',
+                    ),
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                   ),
-                  Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF0284C7)),
+                  const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF0284C7)),
                 ],
               ),
             ),
@@ -1520,7 +2041,7 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
   // ===========================================================================
   // SPREADSHEET TABLE VIEW
   // ===========================================================================
-  Widget _buildSpreadsheetTable() {
+  Widget _buildSpreadsheetTable(String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1533,30 +2054,36 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
           scrollDirection: Axis.horizontal,
           child: DataTable(
             headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
-            columns: const [
-              DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Organization Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('President', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Mobile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Area / Vicinity', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Members', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Established', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Support History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Activities', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            columns: [
+              DataColumn(label: Text(AppTranslations.pick(lang, en: '#', mr: 'क्र.', hi: 'क्र.'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Organization Name', mr: 'संस्थेचे नाव', hi: 'संगठन का नाम'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Type', mr: 'प्रकार', hi: 'प्रकार'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'President', mr: 'अध्यक्ष', hi: 'अध्यक्ष'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Mobile', mr: 'मोबाईल', hi: 'मोबाइल'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Area / Vicinity', mr: 'परिसर / भाग', hi: 'क्षेत्र / मोहल्ला'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Members', mr: 'सदस्य', hi: 'सदस्य'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Established', mr: 'स्थापना', hi: 'स्थापना'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Support History', mr: 'मदत नोंद', hi: 'सहायता इतिहास'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Activities', mr: 'उपक्रम', hi: 'गतिविधियां'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Action', mr: 'कृती', hi: 'कार्रवाई'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
             rows: List.generate(_visibleOrgs.length, (index) {
               final o = _visibleOrgs[index];
               final theme = _getTheme(o.type);
+              final isActive = o.status == 'Active';
+              final statusLabel = isActive
+                  ? AppTranslations.pick(lang, en: 'Active', mr: 'सक्रिय', hi: 'सक्रिय')
+                  : AppTranslations.pick(lang, en: 'Inactive', mr: 'निष्क्रिय', hi: 'निष्क्रिय');
 
               return DataRow(
                 cells: [
-                  DataCell(Text((index + 1).toString(), style: const TextStyle(fontSize: 11))),
+                  DataCell(Text(AppTranslations.formatDigits(index + 1, lang), style: const TextStyle(fontSize: 11))),
                   DataCell(
-                    Text(
-                      o.displayName,
+                    AppTranslatedText(
+                      _pickOrgName(o, lang),
+                      isName: true,
+                      targetLanguage: lang,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
                     ),
                   ),
@@ -1568,31 +2095,76 @@ class _SocialOrganizationsScreenState extends ConsumerState<SocialOrganizationsS
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        o.typeLabelMarathi,
+                        _pickOrgTypeLabel(o.type, lang),
                         style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: theme['color'] as Color),
                       ),
                     ),
                   ),
-                  DataCell(Text(o.presidentName.isNotEmpty ? o.presidentName : '-', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(o.presidentMobile.isNotEmpty ? o.presidentMobile : '-', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(o.area.isNotEmpty ? o.area : '-', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(o.membersCount.toString(), style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(o.establishedYear.isNotEmpty ? o.establishedYear : '-', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(o.supportReceived.isNotEmpty ? o.supportReceived : '-', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(o.eventsConducted.length.toString(), style: const TextStyle(fontSize: 11))),
+                  DataCell(
+                    o.presidentName.isNotEmpty
+                        ? AppTranslatedText(
+                            o.presidentName,
+                            isName: true,
+                            targetLanguage: lang,
+                            style: const TextStyle(fontSize: 11),
+                          )
+                        : const Text('-', style: TextStyle(fontSize: 11)),
+                  ),
                   DataCell(
                     Text(
-                      o.status == 'Active' ? 'Active' : 'Inactive',
+                      o.presidentMobile.isNotEmpty
+                          ? AppTranslations.formatDigits(o.presidentMobile, lang)
+                          : '-',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                  DataCell(
+                    o.area.isNotEmpty
+                        ? AppTranslatedText(
+                            AppTranslations.getAreaName(o.area, lang),
+                            targetLanguage: lang,
+                            style: const TextStyle(fontSize: 11),
+                          )
+                        : const Text('-', style: TextStyle(fontSize: 11)),
+                  ),
+                  DataCell(Text(AppTranslations.formatDigits(o.membersCount, lang), style: const TextStyle(fontSize: 11))),
+                  DataCell(
+                    Text(
+                      o.establishedYear.isNotEmpty
+                          ? AppTranslations.formatDigits(o.establishedYear, lang)
+                          : '-',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                  DataCell(
+                    o.supportReceived.isNotEmpty
+                        ? ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 180),
+                            child: AppTranslatedText(
+                              o.supportReceived,
+                              targetLanguage: lang,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          )
+                        : const Text('-', style: TextStyle(fontSize: 11)),
+                  ),
+                  DataCell(Text(AppTranslations.formatDigits(o.eventsConducted.length, lang), style: const TextStyle(fontSize: 11))),
+                  DataCell(
+                    Text(
+                      statusLabel,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: o.status == 'Active' ? const Color(0xFF047857) : const Color(0xFF64748B),
+                        color: isActive ? const Color(0xFF047857) : const Color(0xFF64748B),
                       ),
                     ),
                   ),
                   DataCell(
                     IconButton(
                       icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
+                      tooltip: AppTranslations.pick(lang, en: 'View Details', mr: 'तपशील पहा', hi: 'विवरण देखें'),
                       onPressed: () async {
                         await Navigator.push(
                           context,

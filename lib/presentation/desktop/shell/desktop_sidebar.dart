@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/supabase_service.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../../core/localization/app_translations.dart';
+import '../../../data/models/user_model.dart';
 import '../common/desktop_modal_dialog.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/tenant_provider.dart';
 import '../../providers/language_provider.dart';
-import '../../../data/models/user_model.dart';
-import '../../../core/services/supabase_service.dart';
 
 export '../../providers/language_provider.dart' show desktopLanguageProvider, DesktopLanguageNotifier;
 
@@ -206,7 +207,6 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     final user = ref.watch(authStateProvider).value;
     final tenantState = ref.watch(tenantProvider);
     final currentLang = ref.watch(desktopLanguageProvider);
-    final isMr = currentLang == 'mr';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 260),
@@ -221,7 +221,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
       child: Column(
         children: [
           // Branding Header
-          _buildHeader(tenantState, isMr),
+          _buildHeader(tenantState, currentLang),
 
           // Scrollable Navigation Menu in exact AppLayout.tsx sequence
           Expanded(
@@ -293,20 +293,28 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
           ),
 
           // Footer (Profile & Settings)
-          _buildFooter(user),
+          _buildFooter(user, currentLang),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(TenantState tenantState, bool isMr) {
+  Widget _buildHeader(TenantState tenantState, String lang) {
     final tenant = tenantState.tenant;
-    final headerTitle = isMr
+    final headerTitle = lang == 'mr'
         ? (tenant?.displayNameMarathi ?? 'नगरसेवक कार्यालय')
-        : (tenant?.displayNameEnglish ?? 'Nagar Sevak');
+        : (lang == 'hi'
+            ? (tenant?.displayNameEnglish ?? 'नगरसेवक कार्यालय')
+            : (tenant?.displayNameEnglish ?? 'Nagar Sevak'));
+    final opsLabel = AppTranslations.pick(
+      lang,
+      en: 'Operations & Staff',
+      mr: 'कामकाज व कर्मचारी',
+      hi: 'कार्य एवं कर्मचारी',
+    );
     final headerSubtitle = tenant != null && tenant.partyName.isNotEmpty
-        ? '${tenant.partyName} | ${tenant.wardName.isNotEmpty ? tenant.wardName : 'Operations & Staff'}'
-        : (tenant?.wardName.isNotEmpty == true ? tenant!.wardName : 'Operations & Staff');
+        ? '${tenant.partyName} | ${tenant.wardName.isNotEmpty ? tenant.wardName : opsLabel}'
+        : (tenant?.wardName.isNotEmpty == true ? tenant!.wardName : opsLabel);
 
     return Container(
       height: 72,
@@ -355,8 +363,9 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppTranslatedText(
                             headerTitle,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
@@ -366,8 +375,9 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          Text(
+                          AppTranslatedText(
                             headerSubtitle,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -386,7 +396,12 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
             IconButton(
               onPressed: widget.onToggleCollapse,
               icon: const Icon(Icons.menu_open_rounded, size: 20, color: AppColors.slate500),
-              tooltip: 'Collapse Sidebar',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Collapse Sidebar',
+                mr: 'साइडबार छोटा करा',
+                hi: 'साइडबार छोटा करें',
+              ),
               hoverColor: AppColors.slate100,
             ),
           ] else ...[
@@ -621,7 +636,15 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     );
   }
 
-  Widget _buildFooter(dynamic user) {
+  Widget _buildFooter(dynamic user, String lang) {
+    final settingsLabel = AppTranslations.getNavTitle('profile_settings', lang);
+    final signOutLabel = AppTranslations.pick(lang, en: 'Sign Out', mr: 'बाहेर पडा', hi: 'साइन आउट');
+    final adminFallback = AppTranslations.pick(lang, en: 'Administrator', mr: 'प्रशासक', hi: 'प्रशासक');
+    final roleLabel = AppTranslations.getRoleName(
+      (user?.role?.toString().trim().isNotEmpty == true) ? user.role.toString() : 'Office Admin',
+      lang,
+    ).toUpperCase();
+
     return Container(
       padding: EdgeInsets.all(widget.isCollapsed ? 8 : 14),
       decoration: const BoxDecoration(
@@ -661,8 +684,10 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          user?.name ?? 'Administrator',
+                        AppTranslatedText(
+                          user?.name ?? adminFallback,
+                          isName: true,
+                          targetLanguage: lang,
                           style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -672,7 +697,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          user?.role?.toUpperCase() ?? 'OFFICE ADMIN',
+                          roleLabel,
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -684,7 +709,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                   ),
                 ),
                 Tooltip(
-                  message: 'Settings',
+                  message: settingsLabel,
                   child: IconButton(
                     onPressed: () => ref.read(activeScreenProvider.notifier).setScreen('profile_settings'),
                     icon: const Icon(Icons.settings_outlined, size: 18, color: AppColors.slate400),
@@ -692,9 +717,9 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                   ),
                 ),
                 Tooltip(
-                  message: 'Sign Out',
+                  message: signOutLabel,
                   child: IconButton(
-                    onPressed: () => _confirmLogout(context),
+                    onPressed: () => _confirmLogout(context, lang),
                     icon: const Icon(Icons.logout_rounded, size: 18, color: AppColors.slate400),
                     hoverColor: Colors.red.shade50,
                     style: IconButton.styleFrom(
@@ -706,9 +731,9 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
             ),
           ] else ...[
             Tooltip(
-              message: 'Sign Out',
+              message: signOutLabel,
               child: IconButton(
-                onPressed: () => _confirmLogout(context),
+                onPressed: () => _confirmLogout(context, lang),
                 icon: const Icon(Icons.logout_rounded, size: 20, color: AppColors.slate500),
               ),
             ),
@@ -718,13 +743,26 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     );
   }
 
-  void _confirmLogout(BuildContext context) {
+  void _confirmLogout(BuildContext context, String lang) {
+    final signOutTitle = AppTranslations.pick(lang, en: 'Sign Out', mr: 'बाहेर पडा', hi: 'साइन आउट');
+    final signOutSub = AppTranslations.pick(
+      lang,
+      en: 'Are you sure you want to sign out from the administrative desktop portal?',
+      mr: 'आपण प्रशासकीय डेस्कटॉप पोर्टलमधून बाहेर पडू इच्छिता का?',
+      hi: 'क्या आप वाकई प्रशासनिक डेस्कटॉप पोर्टल से साइन आउट करना चाहते हैं?',
+    );
+    final signOutBody = AppTranslations.pick(
+      lang,
+      en: 'Your active session will be closed and you will be returned to the sign-in screen.',
+      mr: 'तुमचे सक्रिय सत्र बंद होईल आणि तुम्हाला साइन-इन स्क्रीनवर परत नेले जाईल.',
+      hi: 'आपका सक्रिय सत्र बंद हो जाएगा और आपको साइन-इन स्क्रीन पर वापस भेज दिया जाएगा।',
+    );
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => DesktopModalDialog(
-        title: 'Sign Out',
-        subtitle: 'Are you sure you want to sign out from the administrative desktop portal?',
+        title: signOutTitle,
+        subtitle: signOutSub,
         icon: Icons.logout_rounded,
         iconColor: const Color(0xFFDC2626),
         iconBgColor: const Color(0xFFFEE2E2),
@@ -745,12 +783,12 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
               Navigator.of(ctx).pop();
               await SupabaseService.instance.client.auth.signOut();
             },
-            child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(signOutTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
-        child: const Text(
-          'Your active session will be closed and you will be returned to the sign-in screen.',
-          style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
+        child: Text(
+          signOutBody,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
         ),
       ),
     );

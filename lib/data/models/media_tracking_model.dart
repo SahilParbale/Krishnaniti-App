@@ -62,6 +62,28 @@ class MediaTrackingArticleModel {
     return 'Neutral Report';
   }
 
+  String get sentimentLabelHindi {
+    if (isPositive) return 'सकारात्मक कवरेज';
+    if (isNegative) return 'महत्वपूर्ण मुद्दा';
+    return 'तटस्थ रिपोर्ट';
+  }
+
+  String sentimentLabel(String lang) {
+    if (lang == 'mr') return sentimentLabelMarathi;
+    if (lang == 'hi') return sentimentLabelHindi;
+    return sentimentLabelEnglish;
+  }
+
+  String titleFor(String lang) {
+    if (lang == 'mr' && titleMarathi.trim().isNotEmpty) return titleMarathi;
+    return title.trim().isNotEmpty ? title : titleMarathi;
+  }
+
+  String summaryFor(String lang) {
+    if (lang == 'mr' && summaryMarathi.trim().isNotEmpty) return summaryMarathi;
+    return summary.trim().isNotEmpty ? summary : summaryMarathi;
+  }
+
   Color get sourceBrandColor {
     final lower = source.toLowerCase();
     if (lower.contains('abp')) return const Color(0xFFE11D48);

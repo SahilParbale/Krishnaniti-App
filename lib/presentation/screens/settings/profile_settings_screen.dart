@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_config.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/translation_service.dart';
 import '../../navigation/app_drawer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/custom_navigation_provider.dart';
@@ -198,19 +199,34 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
       _rawConfig = mergedConfig;
       if (mounted) {
-        final isMr = ref.read(isMarathiProvider);
+        final lang = ref.read(appLanguageProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isMr ? 'प्रोफाईल माहिती यशस्वीरीत्या सेव्ह केली!' : 'Profile settings saved successfully!'),
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Profile settings saved successfully!',
+                mr: 'प्रोफाईल माहिती यशस्वीरीत्या सेव्ह केली!',
+                hi: 'प्रोफ़ाइल सेटिंग्स सफलतापूर्वक सहेजी गईं!',
+              ),
+            ),
             backgroundColor: const Color(0xFF0284C7),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final lang = ref.read(appLanguageProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Saved locally (${e.toString()})'),
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Saved locally (${e.toString()})',
+                mr: 'स्थानिक पातळीवर जतन केले (${e.toString()})',
+                hi: 'स्थानीय रूप से सहेजा गया (${e.toString()})',
+              ),
+            ),
             backgroundColor: const Color(0xFF0284C7),
           ),
         );
@@ -227,7 +243,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
       return;
     }
     HapticFeedback.lightImpact();
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -264,11 +280,23 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     size: 22,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    isProfile
-                        ? (isMr ? 'प्रोफाईल छायाचित्र निवडा' : 'Select Profile Photo')
-                        : (isMr ? 'पक्ष चिन्ह / लोगो निवडा' : 'Select Party Logo'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                  Expanded(
+                    child: Text(
+                      isProfile
+                          ? AppTranslations.pick(
+                              lang,
+                              en: 'Select Profile Photo',
+                              mr: 'प्रोफाईल छायाचित्र निवडा',
+                              hi: 'प्रोफ़ाइल फ़ोटो चुनें',
+                            )
+                          : AppTranslations.pick(
+                              lang,
+                              en: 'Select Party Logo',
+                              mr: 'पक्ष चिन्ह / लोगो निवडा',
+                              hi: 'पार्टी चिह्न / लोगो चुनें',
+                            ),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
                   ),
                 ],
               ),
@@ -282,11 +310,21 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF0284C7), size: 20),
                 ),
                 title: Text(
-                  isMr ? 'कॅमेऱ्यातून फोटो काढा' : 'Take Photo with Camera',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Take Photo with Camera',
+                    mr: 'कॅमेऱ्यातून फोटो काढा',
+                    hi: 'कैमरे से फ़ोटो लें',
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
                 ),
                 subtitle: Text(
-                  isMr ? 'थेट कॅमेरा उघडून नवीन फोटो घ्या' : 'Capture directly using phone camera',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Capture directly using phone camera',
+                    mr: 'थेट कॅमेरा उघडून नवीन फोटो घ्या',
+                    hi: 'सीधे फ़ोन कैमरे से नया फ़ोटो खींचें',
+                  ),
                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
@@ -305,11 +343,21 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   child: const Icon(Icons.photo_library_rounded, color: Color(0xFF0284C7), size: 20),
                 ),
                 title: Text(
-                  isMr ? 'फोन गॅलरीतून निवडा' : 'Choose from Photo Gallery',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Choose from Photo Gallery',
+                    mr: 'फोन गॅलरीतून निवडा',
+                    hi: 'फ़ोटो गैलरी से चुनें',
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
                 ),
                 subtitle: Text(
-                  isMr ? 'फोनमधील साठवलेल्या फोटोंमधून निवडा' : 'Pick existing image from storage',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Pick existing image from storage',
+                    mr: 'फोनमधील साठवलेल्या फोटोंमधून निवडा',
+                    hi: 'फ़ोन स्टोरेज से मौजूदा फ़ोटो चुनें',
+                  ),
                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
@@ -328,11 +376,21 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   child: const Icon(Icons.link_rounded, color: Color(0xFF64748B), size: 20),
                 ),
                 title: Text(
-                  isMr ? 'थेट वेब लिंक (URL) प्रविष्ट करा' : 'Provide Direct Image URL',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Provide Direct Image URL',
+                    mr: 'थेट वेब लिंक (URL) प्रविष्ट करा',
+                    hi: 'सीधा इमेज URL दर्ज करें',
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
                 ),
                 subtitle: Text(
-                  isMr ? 'इंटरनेटवरील फोटोची लिंक पेस्ट करा' : 'Enter https:// hosted image URL',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Enter https:// hosted image URL',
+                    mr: 'इंटरनेटवरील फोटोची लिंक पेस्ट करा',
+                    hi: 'https:// होस्टेड इमेज लिंक दर्ज करें',
+                  ),
                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
@@ -417,13 +475,23 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             });
           }
         });
-        final isMr = ref.read(isMarathiProvider);
+        final lang = ref.read(appLanguageProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               isProfile
-                  ? (isMr ? 'प्रोफाईल छायाचित्र निवडले!' : 'Profile photo selected!')
-                  : (isMr ? 'पक्ष चिन्ह निवडले!' : 'Party logo selected!'),
+                  ? AppTranslations.pick(
+                      lang,
+                      en: 'Profile photo selected!',
+                      mr: 'प्रोफाईल छायाचित्र निवडले!',
+                      hi: 'प्रोफ़ाइल फ़ोटो चुना गया!',
+                    )
+                  : AppTranslations.pick(
+                      lang,
+                      en: 'Party logo selected!',
+                      mr: 'पक्ष चिन्ह निवडले!',
+                      hi: 'पार्टी लोगो चुना गया!',
+                    ),
             ),
             backgroundColor: const Color(0xFF0284C7),
           ),
@@ -436,15 +504,25 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
 
   void _showUrlInputDialog(bool isProfile) {
     final urlCtrl = TextEditingController(text: isProfile ? _profileImageUrl : _partyLogoUrl);
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           isProfile
-              ? (isMr ? 'प्रोफाईल फोटो URL' : 'Enter Profile Photo URL')
-              : (isMr ? 'पक्ष चिन्ह URL' : 'Enter Party Logo URL'),
+              ? AppTranslations.pick(
+                  lang,
+                  en: 'Enter Profile Photo URL',
+                  mr: 'प्रोफाईल फोटो URL',
+                  hi: 'प्रोफ़ाइल फ़ोटो URL दर्ज करें',
+                )
+              : AppTranslations.pick(
+                  lang,
+                  en: 'Enter Party Logo URL',
+                  mr: 'पक्ष चिन्ह URL',
+                  hi: 'पार्टी लोगो URL दर्ज करें',
+                ),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         content: TextField(
@@ -457,7 +535,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isMr ? 'रद्द करा' : 'Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+            ),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0284C7),
@@ -474,7 +557,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               });
               Navigator.pop(ctx);
             },
-            child: Text(isMr ? 'लागू करा' : 'Apply'),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Apply', mr: 'लागू करा', hi: 'लागू करें'),
+            ),
           ),
         ],
       ),
@@ -544,12 +629,19 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   Future<void> _submitSupportTicket() async {
     final title = _supportTitleCtrl.text.trim();
     final desc = _supportDescCtrl.text.trim();
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
 
     if (title.isEmpty || desc.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isMr ? 'कृपया शीर्षक आणि तपशील दोन्ही भरा.' : 'Please fill in both title and description.'),
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please fill in both title and description.',
+              mr: 'कृपया शीर्षक आणि तपशील दोन्ही भरा.',
+              hi: 'कृपया शीर्षक और विवरण दोनों भरें।',
+            ),
+          ),
           backgroundColor: const Color(0xFFDC2626),
         ),
       );
@@ -598,7 +690,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isMr ? 'अडचण नोंदवली गेली आहे! आयटी सपोर्ट टीम लवकरच संपर्क करेल.' : 'Support ticket submitted! IT support team will review shortly.'),
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Support ticket submitted! IT support team will review shortly.',
+                mr: 'अडचण नोंदवली गेली आहे! आयटी सपोर्ट टीम लवकरच संपर्क करेल.',
+                hi: 'सहायता टिकट दर्ज हो गया है! आईटी सहायता टीम शीघ्र समीक्षा करेगी।',
+              ),
+            ),
             backgroundColor: const Color(0xFF0284C7),
           ),
         );
@@ -609,7 +708,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   void _showGlobalSignOutDialog() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -618,20 +717,35 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           children: [
             const Icon(Icons.shield_outlined, color: Color(0xFFDC2626)),
             const SizedBox(width: 8),
-            Text(
-              isMr ? 'इतर सर्व उपकरणांवरून बाहेर पडा' : 'Sign Out Other Devices',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Sign Out Other Devices',
+                  mr: 'इतर सर्व उपकरणांवरून बाहेर पडा',
+                  hi: 'अन्य सभी डिवाइस से साइन आउट करें',
+                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
         content: Text(
-          isMr
-              ? 'आपण इतर उपकरणांवरील सर्व सक्रिय सत्रे बंद करू इच्छिता? आपण या फोनवर लॉग इन राहाल.'
-              : 'Are you sure you want to invalidate all active session tokens on other devices? You will remain signed in on this device.',
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to invalidate all active session tokens on other devices? You will remain signed in on this device.',
+            mr: 'आपण इतर उपकरणांवरील सर्व सक्रिय सत्रे बंद करू इच्छिता? आपण या फोनवर लॉग इन राहाल.',
+            hi: 'क्या आप अन्य सभी डिवाइस पर सक्रिय सत्र समाप्त करना चाहते हैं? आप इस डिवाइस पर साइन इन रहेंगे।',
+          ),
           style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isMr ? 'रद्द करा' : 'Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+            ),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
@@ -642,12 +756,26 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(isMr ? 'इतर सर्व उपकरणांवरील सत्रे बंद केली गेली आहेत.' : 'All other device sessions signed out successfully.'),
+                  content: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'All other device sessions signed out successfully.',
+                      mr: 'इतर सर्व उपकरणांवरील सत्रे बंद केली गेली आहेत.',
+                      hi: 'अन्य सभी डिवाइस के सत्र सफलतापूर्वक बंद कर दिए गए हैं।',
+                    ),
+                  ),
                   backgroundColor: const Color(0xFF0284C7),
                 ),
               );
             },
-            child: Text(isMr ? 'बाहेर पडा' : 'Sign Out Others'),
+            child: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Sign Out Others',
+                mr: 'बाहेर पडा',
+                hi: 'अन्य से साइन आउट करें',
+              ),
+            ),
           ),
         ],
       ),
@@ -655,7 +783,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   }
 
   void _showLogoutConfirmDialog() async {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -664,20 +792,35 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           children: [
             const Icon(Icons.logout_rounded, color: Color(0xFFDC2626)),
             const SizedBox(width: 8),
-            Text(
-              isMr ? 'लॉगआउट पुष्टीकरण' : 'Confirm Logout',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Confirm Logout',
+                  mr: 'लॉगआउट पुष्टीकरण',
+                  hi: 'लॉगआउट की पुष्टि करें',
+                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
         content: Text(
-          isMr
-              ? 'आपण आपल्या खात्यातून बाहेर पडू इच्छिता?'
-              : 'Are you sure you want to sign out of your account on this device?',
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to sign out of your account on this device?',
+            mr: 'आपण आपल्या खात्यातून बाहेर पडू इच्छिता?',
+            hi: 'क्या आप वाकई इस डिवाइस पर अपने खाते से साइन आउट करना चाहते हैं?',
+          ),
           style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(isMr ? 'रद्द करा' : 'Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+            ),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
@@ -685,7 +828,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(isMr ? 'लॉगआउट' : 'Sign Out'),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Sign Out', mr: 'लॉगआउट', hi: 'साइन आउट'),
+            ),
           ),
         ],
       ),
@@ -701,17 +846,10 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     }
   }
 
-  String _l(String mr, String hi, String en) {
-    final lang = ref.watch(appLanguageProvider);
-    if (lang == 'mr') return mr;
-    if (lang == 'hi') return hi;
-    return en;
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(currentUserProvider);
     final isStaff = user?.isStaff ?? false;
@@ -746,7 +884,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: _l('मेनू उघडा', 'मेनू खोलें', 'Toggle Menu'),
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Toggle Menu',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -758,11 +901,19 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _l(
-                  isStaff ? 'कर्मचारी सेटिंग्ज' : 'प्रोफाईल व ब्रँडिंग सेटिंग्ज',
-                  isStaff ? 'कर्मचारी सेटिंग्स' : 'प्रोफाइल व ब्रांडिंग सेटिंग्स',
-                  isStaff ? 'Staff Settings' : 'Profile & Branding',
-                ),
+                isStaff
+                    ? AppTranslations.pick(
+                        lang,
+                        en: 'Staff Settings',
+                        mr: 'कर्मचारी सेटिंग्ज',
+                        hi: 'कर्मचारी सेटिंग्स',
+                      )
+                    : AppTranslations.pick(
+                        lang,
+                        en: 'Profile & Branding',
+                        mr: 'प्रोफाईल व ब्रँडिंग सेटिंग्ज',
+                        hi: 'प्रोफ़ाइल व ब्रांडिंग सेटिंग्स',
+                      ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -773,11 +924,19 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                 ),
               ),
               Text(
-                _l(
-                  isStaff ? 'नेव्हिगेशन आणि कर्मचारी तपशील' : 'अधिकृत लेटरहेड, संपर्क आणि प्रणाली',
-                  isStaff ? 'नेविगेशन और कर्मचारी विवरण' : 'आधिकारिक लेटरहेड, संपर्क और पोर्टल',
-                  isStaff ? 'Bar customization & staff profile' : 'Official letterhead, contacts & portal',
-                ),
+                isStaff
+                    ? AppTranslations.pick(
+                        lang,
+                        en: 'Bar customization & staff profile',
+                        mr: 'नेव्हिगेशन आणि कर्मचारी तपशील',
+                        hi: 'नेविगेशन और कर्मचारी विवरण',
+                      )
+                    : AppTranslations.pick(
+                        lang,
+                        en: 'Official letterhead, contacts & portal',
+                        mr: 'अधिकृत लेटरहेड, संपर्क आणि प्रणाली',
+                        hi: 'आधिकारिक लेटरहेड, संपर्क और पोर्टल',
+                      ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -855,7 +1014,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.tune_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(_l('नेव्हिगेशन बार', 'नेविगेशन बार', 'Bar Customization')),
+                                                Text(
+                                                  AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Bar Customization',
+                                                    mr: 'नेव्हिगेशन बार',
+                                                    hi: 'नेविगेशन बार',
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -865,7 +1031,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.badge_outlined, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(_l('माझे प्रोफाईल', 'मेरी प्रोफाइल', 'My Profile')),
+                                                Text(
+                                                  AppTranslations.pick(
+                                                    lang,
+                                                    en: 'My Profile',
+                                                    mr: 'माझे प्रोफाईल',
+                                                    hi: 'मेरी प्रोफ़ाइल',
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -875,7 +1048,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.support_agent_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(_l('अडचण नोंदवा', 'समस्या दर्ज करें', 'Report Issue')),
+                                                Text(
+                                                  AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Report Issue',
+                                                    mr: 'अडचण नोंदवा',
+                                                    hi: 'समस्या दर्ज करें',
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -887,7 +1067,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.person_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(_l('प्रोफाईल तपशील', 'प्रोफाइल विवरण', 'Profile Details')),
+                                                Text(
+                                                  AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Profile Details',
+                                                    mr: 'प्रोफाईल तपशील',
+                                                    hi: 'प्रोफ़ाइल विवरण',
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -897,7 +1084,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.tune_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(_l('नेव्हिगेशन बार', 'नेविगेशन बार', 'Bar Customization')),
+                                                Text(
+                                                  AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Bar Customization',
+                                                    mr: 'नेव्हिगेशन बार',
+                                                    hi: 'नेविगेशन बार',
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -907,7 +1101,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.shield_outlined, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(_l('सुरक्षा लॉग', 'सुरक्षा लॉग', 'Security Logs')),
+                                                Text(
+                                                  AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Security Logs',
+                                                    mr: 'सुरक्षा लॉग',
+                                                    hi: 'सुरक्षा लॉग',
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -917,7 +1118,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                               children: [
                                                 const Icon(Icons.support_agent_rounded, size: 15),
                                                 const SizedBox(width: 6),
-                                                Text(_l('अडचण नोंदवा', 'समस्या दर्ज करें', 'Report Issue')),
+                                                Text(
+                                                  AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Report Issue',
+                                                    mr: 'अडचण नोंदवा',
+                                                    hi: 'समस्या दर्ज करें',
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -961,7 +1169,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   // Tab 1: Profile Details & Branding (Responsive Adaptive Grid)
   // ─────────────────────────────────────────────────────────────
   Widget _buildProfileTab(bool isDark, BoxConstraints constraints) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final user = ref.watch(currentUserProvider);
     final isStacked = constraints.maxWidth < 540;
 
@@ -977,17 +1185,25 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Executive Representative Hero Card
-          _buildHeroIdentityCard(isMr, isStacked),
+          _buildHeroIdentityCard(lang, isStacked),
 
           const SizedBox(height: 16),
 
           // 2. Personal & Representation Details Card
           _buildCardSection(
             icon: Icons.account_circle_outlined,
-            title: isMr ? 'वैयक्तिक व प्रभाग तपशील' : 'Personal & Ward Representation',
-            subtitle: isMr
-                ? 'हे तपशील अधिकृत लेटरहेड, डिजिटल प्रमाणपत्रे व नागरिकांच्या डॅशबोर्डवर दिसतील.'
-                : 'Appears on official municipal letterhead, receipts, and public ward summaries.',
+            title: AppTranslations.pick(
+              lang,
+              en: 'Personal & Ward Representation',
+              mr: 'वैयक्तिक व प्रभाग तपशील',
+              hi: 'व्यक्तिगत एवं वार्ड प्रतिनिधित्व विवरण',
+            ),
+            subtitle: AppTranslations.pick(
+              lang,
+              en: 'Appears on official municipal letterhead, receipts, and public ward summaries.',
+              mr: 'हे तपशील अधिकृत लेटरहेड, डिजिटल प्रमाणपत्रे व नागरिकांच्या डॅशबोर्डवर दिसतील.',
+              hi: 'यह विवरण आधिकारिक लेटरहेड, रसीद और सार्वजनिक वार्ड सारांश पर दिखाई देगा।',
+            ),
             child: Column(
               children: [
                 if (!isStacked)
@@ -996,18 +1212,38 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     children: [
                       Expanded(
                         child: _buildTextField(
-                          label: isMr ? 'पूर्ण नाव (इंग्रजीत) *' : 'Full Name (English) *',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Full Name (English) *',
+                            mr: 'पूर्ण नाव (इंग्रजीत) *',
+                            hi: 'पूरा नाम (अंग्रेजी में) *',
+                          ),
                           ctrl: _nameEnglishCtrl,
-                          hint: 'e.g. Hon. Rahul Patil',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. Hon. Rahul Patil',
+                            mr: 'उदा. Hon. Rahul Patil',
+                            hi: 'उदा. Hon. Rahul Patil',
+                          ),
                           prefixIcon: Icons.badge_outlined,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildTextField(
-                          label: isMr ? 'पूर्ण नाव (मराठीत) *' : 'Full Name (Marathi) *',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Full Name (Marathi) *',
+                            mr: 'पूर्ण नाव (मराठीत) *',
+                            hi: 'पूरा नाम (मराठी में) *',
+                          ),
                           ctrl: _nameMarathiCtrl,
-                          hint: 'उदा. मा. राहुल पाटील',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. मा. राहुल पाटील',
+                            mr: 'उदा. मा. राहुल पाटील',
+                            hi: 'उदा. मा. राहुल पाटील',
+                          ),
                           prefixIcon: Icons.translate_rounded,
                         ),
                       ),
@@ -1015,16 +1251,36 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   )
                 else ...[
                   _buildTextField(
-                    label: isMr ? 'पूर्ण नाव (इंग्रजीत) *' : 'Full Name (English) *',
+                    label: AppTranslations.pick(
+                      lang,
+                      en: 'Full Name (English) *',
+                      mr: 'पूर्ण नाव (इंग्रजीत) *',
+                      hi: 'पूरा नाम (अंग्रेजी में) *',
+                    ),
                     ctrl: _nameEnglishCtrl,
-                    hint: 'e.g. Hon. Rahul Patil',
+                    hint: AppTranslations.pick(
+                      lang,
+                      en: 'e.g. Hon. Rahul Patil',
+                      mr: 'उदा. Hon. Rahul Patil',
+                      hi: 'उदा. Hon. Rahul Patil',
+                    ),
                     prefixIcon: Icons.badge_outlined,
                   ),
                   const SizedBox(height: 12),
                   _buildTextField(
-                    label: isMr ? 'पूर्ण नाव (मराठीत) *' : 'Full Name (Marathi) *',
+                    label: AppTranslations.pick(
+                      lang,
+                      en: 'Full Name (Marathi) *',
+                      mr: 'पूर्ण नाव (मराठीत) *',
+                      hi: 'पूरा नाम (मराठी में) *',
+                    ),
                     ctrl: _nameMarathiCtrl,
-                    hint: 'उदा. मा. राहुल पाटील',
+                    hint: AppTranslations.pick(
+                      lang,
+                      en: 'e.g. मा. राहुल पाटील',
+                      mr: 'उदा. मा. राहुल पाटील',
+                      hi: 'उदा. मा. राहुल पाटील',
+                    ),
                     prefixIcon: Icons.translate_rounded,
                   ),
                 ],
@@ -1035,18 +1291,38 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     children: [
                       Expanded(
                         child: _buildTextField(
-                          label: isMr ? 'प्रभाग नाव / मतदारसंघ *' : 'Ward / Constituency Name *',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Ward / Constituency Name *',
+                            mr: 'प्रभाग नाव / मतदारसंघ *',
+                            hi: 'वार्ड / निर्वाचन क्षेत्र का नाम *',
+                          ),
                           ctrl: _wardNameCtrl,
-                          hint: 'e.g. Kasba Peth Ward',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. Kasba Peth Ward',
+                            mr: 'उदा. कसबा पेठ प्रभाग',
+                            hi: 'उदा. कसबा पेठ वार्ड',
+                          ),
                           prefixIcon: Icons.location_city_rounded,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildTextField(
-                          label: isMr ? 'प्रभाग क्रमांक *' : 'Ward Number *',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Ward Number *',
+                            mr: 'प्रभाग क्रमांक *',
+                            hi: 'वार्ड नंबर *',
+                          ),
                           ctrl: _wardNumCtrl,
-                          hint: 'e.g. 12',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. 12',
+                            mr: 'उदा. १२',
+                            hi: 'उदा. १२',
+                          ),
                           prefixIcon: Icons.tag_rounded,
                           isNumeric: true,
                         ),
@@ -1055,25 +1331,55 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   )
                 else ...[
                   _buildTextField(
-                    label: isMr ? 'प्रभाग नाव / मतदारसंघ *' : 'Ward / Constituency Name *',
+                    label: AppTranslations.pick(
+                      lang,
+                      en: 'Ward / Constituency Name *',
+                      mr: 'प्रभाग नाव / मतदारसंघ *',
+                      hi: 'वार्ड / निर्वाचन क्षेत्र का नाम *',
+                    ),
                     ctrl: _wardNameCtrl,
-                    hint: 'e.g. Kasba Peth Ward',
+                    hint: AppTranslations.pick(
+                      lang,
+                      en: 'e.g. Kasba Peth Ward',
+                      mr: 'उदा. कसबा पेठ प्रभाग',
+                      hi: 'उदा. कसबा पेठ वार्ड',
+                    ),
                     prefixIcon: Icons.location_city_rounded,
                   ),
                   const SizedBox(height: 12),
                   _buildTextField(
-                    label: isMr ? 'प्रभाग क्रमांक *' : 'Ward Number *',
+                    label: AppTranslations.pick(
+                      lang,
+                      en: 'Ward Number *',
+                      mr: 'प्रभाग क्रमांक *',
+                      hi: 'वार्ड नंबर *',
+                    ),
                     ctrl: _wardNumCtrl,
-                    hint: 'e.g. 12',
+                    hint: AppTranslations.pick(
+                      lang,
+                      en: 'e.g. 12',
+                      mr: 'उदा. १२',
+                      hi: 'उदा. १२',
+                    ),
                     prefixIcon: Icons.tag_rounded,
                     isNumeric: true,
                   ),
                 ],
                 const SizedBox(height: 12),
                 _buildTextField(
-                  label: isMr ? 'पक्ष किंवा आघाडीचे नाव' : 'Political Party / Coalition Front',
+                  label: AppTranslations.pick(
+                    lang,
+                    en: 'Political Party / Coalition Front',
+                    mr: 'पक्ष किंवा आघाडीचे नाव',
+                    hi: 'राजनीतिक दल / गठबंधन का नाम',
+                  ),
                   ctrl: _partyNameCtrl,
-                  hint: 'e.g. Nagarsevak Vikas Aghadi',
+                  hint: AppTranslations.pick(
+                    lang,
+                    en: 'e.g. Nagarsevak Vikas Aghadi',
+                    mr: 'उदा. नगरसेवक विकास आघाडी',
+                    hi: 'उदा. नगरसेवक विकास आघाडी',
+                  ),
                   prefixIcon: Icons.flag_outlined,
                 ),
               ],
@@ -1085,24 +1391,52 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           // 3. Office & Contact Details Card
           _buildCardSection(
             icon: Icons.apartment_rounded,
-            title: isMr ? 'कार्यालय व सार्वजनिक संपर्क' : 'Office & Public Contacts',
-            subtitle: isMr
-                ? 'नागरिकांना समस्या घेऊन येण्यासाठी कार्यालयाचा पत्ता आणि संपर्क क्रमांक.'
-                : 'Citizen touchpoints for official petitions, meetings, and emergency contacts.',
+            title: AppTranslations.pick(
+              lang,
+              en: 'Office & Public Contacts',
+              mr: 'कार्यालय व सार्वजनिक संपर्क',
+              hi: 'कार्यालय एवं सार्वजनिक संपर्क',
+            ),
+            subtitle: AppTranslations.pick(
+              lang,
+              en: 'Citizen touchpoints for official petitions, meetings, and emergency contacts.',
+              mr: 'नागरिकांना समस्या घेऊन येण्यासाठी कार्यालयाचा पत्ता आणि संपर्क क्रमांक.',
+              hi: 'नागरिकों से मिलने, आवेदन और आपातकालीन संपर्क के लिए कार्यालय विवरण।',
+            ),
             child: Column(
               children: [
                 _buildTextField(
-                  label: isMr ? 'मुख्य संपर्क कार्यालय पत्ता' : 'Ward Office Street Address',
+                  label: AppTranslations.pick(
+                    lang,
+                    en: 'Ward Office Street Address',
+                    mr: 'मुख्य संपर्क कार्यालय पत्ता',
+                    hi: 'वार्ड कार्यालय का पता',
+                  ),
                   ctrl: _officeAddressCtrl,
-                  hint: 'e.g. Ward Office No. 12, Kelkar Road, Pune',
+                  hint: AppTranslations.pick(
+                    lang,
+                    en: 'e.g. Ward Office No. 12, Kelkar Road, Pune',
+                    mr: 'उदा. प्रभाग कार्यालय क्र. १२, केळकर रोड, पुणे',
+                    hi: 'उदा. वार्ड कार्यालय नं. १२, केलकर रोड, पुणे',
+                  ),
                   prefixIcon: Icons.business_rounded,
                   maxLines: 2,
                 ),
                 const SizedBox(height: 12),
                 _buildTextField(
-                  label: isMr ? 'नागरिकांसाठी कार्यालयीन वेळ' : 'Public Meeting / Office Hours',
+                  label: AppTranslations.pick(
+                    lang,
+                    en: 'Public Meeting / Office Hours',
+                    mr: 'नागरिकांसाठी कार्यालयीन वेळ',
+                    hi: 'जनता मुलाकात / कार्यालय समय',
+                  ),
                   ctrl: _officeHoursCtrl,
-                  hint: 'e.g. 10:00 AM - 06:00 PM (Monday to Saturday)',
+                  hint: AppTranslations.pick(
+                    lang,
+                    en: 'e.g. 10:00 AM - 06:00 PM (Monday to Saturday)',
+                    mr: 'उदा. सकाळी १०:०० ते सायं. ०६:०० (सोमवार ते शनिवार)',
+                    hi: 'उदा. सुबह १०:०० से शाम ०६:०० बजे (सोमवार से शनिवार)',
+                  ),
                   prefixIcon: Icons.access_time_rounded,
                 ),
                 const SizedBox(height: 12),
@@ -1112,9 +1446,19 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     children: [
                       Expanded(
                         child: _buildTextField(
-                          label: isMr ? 'अधिकृत दूरध्वनी / मोबाईल *' : 'Official Phone Number *',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Official Phone Number *',
+                            mr: 'अधिकृत दूरध्वनी / मोबाईल *',
+                            hi: 'आधिकारिक फ़ोन / मोबाइल नंबर *',
+                          ),
                           ctrl: _phoneCtrl,
-                          hint: 'e.g. +91 98220 12345',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. +91 98220 12345',
+                            mr: 'उदा. +९१ ९८२२० १२३४५',
+                            hi: 'उदा. +९१ ९८२२० १२३४५',
+                          ),
                           prefixIcon: Icons.phone_rounded,
                           isPhone: true,
                         ),
@@ -1122,9 +1466,19 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildTextField(
-                          label: isMr ? 'अधिकृत ईमेल पत्ता *' : 'Official Email Address *',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Official Email Address *',
+                            mr: 'अधिकृत ईमेल पत्ता *',
+                            hi: 'आधिकारिक ईमेल पता *',
+                          ),
                           ctrl: _emailCtrl,
-                          hint: 'e.g. office@ward12.in',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g. office@ward12.in',
+                            mr: 'उदा. office@ward12.in',
+                            hi: 'उदा. office@ward12.in',
+                          ),
                           prefixIcon: Icons.email_rounded,
                           isEmail: true,
                         ),
@@ -1133,26 +1487,56 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   )
                 else ...[
                   _buildTextField(
-                    label: isMr ? 'अधिकृत दूरध्वनी / मोबाईल *' : 'Official Phone Number *',
+                    label: AppTranslations.pick(
+                      lang,
+                      en: 'Official Phone Number *',
+                      mr: 'अधिकृत दूरध्वनी / मोबाईल *',
+                      hi: 'आधिकारिक फ़ोन / मोबाइल नंबर *',
+                    ),
                     ctrl: _phoneCtrl,
-                    hint: 'e.g. +91 98220 12345',
+                    hint: AppTranslations.pick(
+                      lang,
+                      en: 'e.g. +91 98220 12345',
+                      mr: 'उदा. +९१ ९८२२० १२३४५',
+                      hi: 'उदा. +९१ ९८२२० १२३४५',
+                    ),
                     prefixIcon: Icons.phone_rounded,
                     isPhone: true,
                   ),
                   const SizedBox(height: 12),
                   _buildTextField(
-                    label: isMr ? 'अधिकृत ईमेल पत्ता *' : 'Official Email Address *',
+                    label: AppTranslations.pick(
+                      lang,
+                      en: 'Official Email Address *',
+                      mr: 'अधिकृत ईमेल पत्ता *',
+                      hi: 'आधिकारिक ईमेल पता *',
+                    ),
                     ctrl: _emailCtrl,
-                    hint: 'e.g. office@ward12.in',
+                    hint: AppTranslations.pick(
+                      lang,
+                      en: 'e.g. office@ward12.in',
+                      mr: 'उदा. office@ward12.in',
+                      hi: 'उदा. office@ward12.in',
+                    ),
                     prefixIcon: Icons.email_rounded,
                     isEmail: true,
                   ),
                 ],
                 const SizedBox(height: 12),
                 _buildTextField(
-                  label: isMr ? 'अधिकृत सोशल मीडिया / वेबसाइट लिंक' : 'Official Social Media / Website Link',
+                  label: AppTranslations.pick(
+                    lang,
+                    en: 'Official Social Media / Website Link',
+                    mr: 'अधिकृत सोशल मीडिया / वेबसाइट लिंक',
+                    hi: 'आधिकारिक सोशल मीडिया / वेबसाइट लिंक',
+                  ),
                   ctrl: _socialLinkCtrl,
-                  hint: 'e.g. https://facebook.com/ward12nagarsevak',
+                  hint: AppTranslations.pick(
+                    lang,
+                    en: 'e.g. https://facebook.com/ward12nagarsevak',
+                    mr: 'उदा. https://facebook.com/ward12nagarsevak',
+                    hi: 'उदा. https://facebook.com/ward12nagarsevak',
+                  ),
                   prefixIcon: Icons.link_rounded,
                 ),
               ],
@@ -1164,10 +1548,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           // 4. Official Branding & Media Images Card
           _buildCardSection(
             icon: Icons.photo_library_outlined,
-            title: isMr ? 'अधिकृत फोटो व पक्षाचे चिन्ह' : 'Official Media & Branding',
-            subtitle: isMr
-                ? 'प्रणालीतील अहवाल, पत्रे व कार्ड्सवर दिसणारे अधिकृत छायाचित्र व चिन्ह.'
-                : 'High-resolution images displayed on printable reports, letterheads and headers.',
+            title: AppTranslations.pick(
+              lang,
+              en: 'Official Media & Branding',
+              mr: 'अधिकृत फोटो व पक्षाचे चिन्ह',
+              hi: 'आधिकारिक फोटो व पार्टी चिह्न',
+            ),
+            subtitle: AppTranslations.pick(
+              lang,
+              en: 'High-resolution images displayed on printable reports, letterheads and headers.',
+              mr: 'प्रणालीतील अहवाल, पत्रे व कार्ड्सवर दिसणारे अधिकृत छायाचित्र व चिन्ह.',
+              hi: 'प्रिंट रिपोर्ट, लेटरहेड और डिजिटल कार्ड पर दिखने वाले आधिकारिक फोटो व चिह्न।',
+            ),
             child: Column(
               children: [
                 if (!isStacked)
@@ -1176,24 +1568,44 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       Expanded(
                         child: _buildMediaTile(
                           isProfile: true,
-                          title: isMr ? 'अधिकृत प्रोफाईल छायाचित्र' : 'Official Profile Photo',
-                          subtitle: isMr ? 'नागरिक अहवाल व पत्रांवर' : 'On civic letters & reports',
+                          title: AppTranslations.pick(
+                            lang,
+                            en: 'Official Profile Photo',
+                            mr: 'अधिकृत प्रोफाईल छायाचित्र',
+                            hi: 'आधिकारिक प्रोफ़ाइल फ़ोटो',
+                          ),
+                          subtitle: AppTranslations.pick(
+                            lang,
+                            en: 'On civic letters & reports',
+                            mr: 'नागरिक अहवाल व पत्रांवर',
+                            hi: 'नागरिक पत्रों व रिपोर्ट पर',
+                          ),
                           imageUrl: _profileImageUrl,
                           fallbackIcon: Icons.person_rounded,
                           isCircle: true,
-                          isMr: isMr,
+                          lang: lang,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildMediaTile(
                           isProfile: false,
-                          title: isMr ? 'पक्ष चिन्ह / लोगो' : 'Party Symbol / Logo',
-                          subtitle: isMr ? 'डिजिटल लेटरहेड व बॅनरवर' : 'On digital cards & letterhead',
+                          title: AppTranslations.pick(
+                            lang,
+                            en: 'Party Symbol / Logo',
+                            mr: 'पक्ष चिन्ह / लोगो',
+                            hi: 'पार्टी चिह्न / लोगो',
+                          ),
+                          subtitle: AppTranslations.pick(
+                            lang,
+                            en: 'On digital cards & letterhead',
+                            mr: 'डिजिटल लेटरहेड व बॅनरवर',
+                            hi: 'डिजिटल कार्ड व लेटरहेड पर',
+                          ),
                           imageUrl: _partyLogoUrl,
                           fallbackIcon: Icons.flag_rounded,
                           isCircle: false,
-                          isMr: isMr,
+                          lang: lang,
                         ),
                       ),
                     ],
@@ -1201,22 +1613,42 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                 else ...[
                   _buildMediaTile(
                     isProfile: true,
-                    title: isMr ? 'अधिकृत प्रोफाईल छायाचित्र' : 'Official Profile Photo',
-                    subtitle: isMr ? 'नागरिक अहवाल व पत्रांवर' : 'On civic letters & reports',
+                    title: AppTranslations.pick(
+                      lang,
+                      en: 'Official Profile Photo',
+                      mr: 'अधिकृत प्रोफाईल छायाचित्र',
+                      hi: 'आधिकारिक प्रोफ़ाइल फ़ोटो',
+                    ),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'On civic letters & reports',
+                      mr: 'नागरिक अहवाल व पत्रांवर',
+                      hi: 'नागरिक पत्रों व रिपोर्ट पर',
+                    ),
                     imageUrl: _profileImageUrl,
                     fallbackIcon: Icons.person_rounded,
                     isCircle: true,
-                    isMr: isMr,
+                    lang: lang,
                   ),
                   const SizedBox(height: 12),
                   _buildMediaTile(
                     isProfile: false,
-                    title: isMr ? 'पक्ष चिन्ह / लोगो' : 'Party Symbol / Logo',
-                    subtitle: isMr ? 'डिजिटल लेटरहेड व बॅनरवर' : 'On digital cards & letterhead',
+                    title: AppTranslations.pick(
+                      lang,
+                      en: 'Party Symbol / Logo',
+                      mr: 'पक्ष चिन्ह / लोगो',
+                      hi: 'पार्टी चिह्न / लोगो',
+                    ),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'On digital cards & letterhead',
+                      mr: 'डिजिटल लेटरहेड व बॅनरवर',
+                      hi: 'डिजिटल कार्ड व लेटरहेड पर',
+                    ),
                     imageUrl: _partyLogoUrl,
                     fallbackIcon: Icons.flag_rounded,
                     isCircle: false,
-                    isMr: isMr,
+                    lang: lang,
                   ),
                 ],
               ],
@@ -1226,12 +1658,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           const SizedBox(height: 18),
 
           // 5. Navigation Bar Customization Banner
-          _buildBarCustomizationBanner(isMr, isStacked, false),
+          _buildBarCustomizationBanner(lang, isStacked, false),
 
           const SizedBox(height: 18),
 
           // 6. Account Session & Security Card (Sign Out Option)
-          _buildSessionSecurityCard(isMr, user, isStacked),
+          _buildSessionSecurityCard(lang, user, isStacked),
 
           const SizedBox(height: 20),
 
@@ -1250,8 +1682,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   : const Icon(Icons.check_circle_rounded, size: 20),
               label: Text(
                 _isSaving
-                    ? (isMr ? 'जतन करत आहे...' : 'Saving Changes...')
-                    : (isMr ? 'सर्व बदल जतन करा' : 'Save Profile Changes'),
+                    ? AppTranslations.pick(
+                        lang,
+                        en: 'Saving Changes...',
+                        mr: 'जतन करत आहे...',
+                        hi: 'सहेजा जा रहा है...',
+                      )
+                    : AppTranslations.pick(
+                        lang,
+                        en: 'Save Profile Changes',
+                        mr: 'सर्व बदल जतन करा',
+                        hi: 'प्रोफ़ाइल बदलाव सहेजें',
+                      ),
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
               ),
               style: ElevatedButton.styleFrom(
@@ -1270,17 +1712,84 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   // ─────────────────────────────────────────────────────────────
   // Hero Identity Header Card
   // ─────────────────────────────────────────────────────────────
-  Widget _buildHeroIdentityCard(bool isMr, bool isStacked) {
-    final nameText = _nameEnglishCtrl.text.isNotEmpty
-        ? _nameEnglishCtrl.text
-        : (_nameMarathiCtrl.text.isNotEmpty ? _nameMarathiCtrl.text : 'Elected Representative');
+  Widget _buildHeroIdentityCard(String lang, bool isStacked) {
+    final enName = _nameEnglishCtrl.text.trim();
+    final mrName = _nameMarathiCtrl.text.trim();
+    final rawName = (lang == 'mr' || lang == 'hi')
+        ? (mrName.isNotEmpty ? mrName : enName)
+        : (enName.isNotEmpty ? enName : mrName);
 
-    final wardText = _wardNumCtrl.text.isNotEmpty
-        ? (isMr ? 'प्रभाग क्र. ${_wardNumCtrl.text}' : 'Ward No. ${_wardNumCtrl.text}')
+    final wardNumTrimmed = _wardNumCtrl.text.trim();
+    final wardNumFormatted = AppTranslations.formatDigits(wardNumTrimmed, lang);
+    final wardText = wardNumTrimmed.isNotEmpty
+        ? AppTranslations.pick(
+            lang,
+            en: 'Ward No. $wardNumFormatted',
+            mr: 'प्रभाग क्र. $wardNumFormatted',
+            hi: 'वार्ड नं. $wardNumFormatted',
+          )
         : '';
-    final wardCombined = _wardNameCtrl.text.isNotEmpty
-        ? (wardText.isNotEmpty ? '$wardText · ${_wardNameCtrl.text}' : _wardNameCtrl.text)
-        : wardText;
+    final wardNameTrimmed = _wardNameCtrl.text.trim();
+
+    Widget buildNameWidget(double fontSize) {
+      final style = TextStyle(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w800,
+        color: Colors.white,
+        letterSpacing: -0.3,
+      );
+      if (rawName.isEmpty) {
+        return Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Elected Representative',
+            mr: 'लोकप्रतिनिधी',
+            hi: 'निर्वाचित जनप्रतिनिधि',
+          ),
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      }
+      return AppTranslatedText(
+        rawName,
+        isName: true,
+        targetLanguage: lang,
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    Widget? buildWardWidget(double fontSize) {
+      final style = TextStyle(
+        fontSize: fontSize,
+        color: const Color(0xFFE0F2FE),
+        fontWeight: FontWeight.w500,
+      );
+      if (wardNameTrimmed.isNotEmpty) {
+        return AppTranslatedText(
+          AppTranslations.getAreaName(wardNameTrimmed, lang),
+          prefix: wardText.isNotEmpty ? '$wardText · ' : '',
+          targetLanguage: lang,
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      }
+      if (wardText.isNotEmpty) {
+        return Text(
+          wardText,
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      }
+      return null;
+    }
+
+    final wardWidgetStacked = buildWardWidget(12);
+    final wardWidgetWide = buildWardWidget(12.5);
 
     return Container(
       width: double.infinity,
@@ -1349,32 +1858,24 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                               children: [
                                 const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
                                 const SizedBox(width: 4),
-                                Text(
-                                  isMr ? 'लोकप्रतिनिधी' : 'Elected Representative',
-                                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                Flexible(
+                                  child: Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Elected Representative',
+                                      mr: 'लोकप्रतिनिधी',
+                                      hi: 'निर्वाचित जनप्रतिनिधि',
+                                    ),
+                                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 5),
-                          Text(
-                            nameText,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.3,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (wardCombined.isNotEmpty)
-                            Text(
-                              wardCombined,
-                              style: const TextStyle(fontSize: 12, color: Color(0xFFE0F2FE), fontWeight: FontWeight.w500),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          buildNameWidget(17),
+                          ?wardWidgetStacked,
                         ],
                       ),
                     ),
@@ -1393,7 +1894,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                           )
                         : const Icon(Icons.save_rounded, size: 16),
                     label: Text(
-                      _isSaving ? (isMr ? 'सेव्ह करत आहे...' : 'Saving...') : (isMr ? 'बदल सेव्ह करा' : 'Save Changes'),
+                      _isSaving
+                          ? AppTranslations.pick(lang, en: 'Saving...', mr: 'सेव्ह करत आहे...', hi: 'सहेज रहे हैं...')
+                          : AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल सेव्ह करा', hi: 'बदलाव सहेजें'),
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -1452,32 +1955,24 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                           children: [
                             const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
                             const SizedBox(width: 4),
-                            Text(
-                              isMr ? 'लोकप्रतिनिधी' : 'Elected Representative',
-                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                            Flexible(
+                              child: Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Elected Representative',
+                                  mr: 'लोकप्रतिनिधी',
+                                  hi: 'निर्वाचित जनप्रतिनिधि',
+                                ),
+                                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 5),
-                      Text(
-                        nameText,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.3,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (wardCombined.isNotEmpty)
-                        Text(
-                          wardCombined,
-                          style: const TextStyle(fontSize: 12.5, color: Color(0xFFE0F2FE), fontWeight: FontWeight.w500),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      buildNameWidget(18),
+                      ?wardWidgetWide,
                     ],
                   ),
                 ),
@@ -1492,7 +1987,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                         )
                       : const Icon(Icons.save_rounded, size: 16),
                   label: Text(
-                    _isSaving ? (isMr ? 'सेव्ह करत आहे...' : 'Saving...') : (isMr ? 'बदल सेव्ह करा' : 'Save Changes'),
+                    _isSaving
+                        ? AppTranslations.pick(lang, en: 'Saving...', mr: 'सेव्ह करत आहे...', hi: 'सहेज रहे हैं...')
+                        : AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल सेव्ह करा', hi: 'बदलाव सहेजें'),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -1585,7 +2082,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     required String imageUrl,
     required IconData fallbackIcon,
     required bool isCircle,
-    required bool isMr,
+    required String lang,
   }) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1621,9 +2118,14 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             child: OutlinedButton.icon(
               onPressed: () => _showImagePickerOptions(isProfile),
               icon: const Icon(Icons.upload_rounded, size: 15, color: Color(0xFF0284C7)),
-              label: Text(
-                imageUrl.isNotEmpty ? (isMr ? 'बदला' : 'Change') : (isMr ? 'अपलोड करा' : 'Upload'),
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  imageUrl.isNotEmpty
+                      ? AppTranslations.pick(lang, en: 'Change', mr: 'बदला', hi: 'बदलें')
+                      : AppTranslations.pick(lang, en: 'Upload', mr: 'अपलोड करा', hi: 'अपलोड करें'),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0284C7)),
+                ),
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -1698,7 +2200,10 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   // ─────────────────────────────────────────────────────────────
   // Session Security & Sign Out Card
   // ─────────────────────────────────────────────────────────────
-  Widget _buildSessionSecurityCard(bool isMr, dynamic user, bool isStacked) {
+  Widget _buildSessionSecurityCard(String lang, dynamic user, bool isStacked) {
+    final activeFallback = AppTranslations.pick(lang, en: 'Active Account', mr: 'सक्रिय खाते', hi: 'सक्रिय खाता');
+    final activeShort = AppTranslations.pick(lang, en: 'Representative', mr: 'सक्रिय', hi: 'सक्रिय');
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1728,11 +2233,16 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isMr ? 'खाते सुरक्षा व सत्र' : 'Account & Security Session',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Account & Security Session',
+                                mr: 'खाते सुरक्षा व सत्र',
+                                hi: 'खाता सुरक्षा एवं सत्र',
+                              ),
                               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF991B1B)),
                             ),
                             Text(
-                              user?.email ?? 'Active Account',
+                              user?.email ?? activeFallback,
                               style: const TextStyle(fontSize: 11.5, color: Color(0xFFB91C1C)),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1755,7 +2265,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       onPressed: _showLogoutConfirmDialog,
                       icon: const Icon(Icons.logout_rounded, size: 16),
                       label: Text(
-                        isMr ? 'या फोनवरून लॉगआउट करा' : 'Sign Out of Account',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Sign Out of Account',
+                          mr: 'या फोनवरून लॉगआउट करा',
+                          hi: 'इस डिवाइस से लॉगआउट करें',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                       ),
                     ),
@@ -1778,14 +2293,22 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isMr ? 'खाते सुरक्षा व सत्र' : 'Account & Security Session',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Account & Security Session',
+                            mr: 'खाते सुरक्षा व सत्र',
+                            hi: 'खाता सुरक्षा एवं सत्र',
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF991B1B)),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          isMr
-                              ? 'आपल्या चालू खात्यातून (${user?.email ?? 'Active'}) सुरक्षितपणे बाहेर पडा.'
-                              : 'Signed in as ${user?.email ?? 'Representative'}. Invalidate local device token.',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Signed in as ${user?.email ?? activeShort}. Invalidate local device token.',
+                            mr: 'आपल्या चालू खात्यातून (${user?.email ?? activeShort}) सुरक्षितपणे बाहेर पडा.',
+                            hi: 'वर्तमान खाते (${user?.email ?? activeShort}) से इस डिवाइस पर सुरक्षित रूप से साइन आउट करें।',
+                          ),
                           style: const TextStyle(fontSize: 11.5, color: Color(0xFFB91C1C)),
                         ),
                       ],
@@ -1803,7 +2326,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     onPressed: _showLogoutConfirmDialog,
                     icon: const Icon(Icons.logout_rounded, size: 16),
                     label: Text(
-                      isMr ? 'लॉगआउट' : 'Sign Out',
+                      AppTranslations.pick(lang, en: 'Sign Out', mr: 'लॉगआउट', hi: 'लॉगआउट'),
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
                     ),
                   ),
@@ -1833,10 +2356,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   // Tab: Staff Profile / Account Info (Shown for Team Members)
   // ─────────────────────────────────────────────────────────────
   Widget _buildStaffProfileTab(bool isDark, BoxConstraints constraints) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final user = ref.watch(currentUserProvider);
     final permittedModules = ref.watch(permittedModulesProvider);
     final isStacked = constraints.maxWidth < 540;
+    final moduleCountStr = AppTranslations.formatDigits(permittedModules.length, lang);
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
@@ -1873,10 +2397,25 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        user?.name ?? (isMr ? 'कार्यालय कर्मचारी' : 'Staff Member'),
-                        style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                      ),
+                      if (user != null && user.name.trim().isNotEmpty)
+                        AppTranslatedText(
+                          user.name.trim(),
+                          isName: true,
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        )
+                      else
+                        Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Staff Member',
+                            mr: 'कार्यालय कर्मचारी',
+                            hi: 'कार्यालय कर्मचारी',
+                          ),
+                          style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        ),
                       const SizedBox(height: 2),
                       Text(
                         user?.email ?? '',
@@ -1890,7 +2429,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          isMr ? 'अधिकृत टीम सदस्य (Staff)' : 'Authorized Team Member (Staff)',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Authorized Team Member (Staff)',
+                            mr: 'अधिकृत टीम सदस्य (कर्मचारी)',
+                            hi: 'अधिकृत टीम सदस्य (कर्मचारी)',
+                          ),
                           style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                         ),
                       ),
@@ -1910,9 +2454,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  isMr
-                      ? 'आपल्याला दिलेले अधिकार (${permittedModules.length} विभाग)'
-                      : 'Assigned Permissions (${permittedModules.length} Modules)',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Assigned Permissions ($moduleCountStr Modules)',
+                    mr: 'आपल्याला दिलेले अधिकार ($moduleCountStr विभाग)',
+                    hi: 'नियुक्त अनुमतियां ($moduleCountStr मॉड्यूल)',
+                  ),
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
               ),
@@ -1920,9 +2467,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            isMr
-                ? 'हे विभाग नगरसेवक / ॲडमिन कार्यालयाने आपल्या खात्यास नियुक्त केले आहेत.'
-                : 'These module privileges have been granted to your staff profile by the Nagarsevak office.',
+            AppTranslations.pick(
+              lang,
+              en: 'These module privileges have been granted to your staff profile by the Nagarsevak office.',
+              mr: 'हे विभाग नगरसेवक / ॲडमिन कार्यालयाने आपल्या खात्यास नियुक्त केले आहेत.',
+              hi: 'ये मॉड्यूल अधिकार नगरसेवक / एडमिन कार्यालय द्वारा आपकी प्रोफ़ाइल को दिए गए हैं।',
+            ),
             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
           ),
           const SizedBox(height: 12),
@@ -1944,7 +2494,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     Icon(item.icon, size: 15, color: const Color(0xFF0284C7)),
                     const SizedBox(width: 6),
                     Text(
-                      isMr ? item.titleMr : item.titleEn,
+                      AppTranslations.getNavTitle(item.key, lang),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                     ),
                   ],
@@ -1956,18 +2506,37 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
           const SizedBox(height: 22),
 
           // Bar Customization Call-to-action
-          _buildBarCustomizationBanner(isMr, isStacked, true),
+          _buildBarCustomizationBanner(lang, isStacked, true),
 
           const SizedBox(height: 20),
 
           // Logout for staff
-          _buildSessionSecurityCard(isMr, user, isStacked),
+          _buildSessionSecurityCard(lang, user, isStacked),
         ],
       ),
     );
   }
 
-  Widget _buildBarCustomizationBanner(bool isMr, bool isStacked, bool isStaff) {
+  Widget _buildBarCustomizationBanner(String lang, bool isStacked, bool isStaff) {
+    final title = AppTranslations.pick(
+      lang,
+      en: 'Customize Your Navigation',
+      mr: 'नेव्हिगेशन सानुकूल करा',
+      hi: 'नेविगेशन कस्टमाइज़ करें',
+    );
+    final subtitle = AppTranslations.pick(
+      lang,
+      en: 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
+      mr: 'आपल्या आवडीनुसार बॉटम बार आणि ५ द्रुत क्रिया पर्याय सेट करा.',
+      hi: 'अपनी आवश्यकतानुसार बॉटम बार और ५ त्वरित एक्शन विकल्प सेट करें।',
+    );
+    final buttonLabel = AppTranslations.pick(
+      lang,
+      en: 'Open Customizer',
+      mr: 'सेट करा',
+      hi: 'कस्टमाइज़र खोलें',
+    );
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1985,7 +2554,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
+                        title,
                         style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ),
@@ -1993,9 +2562,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  isMr
-                      ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
-                      : 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
+                  subtitle,
                   style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
                 ),
                 const SizedBox(height: 12),
@@ -2008,7 +2575,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () => _tabController.animateTo(isStaff ? 0 : 1),
-                    child: Text(isMr ? 'सेट करा' : 'Open Customizer', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    child: Text(buttonLabel, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -2022,19 +2589,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isMr ? 'नेव्हिगेशन सानुकूल करा' : 'Customize Your Navigation',
+                        title,
                         style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        isMr
-                            ? 'आपल्या आवडीनुसार बॉटम बार आणि 5 द्रुत क्रिया पर्याय सेट करा.'
-                            : 'Assign your frequently used permitted modules to bottom bar tabs and radial gestures.',
+                        subtitle,
                         style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0284C7),
@@ -2043,7 +2609,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   ),
                   onPressed: () => _tabController.animateTo(isStaff ? 0 : 1),
-                  child: Text(isMr ? 'सेट करा' : 'Open Customizer', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: Text(buttonLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -2054,33 +2620,40 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   // Tab 3: Security Logs (Responsive Table & Search)
   // ─────────────────────────────────────────────────────────────
   Widget _buildSecurityTab(bool isDark, BoxConstraints constraints) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final isStacked = constraints.maxWidth < 480;
 
     final filtered = _securityLogs.where((log) {
       if (_securityLogSearch.isEmpty) return true;
-      final q = _securityLogSearch.toLowerCase();
+      final q = AppTranslations.normalizeAsciiDigits(_securityLogSearch).toLowerCase();
       final email = (log['email'] ?? '').toString().toLowerCase();
       final os = (log['os'] ?? '').toString().toLowerCase();
       final ip = (log['ip_address'] ?? '').toString().toLowerCase();
       return email.contains(q) || os.contains(q) || ip.contains(q);
     }).toList();
 
+    final searchHint = AppTranslations.pick(
+      lang,
+      en: 'Search IP, email or device OS...',
+      mr: 'IP, ईमेल किंवा उपकरण शोधा...',
+      hi: 'IP, ईमेल या डिवाइस खोजें...',
+    );
+
     return Column(
       children: [
         // Responsive Header Search & Sign Out Bar
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
-            border: Border(bottom: BorderSide(color: const Color(0xFFE2E8F0))),
+            border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
           ),
           child: isStacked
               ? Column(
                   children: [
                     TextField(
                       decoration: InputDecoration(
-                        hintText: isMr ? 'IP, ईमेल किंवा उपकरण शोधा...' : 'Search IP, email or device OS...',
+                        hintText: searchHint,
                         hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                         prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
                         isDense: true,
@@ -2101,7 +2674,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                         onPressed: _showGlobalSignOutDialog,
                         icon: const Icon(Icons.logout_rounded, size: 14, color: Color(0xFFDC2626)),
                         label: Text(
-                          isMr ? 'इतर सर्व उपकरणांवरून बाहेर पडा' : 'Sign Out Other Devices',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Sign Out Other Devices',
+                            mr: 'इतर सर्व उपकरणांवरून बाहेर पडा',
+                            hi: 'अन्य सभी डिवाइस से साइन आउट करें',
+                          ),
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -2119,7 +2697,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     Expanded(
                       child: TextField(
                         decoration: InputDecoration(
-                          hintText: isMr ? 'IP, ईमेल किंवा उपकरण शोधा...' : 'Search IP, email or device OS...',
+                          hintText: searchHint,
                           hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                           prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
                           isDense: true,
@@ -2139,7 +2717,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       onPressed: _showGlobalSignOutDialog,
                       icon: const Icon(Icons.logout_rounded, size: 14, color: Color(0xFFDC2626)),
                       label: Text(
-                        isMr ? 'इतर उपकरणे बंद करा' : 'Sign Out Others',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Sign Out Others',
+                          mr: 'इतर उपकरणे बंद करा',
+                          hi: 'अन्य डिवाइस बंद करें',
+                        ),
                         style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -2167,7 +2750,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                             const Icon(Icons.shield_outlined, size: 40, color: Color(0xFF94A3B8)),
                             const SizedBox(height: 10),
                             Text(
-                              isMr ? 'कोणतेही सुरक्षा लॉग उपलब्ध नाहीत' : 'No security audit logs found',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'No security audit logs found',
+                                mr: 'कोणतेही सुरक्षा लॉग उपलब्ध नाहीत',
+                                hi: 'कोई सुरक्षा ऑडिट लॉग उपलब्ध नहीं है',
+                              ),
                               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -2180,12 +2768,28 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, idx) {
                         final log = filtered[idx];
-                        final dateStr = log['created_at'] != null
-                            ? DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.tryParse(log['created_at'].toString()) ?? DateTime.now())
-                            : 'Recent';
+                        final parsedDate = log['created_at'] != null
+                            ? DateTime.tryParse(log['created_at'].toString())
+                            : null;
+                        final dateStr = parsedDate != null
+                            ? AppTranslations.formatDateTime(parsedDate.toLocal(), lang)
+                            : AppTranslations.pick(lang, en: 'Recent', mr: 'अलीकडील', hi: 'हाल ही का');
 
-                        final osStr = (log['os'] ?? 'Device').toString();
-                        final browserStr = (log['browser'] ?? 'App').toString();
+                        final osStr = (log['os'] ??
+                                AppTranslations.pick(lang, en: 'Device', mr: 'उपकरण', hi: 'डिवाइस'))
+                            .toString();
+                        final browserStr = (log['browser'] ??
+                                AppTranslations.pick(lang, en: 'App', mr: 'ॲप', hi: 'ऐप'))
+                            .toString();
+                        final rawStatus = (log['status'] ?? 'SUCCESS').toString();
+                        final statusUpper = rawStatus.trim().toUpperCase();
+                        final statusDisplay = statusUpper == 'SUCCESS'
+                            ? AppTranslations.pick(lang, en: 'SUCCESS', mr: 'यशस्वी', hi: 'सफल')
+                            : (statusUpper == 'FAILED'
+                                ? AppTranslations.pick(lang, en: 'FAILED', mr: 'अयशस्वी', hi: 'विफल')
+                                : AppTranslations.getStatus(rawStatus, lang));
+                        final isFailed = statusUpper == 'FAILED' || statusUpper == 'ERROR';
+                        final userFallback = AppTranslations.pick(lang, en: 'User', mr: 'वापरकर्ता', hi: 'उपयोगकर्ता');
 
                         return Card(
                           elevation: 0,
@@ -2231,20 +2835,26 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF0FDF4),
+                                              color: isFailed ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
                                               borderRadius: BorderRadius.circular(4),
-                                              border: Border.all(color: const Color(0xFFBBF7D0)),
+                                              border: Border.all(
+                                                color: isFailed ? const Color(0xFFFECACA) : const Color(0xFFBBF7D0),
+                                              ),
                                             ),
                                             child: Text(
-                                              (log['status'] ?? 'SUCCESS').toString().toUpperCase(),
-                                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                                              statusDisplay,
+                                              style: TextStyle(
+                                                fontSize: 9.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: isFailed ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
-                                        'IP: ${log['ip_address'] ?? '127.0.0.1'} · ${log['email'] ?? 'User'}',
+                                        'IP: ${log['ip_address'] ?? '127.0.0.1'} · ${log['email'] ?? userFallback}',
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -2271,7 +2881,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
   // Tab 4: Report Issue / Support
   // ─────────────────────────────────────────────────────────────
   Widget _buildSupportTab(bool isDark, BoxConstraints constraints) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final ticketCountStr = AppTranslations.formatDigits(_supportTickets.length, lang);
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
@@ -2314,14 +2925,22 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isMr ? 'नवीन अडचण किंवा सूचना नोंदवा' : 'Report Issue / Feature Request',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Report Issue / Feature Request',
+                                mr: 'नवीन अडचण किंवा सूचना नोंदवा',
+                                hi: 'समस्या या सुझाव दर्ज करें',
+                              ),
                               style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              isMr
-                                  ? 'कृष्णनीती म्युनिसिपल सॉफ्टवेअर सपोर्ट डेस्ककडे थेट तांत्रिक संपर्क.'
-                                  : 'Direct technical escalation to Krishnaniti municipal software support desk.',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Direct technical escalation to Krishnaniti municipal software support desk.',
+                                mr: 'कृष्णनीती म्युनिसिपल सॉफ्टवेअर सपोर्ट डेस्ककडे थेट तांत्रिक संपर्क.',
+                                hi: 'कृष्णनीति म्युनिसिपल सॉफ्टवेयर सपोर्ट डेस्क से सीधा तकनीकी संपर्क।',
+                              ),
                               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                             ),
                           ],
@@ -2332,7 +2951,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   const Divider(height: 22, color: Color(0xFFF1F5F9)),
 
                   Text(
-                    isMr ? 'समस्येचे शीर्षक / सारांश *' : 'Issue Title / Summary *',
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Issue Title / Summary *',
+                      mr: 'समस्येचे शीर्षक / सारांश *',
+                      hi: 'समस्या का शीर्षक / सारांश *',
+                    ),
                     style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
                   ),
                   const SizedBox(height: 5),
@@ -2340,7 +2964,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     controller: _supportTitleCtrl,
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: isMr ? 'उदा. फोटो अपलोड करताना त्रुटी येते' : 'e.g. Photo upload in gallery reports timeout error',
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'e.g. Photo upload in gallery reports timeout error',
+                        mr: 'उदा. फोटो अपलोड करताना त्रुटी येते',
+                        hi: 'उदा. गैलरी में फ़ोटो अपलोड करते समय त्रुटि आ रही है',
+                      ),
                       hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                       isDense: true,
                       filled: true,
@@ -2360,7 +2989,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                   const SizedBox(height: 12),
 
                   Text(
-                    isMr ? 'तपशीलवार वर्णन *' : 'Detailed Description *',
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Detailed Description *',
+                      mr: 'तपशीलवार वर्णन *',
+                      hi: 'विस्तृत विवरण *',
+                    ),
                     style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
                   ),
                   const SizedBox(height: 5),
@@ -2369,9 +3003,12 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     maxLines: 4,
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: isMr
-                          ? 'येणारी समस्या, पावले आणि अपेक्षित निकाल स्पष्ट करा...'
-                          : 'Explain the issue encountered, steps to reproduce, or requested enhancement...',
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Explain the issue encountered, steps to reproduce, or requested enhancement...',
+                        mr: 'येणारी समस्या, पावले आणि अपेक्षित निकाल स्पष्ट करा...',
+                        hi: 'आने वाली समस्या, चरण और अपेक्षित सुधार स्पष्ट करें...',
+                      ),
                       hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                       filled: true,
                       fillColor: Colors.white,
@@ -2396,12 +3033,29 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                     runSpacing: 8,
                     children: [
                       Text(
-                        isMr ? 'तीव्रता / प्राधान्य:' : 'Severity / Priority:',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Severity / Priority:',
+                          mr: 'तीव्रता / प्राधान्य:',
+                          hi: 'गंभीरता / प्राथमिकता:',
+                        ),
                         style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
                       ),
-                      _buildPriorityChoice('Low', isMr ? 'कमी (Low)' : 'Low', const Color(0xFF10B981)),
-                      _buildPriorityChoice('Medium', isMr ? 'मध्यम (Med)' : 'Medium', const Color(0xFFF59E0B)),
-                      _buildPriorityChoice('High', isMr ? 'तातडीचे (High)' : 'High', const Color(0xFFEF4444)),
+                      _buildPriorityChoice(
+                        'Low',
+                        AppTranslations.pick(lang, en: 'Low', mr: 'कमी (Low)', hi: 'कम (Low)'),
+                        const Color(0xFF10B981),
+                      ),
+                      _buildPriorityChoice(
+                        'Medium',
+                        AppTranslations.pick(lang, en: 'Medium', mr: 'मध्यम (Med)', hi: 'मध्यम (Med)'),
+                        const Color(0xFFF59E0B),
+                      ),
+                      _buildPriorityChoice(
+                        'High',
+                        AppTranslations.pick(lang, en: 'High', mr: 'तातडीचे (High)', hi: 'अति आवश्यक (High)'),
+                        const Color(0xFFEF4444),
+                      ),
                     ],
                   ),
 
@@ -2419,8 +3073,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                         fit: BoxFit.scaleDown,
                         child: Text(
                           _isSubmittingTicket
-                              ? (isMr ? 'पाठवत आहे...' : 'Submitting Ticket...')
-                              : (isMr ? 'सपोर्ट तिकीट पाठवा' : 'Submit Support Ticket'),
+                              ? AppTranslations.pick(
+                                  lang,
+                                  en: 'Submitting Ticket...',
+                                  mr: 'पाठवत आहे...',
+                                  hi: 'टिकट भेजा जा रहा है...',
+                                )
+                              : AppTranslations.pick(
+                                  lang,
+                                  en: 'Submit Support Ticket',
+                                  mr: 'सपोर्ट तिकीट पाठवा',
+                                  hi: 'सहायता टिकट भेजें',
+                                ),
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
                         ),
                       ),
@@ -2444,12 +3108,16 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
             children: [
               Expanded(
                 child: Text(
-                  isMr ? 'माझी सपोर्ट तिकिटे (${_supportTickets.length})' : 'My Support Tickets (${_supportTickets.length})',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'My Support Tickets ($ticketCountStr)',
+                    mr: 'माझी सपोर्ट तिकिटे ($ticketCountStr)',
+                    hi: 'मेरे सहायता टिकट ($ticketCountStr)',
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-
             ],
           ),
           const SizedBox(height: 8),
@@ -2478,15 +3146,23 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            isMr ? 'कोणतीही सपोर्ट तिकिटे नोंदवली नाहीत' : 'No support tickets filed yet',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'No support tickets filed yet',
+                              mr: 'कोणतीही सपोर्ट तिकिटे नोंदवली नाहीत',
+                              hi: 'अभी तक कोई सहायता टिकट दर्ज नहीं है',
+                            ),
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            isMr
-                                ? 'काही अडचण किंवा प्रश्न असल्यास वरील फॉर्म भरून तिकीट पाठवा.'
-                                : 'If you face any issues, submit a ticket above.',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'If you face any issues, submit a ticket above.',
+                              mr: 'काही अडचण किंवा प्रश्न असल्यास वरील फॉर्म भरून तिकीट पाठवा.',
+                              hi: 'यदि कोई समस्या हो तो ऊपर दिया गया फॉर्म भरकर टिकट भेजें।',
+                            ),
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                             textAlign: TextAlign.center,
                           ),
@@ -2500,30 +3176,29 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (ctx, i) {
                         final t = _supportTickets[i];
-                        final dateStr = t['created_at'] != null
-                            ? DateFormat('dd MMM yyyy').format(DateTime.tryParse(t['created_at'].toString()) ?? DateTime.now())
-                            : 'Recent';
+                        final parsedDate = t['created_at'] != null
+                            ? DateTime.tryParse(t['created_at'].toString())
+                            : null;
+                        final dateStr = parsedDate != null
+                            ? AppTranslations.formatDate(parsedDate.toLocal(), lang)
+                            : AppTranslations.pick(lang, en: 'Recent', mr: 'अलीकडील', hi: 'हाल ही का');
 
                         final status = (t['status'] ?? 'Pending').toString();
                         final priority = (t['priority'] ?? 'Medium').toString();
 
                         Color statusBg;
                         Color statusText;
-                        String statusLabel;
-
                         if (status.toLowerCase() == 'resolved') {
                           statusBg = const Color(0xFFDCFCE7);
                           statusText = const Color(0xFF15803D);
-                          statusLabel = isMr ? 'सोडवलेले' : 'Resolved';
                         } else if (status.toLowerCase() == 'inprogress' || status.toLowerCase() == 'in progress') {
                           statusBg = const Color(0xFFFEF3C7);
                           statusText = const Color(0xFFB45309);
-                          statusLabel = isMr ? 'काम चालू' : 'In Progress';
                         } else {
                           statusBg = const Color(0xFFFEF2F2);
                           statusText = const Color(0xFFB91C1C);
-                          statusLabel = isMr ? 'प्रलंबित' : 'Pending';
                         }
+                        final statusLabel = AppTranslations.getStatus(status, lang);
 
                         Color priorityBg;
                         Color priorityText;
@@ -2537,11 +3212,16 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                           priorityBg = const Color(0xFFF1F5F9);
                           priorityText = const Color(0xFF475569);
                         }
+                        final priorityLabel = AppTranslations.getPriority(priority, lang);
 
                         final rawId = (t['id'] ?? 'TKT').toString();
-                        final displayId = rawId.length > 10 && rawId.contains('-')
+                        final displayIdRaw = rawId.length > 10 && rawId.contains('-')
                             ? '#${rawId.split('-').first.toUpperCase()}'
                             : (rawId.startsWith('#') ? rawId : '#$rawId');
+                        final displayId = AppTranslations.formatDigits(displayIdRaw, lang);
+
+                        final rawTitle = (t['title'] ?? '').toString().trim();
+                        final rawDesc = (t['description'] ?? '').toString().trim();
 
                         return Container(
                           decoration: BoxDecoration(
@@ -2562,16 +3242,33 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        (t['title'] ?? (isMr ? 'सपोर्ट चौकशी' : 'Support Inquiry')).toString(),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 13.5,
-                                          color: Color(0xFF0F172A),
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                      child: rawTitle.isNotEmpty
+                                          ? AppTranslatedText(
+                                              rawTitle,
+                                              targetLanguage: lang,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 13.5,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            )
+                                          : Text(
+                                              AppTranslations.pick(
+                                                lang,
+                                                en: 'Support Inquiry',
+                                                mr: 'सपोर्ट चौकशी',
+                                                hi: 'सहायता पूछताछ',
+                                              ),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 13.5,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                     ),
                                     const SizedBox(width: 8),
                                     Container(
@@ -2594,10 +3291,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                 ),
 
                                 // Description (maxLines: 2)
-                                if ((t['description'] ?? '').toString().trim().isNotEmpty) ...[
+                                if (rawDesc.isNotEmpty) ...[
                                   const SizedBox(height: 5),
-                                  Text(
-                                    t['description'].toString().trim(),
+                                  AppTranslatedText(
+                                    rawDesc,
+                                    targetLanguage: lang,
                                     style: const TextStyle(
                                       fontSize: 11.5,
                                       color: Color(0xFF64748B),
@@ -2632,7 +3330,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        priority.toUpperCase(),
+                                        priorityLabel,
                                         style: TextStyle(
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.w700,

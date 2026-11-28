@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../data/models/ward_provision_model.dart';
 import '../../../data/repositories/ward_provisions_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -59,13 +60,16 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
     }
   }
 
-  String _formatCurrency(double? amount) {
-    if (amount == null) return '₹0';
-    return NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    ).format(amount);
+  String _formatCurrency(double? amount, String lang) {
+    return AppTranslations.formatCurrency(amount ?? 0, lang);
+  }
+
+  String _formatProvDate(String raw, String lang) {
+    final parsed = DateTime.tryParse(raw.trim());
+    if (parsed != null) {
+      return AppTranslations.formatDate(parsed, lang, pattern: 'dd MMM yyyy');
+    }
+    return AppTranslations.formatDigits(raw, lang);
   }
 
   Color _getStatusBg(String status) {
@@ -119,18 +123,8 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
     }
   }
 
-  String _getStatusText(String status, bool isMr) {
-    switch (status) {
-      case 'Approved':
-        return isMr ? 'मंजूर' : 'Approved';
-      case 'Partially Approved':
-        return isMr ? 'अंशतः मंजूर' : 'Partially Approved';
-      case 'Rejected':
-        return isMr ? 'नाकारले' : 'Rejected';
-      default:
-        return isMr ? 'प्रलंबित' : 'Pending';
-    }
-  }
+  String _getStatusText(String status, String lang) =>
+      AppTranslations.getStatus(status, lang);
 
   Widget _fieldLabel(String text, {bool isRequired = false}) {
     return Padding(
@@ -186,14 +180,21 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
 
   // Add Provision Request Modal matching WardProvisions.tsx lines 347-456
   void _openAddModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final reqAmtCtrl = TextEditingController();
-    final catCtrl = TextEditingController(text: 'Roads & Civil');
-    final areaCtrl = TextEditingController(text: 'Ward 12');
+    final catCtrl = TextEditingController(
+      text: AppTranslations.pick(lang, en: 'Roads & Civil', mr: 'रस्ते व बांधकाम', hi: 'सड़क व निर्माण'),
+    );
+    final areaCtrl = TextEditingController(
+      text: AppTranslations.pick(lang, en: 'Ward 12', mr: 'प्रभाग १२', hi: 'वार्ड १२'),
+    );
     final refCtrl = TextEditingController();
-    final dateCtrl = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
+    final now = DateTime.now();
+    final dateCtrl = TextEditingController(
+      text: '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+    );
     String finYear = _year;
 
     showModalBottomSheet(
@@ -223,10 +224,18 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                   // 1. FIXED HEADER
                   AppModalHeader(
                     icon: Icons.account_balance_wallet_rounded,
-                    title: isMr ? 'नवीन तरतूद मागणी जोडा' : 'Add Provision Request',
-                    subtitle: isMr
-                        ? 'प्रभागातील प्रस्तावित कामांसाठी तरतूद मागणी नोंदवा'
-                        : 'Record civic budget provision and funding requests',
+                    title: AppTranslations.pick(
+                      lang,
+                      en: 'Add Provision Request',
+                      mr: 'नवीन तरतूद मागणी जोडा',
+                      hi: 'नया प्रावधान अनुरोध जोड़ें',
+                    ),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Record civic budget provision and funding requests',
+                      mr: 'प्रभागातील प्रस्तावित कामांसाठी तरतूद मागणी नोंदवा',
+                      hi: 'वार्ड के प्रस्तावित कार्यों के लिए बजट प्रावधान दर्ज करें',
+                    ),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
                   Expanded(
@@ -234,11 +243,24 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                       padding: const EdgeInsets.all(16),
                       children: [
                         // Title
-                        _fieldLabel(isMr ? 'प्रस्तावित कामाचे नाव / शीर्षक' : 'Provision Proposal Title', isRequired: true),
+                        _fieldLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Provision Proposal Title',
+                            mr: 'प्रस्तावित कामाचे नाव / शीर्षक',
+                            hi: 'प्रस्तावित कार्य का शीर्षक',
+                          ),
+                          isRequired: true,
+                        ),
                         TextField(
                           controller: titleCtrl,
                           decoration: _inputDec(
-                            hintText: isMr ? 'प्रकल्प / कामाचे नाव प्रविष्ट करा...' : 'Enter project name / provision title...',
+                            hintText: AppTranslations.pick(
+                              lang,
+                              en: 'Enter project name / provision title...',
+                              mr: 'प्रकल्प / कामाचे नाव प्रविष्ट करा...',
+                              hi: 'परियोजना / कार्य का नाम दर्ज करें...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -251,13 +273,21 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'मागणी केलेली रक्कम (₹)' : 'Requested Amount (₹)', isRequired: true),
+                                  _fieldLabel(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Requested Amount (₹)',
+                                      mr: 'मागणी केलेली रक्कम (₹)',
+                                      hi: 'अपेक्षित राशि (₹)',
+                                    ),
+                                    isRequired: true,
+                                  ),
                                   TextField(
                                     controller: reqAmtCtrl,
                                     keyboardType: TextInputType.number,
                                     decoration: _inputDec(
                                       prefixText: '₹ ',
-                                      hintText: 'e.g. 2500000',
+                                      hintText: AppTranslations.pick(lang, en: 'e.g. 2500000', mr: 'उदा. २५०००००', hi: 'उदा. २५०००००'),
                                     ),
                                   ),
                                 ],
@@ -268,7 +298,15 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'मागणी तारीख' : 'Requested Date', isRequired: true),
+                                  _fieldLabel(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Requested Date',
+                                      mr: 'मागणी तारीख',
+                                      hi: 'अपेक्षित तिथि',
+                                    ),
+                                    isRequired: true,
+                                  ),
                                   TextField(
                                     controller: dateCtrl,
                                     decoration: _inputDec(
@@ -290,11 +328,19 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'श्रेणी / विभाग' : 'Category', isRequired: true),
+                                  _fieldLabel(
+                                    AppTranslations.pick(lang, en: 'Category', mr: 'श्रेणी / विभाग', hi: 'श्रेणी / विभाग'),
+                                    isRequired: true,
+                                  ),
                                   TextField(
                                     controller: catCtrl,
                                     decoration: _inputDec(
-                                      hintText: isMr ? 'उदा. रस्ते, पाणी, आरोग्य' : 'e.g. Roads, Water, Health',
+                                      hintText: AppTranslations.pick(
+                                        lang,
+                                        en: 'e.g. Roads, Water, Health',
+                                        mr: 'उदा. रस्ते, पाणी, आरोग्य',
+                                        hi: 'उदा. सड़क, पानी, स्वास्थ्य',
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -305,11 +351,19 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'परिसर / प्रभाग भाग' : 'Area / Locality', isRequired: true),
+                                  _fieldLabel(
+                                    AppTranslations.pick(lang, en: 'Area / Locality', mr: 'परिसर / प्रभाग भाग', hi: 'क्षेत्र / वार्ड भाग'),
+                                    isRequired: true,
+                                  ),
                                   TextField(
                                     controller: areaCtrl,
                                     decoration: _inputDec(
-                                      hintText: isMr ? 'उदा. शनिवार पेठ' : 'Enter Area / Ward Sector',
+                                      hintText: AppTranslations.pick(
+                                        lang,
+                                        en: 'Enter Area / Ward Sector',
+                                        mr: 'उदा. शनिवार पेठ',
+                                        hi: 'क्षेत्र / सेक्टर दर्ज करें',
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -328,11 +382,11 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppDropdownFormField<String>(
-                                label: isMr ? 'आर्थिक वर्ष' : 'Financial Year',
+                                label: AppTranslations.pick(lang, en: 'Financial Year', mr: 'आर्थिक वर्ष', hi: 'वित्तीय वर्ष'),
                                 value: finYear,
-                                    items: const [
-                                      DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025', style: TextStyle(fontSize: 13))),
-                                      DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024', style: TextStyle(fontSize: 13))),
+                                    items: [
+                                      DropdownMenuItem(value: '2024-2025', child: Text(AppTranslations.pick(lang, en: 'FY 2024-2025', mr: 'आर्थिक वर्ष २०२४-२०२५', hi: 'वित्तीय वर्ष २०२४-२०२५'), style: const TextStyle(fontSize: 13))),
+                                      DropdownMenuItem(value: '2023-2024', child: Text(AppTranslations.pick(lang, en: 'FY 2023-2024', mr: 'आर्थिक वर्ष २०२३-२०२४', hi: 'वित्तीय वर्ष २०२३-२०२४'), style: const TextStyle(fontSize: 13))),
                                     ],
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => finYear = val);
@@ -346,7 +400,10 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'पत्र संदर्भ क्र.' : 'Letter Ref No', isRequired: true),
+                                  _fieldLabel(
+                                    AppTranslations.pick(lang, en: 'Letter Ref No', mr: 'पत्र संदर्भ क्र.', hi: 'पत्र संदर्भ क्र.'),
+                                    isRequired: true,
+                                  ),
                                   TextField(
                                     controller: refCtrl,
                                     decoration: _inputDec(
@@ -361,12 +418,24 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                         const SizedBox(height: 14),
 
                         // Description
-                        _fieldLabel(isMr ? 'सविस्तर स्वरूप / औचित्य' : 'Detailed Scope / Justification'),
+                        _fieldLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Detailed Scope / Justification',
+                            mr: 'सविस्तर स्वरूप / औचित्य',
+                            hi: 'विस्तृत दायरा / औचित्य',
+                          ),
+                        ),
                         TextField(
                           controller: descCtrl,
                           maxLines: 3,
                           decoration: _inputDec(
-                            hintText: isMr ? 'नागरी गरजेचा थोडक्यात तपशील...' : 'Brief details about the civic requirement...',
+                            hintText: AppTranslations.pick(
+                              lang,
+                              en: 'Brief details about the civic requirement...',
+                              mr: 'नागरी गरजेचा थोडक्यात तपशील...',
+                              hi: 'नागरिक आवश्यकता का संक्षिप्त विवरण...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -383,7 +452,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                             ),
                             icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                             label: Text(
-                              isMr ? 'तरतूद मागणी जतन करा' : 'Save Provision Request',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Save Provision Request',
+                                mr: 'तरतूद मागणी जतन करा',
+                                hi: 'प्रावधान अनुरोध सहेजें',
+                              ),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             onPressed: () async {
@@ -391,18 +465,24 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                 ScaffoldMessenger.of(sheetCtx).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      isMr ? 'कृपया कामाचे नाव प्रविष्ट करा.' : 'Please enter proposal title',
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Please enter proposal title',
+                                        mr: 'कृपया कामाचे नाव प्रविष्ट करा.',
+                                        hi: 'कृपया प्रस्ताव का शीर्षक दर्ज करें।',
+                                      ),
                                     ),
                                   ),
                                 );
                                 return;
                               }
 
+                              final normalizedAmt = AppTranslations.normalizeAsciiDigits(reqAmtCtrl.text.trim());
                               final newProv = WardProvisionModel(
                                 id: 'prov-${DateTime.now().millisecondsSinceEpoch}',
                                 title: titleCtrl.text.trim(),
                                 description: descCtrl.text.trim(),
-                                requestedAmount: double.tryParse(reqAmtCtrl.text.trim()) ?? 0,
+                                requestedAmount: double.tryParse(normalizedAmt) ?? 0,
                                 sanctionedAmount: null,
                                 requestedDate: dateCtrl.text.trim(),
                                 sanctionedDate: null,
@@ -422,9 +502,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      isMr
-                                          ? 'तरतूद मागणी यशस्वीरित्या जोडली गेली!'
-                                          : 'Provision request added successfully!',
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Provision request added successfully!',
+                                        mr: 'तरतूद मागणी यशस्वीरित्या जोडली गेली!',
+                                        hi: 'प्रावधान अनुरोध सफलतापूर्वक जोड़ा गया!',
+                                      ),
                                     ),
                                     backgroundColor: const Color(0xFF16A34A),
                                   ),
@@ -448,10 +531,14 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
 
   // Update Sanction Modal matching WardProvisions.tsx lines 460-540
   void _openUpdateModal(WardProvisionModel item) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final sancAmtCtrl = TextEditingController(text: (item.sanctionedAmount ?? item.requestedAmount).toStringAsFixed(0));
     final areaCtrl = TextEditingController(text: item.area);
-    final sancDateCtrl = TextEditingController(text: item.sanctionedDate ?? DateFormat('yyyy-MM-dd').format(DateTime.now()));
+    final now = DateTime.now();
+    final sancDateCtrl = TextEditingController(
+      text: item.sanctionedDate ??
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+    );
     String status = item.status == 'Pending' ? 'Approved' : item.status;
 
     showModalBottomSheet(
@@ -481,8 +568,13 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                   // 1. FIXED HEADER
                   AppModalHeader(
                     icon: Icons.verified_rounded,
-                    title: isMr ? 'मंजुरी तपशील अद्यतनित करा' : 'Update Sanction Details',
-                    subtitle: item.title,
+                    title: AppTranslations.pick(
+                      lang,
+                      en: 'Update Sanction Details',
+                      mr: 'मंजुरी तपशील अद्यतनित करा',
+                      hi: 'स्वीकृति विवरण अपडेट करें',
+                    ),
+                    subtitle: DynamicTranslationService.getCachedTranslation(item.title, lang) ?? item.title,
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
                   Expanded(
@@ -501,14 +593,18 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isMr ? 'प्रकल्प / काम' : 'PROJECT',
+                                AppTranslations.pick(lang, en: 'PROJECT', mr: 'प्रकल्प / काम', hi: 'परियोजना / कार्य'),
                                 style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
                               ),
                               const SizedBox(height: 3),
-                              Text(item.title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                              AppTranslatedText(
+                                item.title,
+                                targetLanguage: lang,
+                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
                               const SizedBox(height: 4),
                               Text(
-                                '${isMr ? "मागणी रक्कम" : "Requested"}: ${_formatCurrency(item.requestedAmount)}',
+                                '${AppTranslations.pick(lang, en: "Requested", mr: "मागणी रक्कम", hi: "अपेक्षित राशि")}: ${_formatCurrency(item.requestedAmount, lang)}',
                                 style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                               ),
                             ],
@@ -524,7 +620,15 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'मंजूर रक्कम (₹)' : 'Sanctioned Amount (₹)', isRequired: true),
+                                  _fieldLabel(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Sanctioned Amount (₹)',
+                                      mr: 'मंजूर रक्कम (₹)',
+                                      hi: 'स्वीकृत राशि (₹)',
+                                    ),
+                                    isRequired: true,
+                                  ),
                                   TextField(
                                     controller: sancAmtCtrl,
                                     keyboardType: TextInputType.number,
@@ -541,7 +645,15 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'मंजूर तारीख' : 'Sanctioned Date', isRequired: true),
+                                  _fieldLabel(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Sanctioned Date',
+                                      mr: 'मंजूर तारीख',
+                                      hi: 'स्वीकृति तिथि',
+                                    ),
+                                    isRequired: true,
+                                  ),
                                   TextField(
                                     controller: sancDateCtrl,
                                     decoration: _inputDec(
@@ -556,7 +668,15 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                         const SizedBox(height: 14),
 
                         // Area
-                        _fieldLabel(isMr ? 'परिसर / प्रभाग भाग' : 'Area / Ward Sector', isRequired: true),
+                        _fieldLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Area / Ward Sector',
+                            mr: 'परिसर / प्रभाग भाग',
+                            hi: 'क्षेत्र / वार्ड सेक्टर',
+                          ),
+                          isRequired: true,
+                        ),
                         TextField(
                           controller: areaCtrl,
                           decoration: _inputDec(),
@@ -564,7 +684,15 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                         const SizedBox(height: 14),
 
                         // Status Choices
-                        _fieldLabel(isMr ? 'मंजुरी स्थिती' : 'Approval Status', isRequired: true),
+                        _fieldLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Approval Status',
+                            mr: 'मंजुरी स्थिती',
+                            hi: 'स्वीकृति स्थिति',
+                          ),
+                          isRequired: true,
+                        ),
                         GridView.count(
                           crossAxisCount: 2,
                           shrinkWrap: true,
@@ -585,7 +713,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  _getStatusText(s, isMr),
+                                  _getStatusText(s, lang),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -610,12 +738,18 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                             ),
                             icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                             label: Text(
-                              isMr ? 'मंजुरी अद्यतनित करा' : 'Update Sanction',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Update Sanction',
+                                mr: 'मंजुरी अद्यतनित करा',
+                                hi: 'स्वीकृति अपडेट करें',
+                              ),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             onPressed: () async {
+                              final normalizedSancAmt = AppTranslations.normalizeAsciiDigits(sancAmtCtrl.text.trim());
                               final updated = item.copyWith(
-                                sanctionedAmount: double.tryParse(sancAmtCtrl.text.trim()),
+                                sanctionedAmount: double.tryParse(normalizedSancAmt),
                                 area: areaCtrl.text.trim(),
                                 sanctionedDate: sancDateCtrl.text.trim(),
                                 status: status,
@@ -630,9 +764,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      isMr
-                                          ? 'मंजुरी तपशील यशस्वीरित्या अद्यतनित केले!'
-                                          : 'Sanction details updated successfully!',
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Sanction details updated successfully!',
+                                        mr: 'मंजुरी तपशील यशस्वीरित्या अद्यतनित केले!',
+                                        hi: 'स्वीकृति विवरण सफलतापूर्वक अपडेट किए गए!',
+                                      ),
                                     ),
                                     backgroundColor: const Color(0xFF16A34A),
                                   ),
@@ -656,17 +793,44 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
 
   // Delete target modal matching lines 542-570
   void _confirmDelete(WardProvisionModel item) {
+    final lang = ref.read(appLanguageProvider);
+    final displayTitle =
+        DynamicTranslationService.getCachedTranslation(item.title, lang) ??
+            item.title;
     showDialog(
       context: context,
       builder: (dCtx) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Delete Provision?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          content: Text('Are you sure you want to delete "${item.title}"? This action cannot be undone.'),
+          title: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Delete Provision?',
+              mr: 'तरतूद हटवायची का?',
+              hi: 'प्रावधान हटाएं?',
+            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Are you sure you want to delete "$displayTitle"? This action cannot be undone.',
+              mr: 'तुम्हाला "$displayTitle" ही तरतूद नक्की हटवायची आहे का? ही कृती पूर्ववत करता येणार नाही.',
+              hi: 'क्या आप वाकई "$displayTitle" को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।',
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dCtx),
-              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Cancel',
+                  mr: 'रद्द करा',
+                  hi: 'रद्द करें',
+                ),
+                style: const TextStyle(color: Color(0xFF64748B)),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white),
@@ -677,11 +841,27 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                 await _loadProvisions();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Provision deleted successfully')),
+                    SnackBar(
+                      content: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Provision deleted successfully',
+                          mr: 'तरतूद यशस्वीरित्या हटवली',
+                          hi: 'प्रावधान सफलतापूर्वक हटाया गया',
+                        ),
+                      ),
+                    ),
                   );
                 }
               },
-              child: const Text('Delete'),
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Delete',
+                  mr: 'हटवा',
+                  hi: 'हटाएं',
+                ),
+              ),
             ),
           ],
         );
@@ -691,7 +871,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     final totalRequested = _provisions.fold<double>(0, (sum, p) => sum + p.requestedAmount);
     final totalSanctioned = _provisions.fold<double>(0, (sum, p) => sum + (p.sanctionedAmount ?? 0));
@@ -715,7 +895,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+        lang,
+        en: 'Open Menu Drawer',
+        mr: 'मेनू उघडा',
+        hi: 'मेनू खोलें',
+      ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -728,7 +913,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isMr ? 'प्रभागनिहाय तरतूद' : 'Ward Wise Provision',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Ward Wise Provision',
+                  mr: 'प्रभागनिहाय तरतूद',
+                  hi: 'वार्ड-वार प्रावधान',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -739,7 +929,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                 ),
               ),
               Text(
-                isMr ? 'वार्षिक बजेट तरतुदी आणि निधी वाटप' : 'Yearly municipal provisions & capital development allocations',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Yearly municipal provisions & capital development allocations',
+                  mr: 'वार्षिक बजेट तरतुदी आणि निधी वाटप',
+                  hi: 'वार्षिक बजट प्रावधान व पूंजीगत विकास आवंटन',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -768,14 +963,19 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                         children: [
                           // FY Selector
                           AppDropdown<String>(
-                            title: isMr ? 'आर्थिक वर्ष निवडा' : 'Select Financial Year',
+                            title: AppTranslations.pick(
+                              lang,
+                              en: 'Select Financial Year',
+                              mr: 'आर्थिक वर्ष निवडा',
+                              hi: 'वित्तीय वर्ष चुनें',
+                            ),
                             value: _year,
                             height: 40,
                             isExpanded: false,
                             prefixIcon: const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF0284C7)),
-                            items: const [
-                              DropdownMenuItem(value: '2024-2025', child: Text('FY 2024-2025')),
-                              DropdownMenuItem(value: '2023-2024', child: Text('FY 2023-2024')),
+                            items: [
+                              DropdownMenuItem(value: '2024-2025', child: Text(AppTranslations.pick(lang, en: 'FY 2024-2025', mr: 'आर्थिक वर्ष २०२४-२०२५', hi: 'वित्त वर्ष २०२४-२०२५'))),
+                              DropdownMenuItem(value: '2023-2024', child: Text(AppTranslations.pick(lang, en: 'FY 2023-2024', mr: 'आर्थिक वर्ष २०२३-२०२४', hi: 'वित्त वर्ष २०२३-२०२४'))),
                             ],
                             onChanged: (val) {
                               if (val != null) {
@@ -792,13 +992,14 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                           // Download Report
                           Expanded(
                             child: AppPdfButton(
-                              label: 'Reports',
+                              label: AppTranslations.getDownloadReport(lang),
                               style: AppPdfButtonStyle.tonal,
-                              tooltip: 'Reports',
+                              tooltip: AppTranslations.getDownloadReport(lang),
                               onPressed: () {
                                 WardProvisionReportGenerator.generateAndPrintProvisionReport(
                                   provisions: _provisions,
                                   year: _year,
+                                  lang: lang,
                                 );
                               },
                             ),
@@ -839,7 +1040,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        isMr ? 'एकूण मागणी' : 'Total Requested',
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Total Requested',
+                                          mr: 'एकूण मागणी',
+                                          hi: 'कुल मांग',
+                                        ),
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                                       ),
                                       Container(
@@ -855,12 +1061,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    _formatCurrency(totalRequested),
+                                    _formatCurrency(totalRequested, lang),
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    '${_provisions.length} ${isMr ? "प्रस्तावित कामे" : "pending requests"}',
+                                    '${AppTranslations.formatDigits('${_provisions.length}', lang)} ${AppTranslations.pick(lang, en: "pending requests", mr: "प्रस्तावित कामे", hi: "प्रस्तावित कार्य")}',
                                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                   ),
                                 ],
@@ -896,7 +1102,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        isMr ? 'एकूण मंजूर' : 'Total Sanctioned',
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Total Sanctioned',
+                                          mr: 'एकूण मंजूर',
+                                          hi: 'कुल स्वीकृत',
+                                        ),
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                                       ),
                                       Container(
@@ -912,7 +1123,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    _formatCurrency(totalSanctioned),
+                                    _formatCurrency(totalSanctioned, lang),
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                   ),
                                   const SizedBox(height: 6),
@@ -927,7 +1138,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '$successRate% success rate',
+                                    '${AppTranslations.formatDigits(successRate, lang)}% ${AppTranslations.pick(lang, en: "success rate", mr: "मंजुरी दर", hi: "सफलता दर")}',
                                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                   ),
                                 ],
@@ -963,7 +1174,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                   const Icon(Icons.description_outlined, size: 48, color: Color(0xFF94A3B8)),
                                   const SizedBox(height: 12),
                                   Text(
-                                    isMr ? 'कोणतेही तरतूद रेकॉर्ड आढळले नाही' : 'No provision records found',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'No provision records found',
+                                      mr: 'कोणतेही तरतूद रेकॉर्ड आढळले नाही',
+                                      hi: 'कोई प्रावधान रिकॉर्ड नहीं मिला',
+                                    ),
                                     style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                                   ),
                                 ],
@@ -975,12 +1191,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                 headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
                                 columnSpacing: 18,
                                 columns: [
-                                  DataColumn(label: Text(isMr ? 'प्रकल्प शीर्षक' : 'Title / Scope', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                                  DataColumn(label: Text(isMr ? 'परिसर' : 'Area', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                                  DataColumn(label: Text(isMr ? 'रक्कम' : 'Amount', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                                  DataColumn(label: Text(isMr ? 'स्थिती' : 'Status', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                                  DataColumn(label: Text(isMr ? 'तारीख' : 'Date', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                                  const DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                                  DataColumn(label: Text(AppTranslations.pick(lang, en: 'Title / Scope', mr: 'प्रकल्प शीर्षक', hi: 'परियोजना शीर्षक'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                                  DataColumn(label: Text(AppTranslations.pick(lang, en: 'Area', mr: 'परिसर', hi: 'क्षेत्र'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                                  DataColumn(label: Text(AppTranslations.pick(lang, en: 'Amount', mr: 'रक्कम', hi: 'राशि'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                                  DataColumn(label: Text(AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                                  DataColumn(label: Text(AppTranslations.pick(lang, en: 'Date', mr: 'तारीख', hi: 'तारीख'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                                  DataColumn(label: Text(AppTranslations.pick(lang, en: 'Actions', mr: 'कृती', hi: 'कार्रवाई'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                                 ],
                                 rows: _visibleProvisions.map((item) {
                                   return DataRow(
@@ -993,8 +1209,9 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(
+                                              AppTranslatedText(
                                                 item.title,
+                                                targetLanguage: lang,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
@@ -1008,15 +1225,16 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                                       color: const Color(0xFFF1F5F9),
                                                       borderRadius: BorderRadius.circular(4),
                                                     ),
-                                                    child: Text(
+                                                    child: AppTranslatedText(
                                                       item.category,
+                                                      targetLanguage: lang,
                                                       style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 4),
                                                   Flexible(
                                                     child: Text(
-                                                      'Ref: ${item.letterReference}',
+                                                      '${AppTranslations.pick(lang, en: "Ref", mr: "संदर्भ", hi: "संदर्भ")}: ${AppTranslations.formatDigits(item.letterReference, lang)}',
                                                       overflow: TextOverflow.ellipsis,
                                                       style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                                                     ),
@@ -1032,8 +1250,9 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                       DataCell(
                                         SizedBox(
                                           width: 100,
-                                          child: Text(
+                                          child: AppTranslatedText(
                                             item.area.isNotEmpty ? item.area : '-',
+                                            targetLanguage: lang,
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
                                           ),
@@ -1047,12 +1266,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              _formatCurrency(item.sanctionedAmount ?? item.requestedAmount),
+                                              _formatCurrency(item.sanctionedAmount ?? item.requestedAmount, lang),
                                               style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                             ),
                                             if (item.sanctionedAmount != null && item.sanctionedAmount! < item.requestedAmount) ...[
                                               Text(
-                                                'req: ${_formatCurrency(item.requestedAmount)}',
+                                                '${AppTranslations.pick(lang, en: "req", mr: "मागणी", hi: "मांग")}: ${_formatCurrency(item.requestedAmount, lang)}',
                                                 style: const TextStyle(
                                                   fontSize: 10,
                                                   color: Color(0xFF94A3B8),
@@ -1079,7 +1298,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                               Icon(_getStatusIcon(item.status), size: 12, color: _getStatusTextColor(item.status)),
                                               const SizedBox(width: 4),
                                               Text(
-                                                _getStatusText(item.status, isMr),
+                                                _getStatusText(item.status, lang),
                                                 style: TextStyle(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
@@ -1094,7 +1313,7 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                       // Date matching line 309
                                       DataCell(
                                         Text(
-                                          item.sanctionedDate ?? item.requestedDate,
+                                          _formatProvDate(item.sanctionedDate ?? item.requestedDate, lang),
                                           style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                                         ),
                                       ),
@@ -1106,12 +1325,22 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                                           children: [
                                             IconButton(
                                               icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0284C7)),
-                                              tooltip: 'Update Sanction',
+                                              tooltip: AppTranslations.pick(
+                                    lang,
+                                    en: 'Update Sanction',
+                                    mr: 'मंजुरी अद्यतनित करा',
+                                    hi: 'स्वीकृति अपडेट करें',
+                                  ),
                                               onPressed: () => _openUpdateModal(item),
                                             ),
                                             IconButton(
                                               icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
-                                              tooltip: 'Delete',
+                                              tooltip: AppTranslations.pick(
+                                    lang,
+                                    en: 'Delete',
+                                    mr: 'हटवा',
+                                    hi: 'हटाएं',
+                                  ),
                                               onPressed: () => _confirmDelete(item),
                                             ),
                                           ],
@@ -1130,8 +1359,8 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
                         totalCount: _provisions.length,
                         pageSize: 20,
                         onLoadMore: () => setState(() => _displayedLimit += 20),
-                        label: isMr ? 'तरतुदी' : 'provisions',
-                        isMarathi: isMr,
+                        label: AppTranslations.pick(lang, en: 'provisions', mr: 'तरतुदी', hi: 'प्रावधान'),
+                        isMarathi: lang == 'mr',
                       ),
 
                     const SizedBox(height: 80),
@@ -1145,7 +1374,12 @@ class _WardProvisionsScreenState extends ConsumerState<WardProvisionsScreen> {
           onPressed: _openAddModal,
           icon: const Icon(Icons.add_rounded, size: 22),
           label: Text(
-            isMr ? 'नवीन मागणी' : 'New Provision',
+            AppTranslations.pick(
+              lang,
+              en: 'New Provision',
+              mr: 'नवीन मागणी',
+              hi: 'नया प्रावधान',
+            ),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),

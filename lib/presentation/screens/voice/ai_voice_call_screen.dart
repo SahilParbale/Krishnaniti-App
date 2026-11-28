@@ -1,12 +1,14 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
@@ -65,8 +67,13 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
       }
     });
 
-    _speechMessageController.text =
-        'Hello, this is a call from Ward 12 Corporator Office. We are calling to gather your feedback on water supply and road maintenance in your area.';
+    final initLang = appLanguageValueNotifier.value;
+    _speechMessageController.text = AppTranslations.pick(
+      initLang,
+      en: 'Hello, this is a call from Ward 12 Corporator Office. We are calling to gather your feedback on water supply and road maintenance in your area.',
+      mr: 'नमस्कार, हा कॉल प्रभाग १२ नगरसेवक कार्यालयातून आहे. आपल्या भागातील पाणीपुरवठा आणि रस्ते देखभालीबाबत आपला अभिप्राय जाणून घेण्यासाठी आम्ही संपर्क साधत आहोत.',
+      hi: 'नमस्ते, यह वार्ड १२ नगरसेवक कार्यालय से कॉल है। हम आपके क्षेत्र में जल आपूर्ति और सड़क रखरखाव पर आपकी प्रतिक्रिया जानने के लिए कॉल कर रहे हैं।',
+    );
 
     _loadVoters();
     _loadHistory();
@@ -87,8 +94,8 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
 
     try {
       final list = await repo.getVotersWithMobile(
-        name: _nameController.text.trim(),
-        address: _addressController.text.trim(),
+        name: AppTranslations.normalizeAsciiDigits(_nameController.text.trim()),
+        address: AppTranslations.normalizeAsciiDigits(_addressController.text.trim()),
       );
 
       if (mounted) {
@@ -171,17 +178,36 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
   }
 
   Future<void> _startAiCalls() async {
+    final lang = ref.read(appLanguageProvider);
     final text = _speechMessageController.text.trim();
     if (text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter speech text to be spoken by AI')),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please enter speech text to be spoken by AI',
+              mr: 'कृपया AI ने बोलण्याचा मजकूर प्रविष्ट करा',
+              hi: 'कृपया AI द्वारा बोला जाने वाला संदेश दर्ज करें',
+            ),
+          ),
+        ),
       );
       return;
     }
 
     if (_selectedVoterIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one voter to initiate AI call')),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please select at least one voter to initiate AI call',
+              mr: 'AI कॉल सुरू करण्यासाठी कृपया किमान एक मतदार निवडा',
+              hi: 'AI कॉल शुरू करने के लिए कृपया कम से कम एक मतदाता चुनें',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -192,6 +218,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
       final client = SupabaseService.instance.client;
       final tenantId = SupabaseService.instance.activeTenantId;
       final count = _selectedVoterIds.length;
+      final countStr = AppTranslations.formatDigits(count, lang);
 
       final newLog = WhatsAppBroadcastModel(
         id: 'ai-${DateTime.now().millisecondsSinceEpoch}',
@@ -226,7 +253,14 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: _kAiPurple,
-            content: Text('AI Voice Broadcast initiated to $count recipients!'),
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'AI Voice Broadcast initiated to $countStr recipients!',
+                mr: '$countStr नागरिकांसाठी AI व्हॉइस प्रसारण सुरू झाले!',
+                hi: '$countStr प्राप्तकर्ताओं के लिए AI वॉयस प्रसारण शुरू किया गया!',
+              ),
+            ),
           ),
         );
       }
@@ -234,7 +268,16 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
       if (mounted) {
         setState(() => _isCalling = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to initiate AI Voice Broadcast')),
+          SnackBar(
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Failed to initiate AI Voice Broadcast',
+                mr: 'AI व्हॉइस प्रसारण सुरू करण्यात अयशस्वी',
+                hi: 'AI वॉयस प्रसारण शुरू करने में विफल',
+              ),
+            ),
+          ),
         );
       }
     }
@@ -242,6 +285,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -254,25 +298,35 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Open Menu Drawer',
+              mr: 'मेनू उघडा',
+              hi: 'मेनू खोलें',
             ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'AI Voice Call',
+              AppTranslations.pick(
+                lang,
+                en: 'AI Voice Call',
+                mr: 'AI व्हॉइस कॉल',
+                hi: 'एआई वॉयस कॉल',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -280,10 +334,15 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
               ),
             ),
             Text(
-              'AI voice agent & citizen feedback',
+              AppTranslations.pick(
+                lang,
+                en: 'AI voice agent & citizen feedback',
+                mr: 'AI व्हॉइस एजंट आणि नागरिक अभिप्राय',
+                hi: 'एआई वॉयस एजेंट और नागरिक प्रतिक्रिया',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -294,13 +353,15 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
         actions: [
           if (_aiCallLogs.isNotEmpty) ...[
             AppPdfButton(
-              label: 'Reports',
+              label: AppTranslations.pick(lang, en: 'Reports', mr: 'अहवाल', hi: 'रिपोर्ट'),
+              tooltip: AppTranslations.getDownloadReport(lang),
               style: AppPdfButtonStyle.outlined,
               onPressed: () {
                 CommunicationHistoryReportGenerator.generateAndPrintReport(
                   logs: _aiCallLogs,
                   title: 'AI Voice Call History & Citizen Feedback',
                   subtitle: 'Automated AI Voice Call Broadcast Register - Prabhag 12',
+                  lang: lang,
                 );
               },
             ),
@@ -339,16 +400,21 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
-                tabs: const [
+                tabs: [
                   Tab(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.record_voice_over, size: 16),
-                        SizedBox(width: 6),
+                        const Icon(Icons.record_voice_over, size: 16),
+                        const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'AI Call Broadcast',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'AI Call Broadcast',
+                              mr: 'AI कॉल प्रसारण',
+                              hi: 'एआई कॉल प्रसारण',
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -360,11 +426,16 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.history, size: 16),
-                        SizedBox(width: 6),
+                        const Icon(Icons.history, size: 16),
+                        const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'Call History',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Call History',
+                              mr: 'कॉल इतिहास',
+                              hi: 'कॉल इतिहास',
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -380,8 +451,8 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildAiCallTab(theme, isDark),
-                _buildHistoryTab(theme, isDark),
+                _buildAiCallTab(theme, isDark, lang),
+                _buildHistoryTab(theme, isDark, lang),
               ],
             ),
           ),
@@ -390,7 +461,10 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
     );
   }
 
-  Widget _buildAiCallTab(ThemeData theme, bool isDark) {
+  Widget _buildAiCallTab(ThemeData theme, bool isDark, String lang) {
+    final selectedStr = AppTranslations.formatDigits(_selectedVoterIds.length, lang);
+    final totalVotersStr = AppTranslations.formatDigits(_voters.length, lang);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -410,23 +484,28 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
-                      Icon(Icons.language, size: 16, color: _kAiPurple),
-                      SizedBox(width: 6),
+                    children: [
+                      const Icon(Icons.language, size: 16, color: _kAiPurple),
+                      const SizedBox(width: 6),
                       Text(
-                        'Select Voice Language',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Select Voice Language',
+                          mr: 'व्हॉइस भाषा निवडा',
+                          hi: 'वॉयस भाषा चुनें',
+                        ),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _buildLangChoice('en-IN', 'English'),
+                      _buildLangChoice('en-IN', AppTranslations.pick(lang, en: 'English', mr: 'इंग्रजी', hi: 'अंग्रेज़ी')),
                       const SizedBox(width: 8),
-                      _buildLangChoice('mr-IN', 'Marathi'),
+                      _buildLangChoice('mr-IN', AppTranslations.pick(lang, en: 'Marathi', mr: 'मराठी', hi: 'मराठी')),
                       const SizedBox(width: 8),
-                      _buildLangChoice('hi-IN', 'Hindi'),
+                      _buildLangChoice('hi-IN', AppTranslations.pick(lang, en: 'Hindi', mr: 'हिंदी', hi: 'हिंदी')),
                     ],
                   ),
                 ],
@@ -451,9 +530,14 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Message to Speak',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Message to Speak',
+                          mr: 'बोलण्याचा संदेश',
+                          hi: 'बोलने का संदेश',
+                        ),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -461,9 +545,14 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                           color: _kAiPurpleLight,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'Text-to-Speech AI',
-                          style: TextStyle(fontSize: 10, color: _kAiPurple, fontWeight: FontWeight.bold),
+                        child: Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Text-to-Speech AI',
+                            mr: 'टेक्स्ट-टू-स्पीच AI',
+                            hi: 'टेक्स्ट-टू-स्पीच AI',
+                          ),
+                          style: const TextStyle(fontSize: 10, color: _kAiPurple, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -474,7 +563,12 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                     maxLines: 4,
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: 'Enter message to be spoken by AI voice agent...',
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Enter message to be spoken by AI voice agent...',
+                        mr: 'AI व्हॉइस एजंटने बोलण्याचा संदेश प्रविष्ट करा...',
+                        hi: 'AI वॉयस एजेंट द्वारा बोला जाने वाला संदेश दर्ज करें...',
+                      ),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       contentPadding: const EdgeInsets.all(10),
                     ),
@@ -490,15 +584,25 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.people_alt_outlined, size: 18, color: _kAiPurple),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Select Voters (${_selectedVoterIds.length} / ${_voters.length})',
-                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              Flexible(
+                child: Row(
+                  children: [
+                    const Icon(Icons.people_alt_outlined, size: 18, color: _kAiPurple),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Select Voters ($selectedStr / $totalVotersStr)',
+                          mr: 'मतदार निवडा ($selectedStr / $totalVotersStr)',
+                          hi: 'मतदाता चुनें ($selectedStr / $totalVotersStr)',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               TextButton.icon(
                 onPressed: _toggleSelectAll,
@@ -508,7 +612,9 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                   color: _kAiPurple,
                 ),
                 label: Text(
-                  _isAllSelected ? 'Deselect All' : 'Select All',
+                  _isAllSelected
+                      ? AppTranslations.pick(lang, en: 'Deselect All', mr: 'सर्व रद्द करा', hi: 'सभी अचयनित करें')
+                      : AppTranslations.pick(lang, en: 'Select All', mr: 'सर्व निवडा', hi: 'सभी चुनें'),
                   style: const TextStyle(fontSize: 12, color: _kAiPurple, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -524,7 +630,12 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                 child: TextField(
                   controller: _nameController,
                   decoration: InputDecoration(
-                    hintText: 'Filter name...',
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Filter name...',
+                      mr: 'नाव शोधा...',
+                      hi: 'नाम खोजें...',
+                    ),
                     prefixIcon: const Icon(Icons.search, size: 18),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -538,7 +649,12 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                 child: TextField(
                   controller: _addressController,
                   decoration: InputDecoration(
-                    hintText: 'Filter area...',
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Filter area...',
+                      mr: 'परिसर शोधा...',
+                      hi: 'क्षेत्र खोजें...',
+                    ),
                     prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -550,6 +666,12 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
               const SizedBox(width: 6),
               IconButton.filledTonal(
                 onPressed: _loadVoters,
+                tooltip: AppTranslations.pick(
+                  lang,
+                  en: 'Apply Filters',
+                  mr: 'फिल्टर लागू करा',
+                  hi: 'फ़िल्टर लागू करें',
+                ),
                 icon: const Icon(Icons.filter_alt, size: 18),
               ),
             ],
@@ -564,7 +686,15 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                   ? Center(
                       child: Padding(
                         padding: const EdgeInsets.all(20),
-                        child: Text('No voters found with phone numbers', style: TextStyle(color: Colors.grey[600])),
+                        child: Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'No voters found with phone numbers',
+                            mr: 'मोबाईल क्रमांक असलेले मतदार आढळले नाहीत',
+                            hi: 'फ़ोन नंबर वाले कोई मतदाता नहीं मिले',
+                          ),
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
                       ),
                     )
                   : Column(
@@ -604,15 +734,31 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              v.displayName,
+                                            AppTranslatedText(
+                                              v.displayNameFor(lang),
+                                              isName: true,
+                                              targetLanguage: lang,
                                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                             ),
-                                            Text(
-                                              '${v.mobile ?? '-'} · ${v.address}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  AppTranslations.formatDigits(v.mobile ?? '-', lang),
+                                                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                                ),
+                                                if (v.address.isNotEmpty) ...[
+                                                  Text(' · ', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                                                  Expanded(
+                                                    child: AppTranslatedText(
+                                                      v.address,
+                                                      targetLanguage: lang,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
                                             ),
                                           ],
                                         ),
@@ -629,7 +775,8 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                           currentCount: _visibleVoters.length,
                           totalCount: _voters.length,
                           pageSize: 20,
-                          label: 'voters',
+                          label: AppTranslations.pick(lang, en: 'voters', mr: 'मतदार', hi: 'मतदाता'),
+                          isMarathi: lang == 'mr',
                           onLoadMore: () {
                             setState(() {
                               _displayedVotersLimit += 20;
@@ -651,7 +798,19 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.phone_in_talk, size: 20),
               label: Text(
-                _isCalling ? 'Initiating Calls...' : 'Start AI Voice Calls (${_selectedVoterIds.length})',
+                _isCalling
+                    ? AppTranslations.pick(
+                        lang,
+                        en: 'Initiating Calls...',
+                        mr: 'कॉल सुरू होत आहेत...',
+                        hi: 'कॉल शुरू हो रहे हैं...',
+                      )
+                    : AppTranslations.pick(
+                        lang,
+                        en: 'Start AI Voice Calls ($selectedStr)',
+                        mr: 'AI व्हॉइस कॉल सुरू करा ($selectedStr)',
+                        hi: 'AI वॉयस कॉल शुरू करें ($selectedStr)',
+                      ),
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
@@ -693,7 +852,7 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
     );
   }
 
-  Widget _buildHistoryTab(ThemeData theme, bool isDark) {
+  Widget _buildHistoryTab(ThemeData theme, bool isDark, String lang) {
     if (_isLoadingHistory && _aiCallLogs.isEmpty) {
       return const AppShimmerList(count: 6);
     }
@@ -705,7 +864,15 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
           children: [
             Icon(Icons.history_outlined, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 12),
-            Text('No AI Voice Call history found', style: TextStyle(color: Colors.grey[600])),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No AI Voice Call history found',
+                mr: 'AI व्हॉइस कॉल इतिहास आढळला नाही',
+                hi: 'AI वॉयस कॉल इतिहास नहीं मिला',
+              ),
+              style: TextStyle(color: Colors.grey[600]),
+            ),
           ],
         ),
       );
@@ -727,7 +894,8 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                     currentCount: _visibleHistory.length,
                     totalCount: _aiCallLogs.length,
                     pageSize: 20,
-                    label: 'calls',
+                    label: AppTranslations.pick(lang, en: 'calls', mr: 'कॉल्स', hi: 'कॉल्स'),
+                    isMarathi: lang == 'mr',
                     onLoadMore: () {
                       setState(() {
                         _displayedHistoryLimit += 20;
@@ -736,7 +904,9 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                   );
                 }
                 final item = _visibleHistory[index];
-                final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.sentAt);
+                final dateStr = AppTranslations.formatDateTime(item.sentAt, lang);
+                final recStr = AppTranslations.formatDigits(item.recipients, lang);
+                final sentStr = AppTranslations.formatDigits(item.sentCount, lang);
 
                 return Card(
                   elevation: 0,
@@ -764,9 +934,14 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                                 color: _kAiPurpleLight,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text(
-                                'AI VOICE CALL',
-                                style: TextStyle(
+                              child: Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'AI VOICE CALL',
+                                  mr: 'AI व्हॉइस कॉल',
+                                  hi: 'एआई वॉयस कॉल',
+                                ),
+                                style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: _kAiPurple,
@@ -776,15 +951,21 @@ class _AiVoiceCallScreenState extends ConsumerState<AiVoiceCallScreen>
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text(
+                        AppTranslatedText(
                           item.message.isNotEmpty ? item.message : item.title,
+                          targetLanguage: lang,
                           style: TextStyle(fontSize: 12.5, color: isDark ? Colors.grey[300] : Colors.grey[700]),
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
                             Text(
-                              '${item.recipients} Recipients · ${item.sentCount} Completed',
+                              AppTranslations.pick(
+                                lang,
+                                en: '$recStr Recipients · $sentStr Completed',
+                                mr: '$recStr प्राप्तकर्ते · $sentStr पूर्ण',
+                                hi: '$recStr प्राप्तकर्ता · $sentStr पूर्ण',
+                              ),
                               style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w600),
                             ),
                           ],

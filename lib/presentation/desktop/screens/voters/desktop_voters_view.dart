@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/repositories/voters_repository.dart';
@@ -30,7 +31,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
   String _selectedFavour = 'All';
   String _selectedGender = 'All';
   String _selectedAgeRange = 'All';
-  bool _isFriendOnly = false;
+  final bool _isFriendOnly = false;
   List<String> _availableBooths = [];
   String _viewMode = 'grid'; // 'grid' | 'table'
 
@@ -74,13 +75,13 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
       final res = await repo.getPaginatedVoters(
         page: _currentPage,
         pageSize: _pageSize,
-        query: _searchQuery,
+        query: AppTranslations.normalizeAsciiDigits(_searchQuery),
         boothFilter: _selectedBooth,
         favourFilter: _selectedFavour,
         genderFilter: _selectedGender,
         ageRangeFilter: _selectedAgeRange,
-        addressFilter: _addressFilter,
-        houseNoFilter: _houseNoFilter,
+        addressFilter: AppTranslations.normalizeAsciiDigits(_addressFilter),
+        houseNoFilter: AppTranslations.normalizeAsciiDigits(_houseNoFilter),
         casteFilter: _casteFilter,
         isFriendOnly: _isFriendOnly,
       );
@@ -103,224 +104,347 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
   }
 
   void _showAddVoterModal() {
+    final currentLang = ref.read(desktopLanguageProvider);
     final nameMrController = TextEditingController();
     final nameEnController = TextEditingController();
     final epicController = TextEditingController();
-    final boothController = TextEditingController(text: '12');
+    final boothController = TextEditingController(
+      text: AppTranslations.formatDigits('12', currentLang),
+    );
     final ageController = TextEditingController();
     final mobileController = TextEditingController();
     final addressController = TextEditingController();
     final houseNoController = TextEditingController();
     String gender = 'M';
-    String favour = 'Neutral';
+    final String favour = 'Neutral';
+    String? epicError;
 
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          return DesktopModalDialog(
-            title: 'Add Voter',
-            subtitle: 'Register a new citizen in the ward voter registry',
-            icon: Icons.how_to_reg_rounded,
-            width: 600,
-            onClose: () => Navigator.pop(ctx),
-            actions: [
-              DesktopModalDialog.cancelButton(ctx),
-              const SizedBox(width: 12),
-              DesktopModalDialog.primaryButton(
-                text: 'Save Voter',
-                onPressed: () async {
-                  if (epicController.text.trim().isEmpty) return;
-                  final newVoter = VoterModel(
-                    id: 'vot-${DateTime.now().millisecondsSinceEpoch}',
-                    nameMarathi: nameMrController.text.trim().isNotEmpty ? nameMrController.text.trim() : nameEnController.text.trim(),
-                    nameEnglish: nameEnController.text.trim().isNotEmpty ? nameEnController.text.trim() : nameMrController.text.trim(),
-                    epicNo: epicController.text.trim(),
-                    booth: boothController.text.trim(),
-                    age: int.tryParse(ageController.text.trim()) ?? 0,
-                    gender: gender,
-                    mobile: mobileController.text.trim().isNotEmpty ? mobileController.text.trim() : null,
-                    houseNo: houseNoController.text.trim().isNotEmpty ? houseNoController.text.trim() : null,
-                    address: addressController.text.trim(),
-                    favour: favour,
-                  );
-
-                  final repo = ref.read(votersRepoProvider);
-                  await repo.addVoter(newVoter);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  _fetchVoters();
-                },
-              ),
-            ],
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Names
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Voter Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: nameMrController,
-                            decoration: desktopInputDecoration(hintText: 'e.g. Ramesh P. Kadam'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Name (English)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: nameEnController,
-                            decoration: desktopInputDecoration(hintText: 'e.g. Ramesh Pandurang Kadam'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+      builder: (ctx) => Consumer(
+        builder: (ctx, dialogRef, _) {
+          final lang = dialogRef.watch(desktopLanguageProvider);
+          return StatefulBuilder(
+            builder: (ctx, setModalState) {
+              return DesktopModalDialog(
+                title: AppTranslations.pick(lang, en: 'Add Voter', mr: 'मतदार जोडा', hi: 'मतदाता जोड़ें'),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Register a new citizen in the ward voter registry',
+                  mr: 'प्रभाग मतदार यादीत नवीन मतदाराची नोंदणी करा',
+                  hi: 'वार्ड मतदाता सूची में नए मतदाता का पंजीकरण करें',
                 ),
-                const SizedBox(height: 16),
+                icon: Icons.how_to_reg_rounded,
+                width: 600,
+                onClose: () => Navigator.pop(ctx),
+                actions: [
+                  DesktopModalDialog.cancelButton(
+                    ctx,
+                    text: AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                  ),
+                  const SizedBox(width: 12),
+                  DesktopModalDialog.primaryButton(
+                    text: AppTranslations.pick(lang, en: 'Save Voter', mr: 'मतदार जतन करा', hi: 'मतदाता सहेजें'),
+                    onPressed: () async {
+                      if (epicController.text.trim().isEmpty) {
+                        setModalState(() {
+                          epicError = AppTranslations.pick(
+                            lang,
+                            en: 'Please enter EPIC number',
+                            mr: 'कृपया ओळखपत्र क्रमांक (EPIC) प्रविष्ट करा',
+                            hi: 'कृपया मतदाता पहचान पत्र क्रमांक (EPIC) दर्ज करें',
+                          );
+                        });
+                        return;
+                      }
+                      final normalizedAge = AppTranslations.normalizeAsciiDigits(ageController.text.trim());
+                      final normalizedMobile = AppTranslations.normalizeAsciiDigits(mobileController.text.trim());
+                      final newVoter = VoterModel(
+                        id: 'vot-${DateTime.now().millisecondsSinceEpoch}',
+                        nameMarathi: nameMrController.text.trim().isNotEmpty
+                            ? nameMrController.text.trim()
+                            : nameEnController.text.trim(),
+                        nameEnglish: nameEnController.text.trim().isNotEmpty
+                            ? nameEnController.text.trim()
+                            : nameMrController.text.trim(),
+                        epicNo: AppTranslations.normalizeAsciiDigits(epicController.text.trim()),
+                        booth: AppTranslations.normalizeAsciiDigits(boothController.text.trim()),
+                        age: int.tryParse(normalizedAge) ?? 0,
+                        gender: gender,
+                        mobile: normalizedMobile.isNotEmpty ? normalizedMobile : null,
+                        houseNo: houseNoController.text.trim().isNotEmpty
+                            ? AppTranslations.normalizeAsciiDigits(houseNoController.text.trim())
+                            : null,
+                        address: addressController.text.trim(),
+                        favour: favour,
+                      );
 
-                // EPIC & Booth
-                Row(
+                      final repo = ref.read(votersRepoProvider);
+                      await repo.addVoter(newVoter);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      _fetchVoters();
+                    },
+                  ),
+                ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('EPIC No. *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: epicController,
-                            decoration: desktopInputDecoration(hintText: 'ABC1234567'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Booth No', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: boothController,
-                            decoration: desktopInputDecoration(hintText: 'e.g. 104'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Age, Gender, Mobile
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Age', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: ageController,
-                            keyboardType: TextInputType.number,
-                            decoration: desktopInputDecoration(hintText: '35'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          AppDropdown<String>(
-                            value: gender,
-                            height: 44,
-                            backgroundColor: const Color(0xFFF8FAFC),
-                            borderColor: const Color(0xFFE2E8F0),
-                            items: const [
-                              DropdownMenuItem(value: 'M', child: Text('Male')),
-                              DropdownMenuItem(value: 'F', child: Text('Female')),
-                              DropdownMenuItem(value: 'O', child: Text('Other')),
+                    // Names
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Voter Name *',
+                                  mr: 'मतदाराचे नाव *',
+                                  hi: 'मतदाता का नाम *',
+                                ),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: nameMrController,
+                                decoration: desktopInputDecoration(
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Ramesh P. Kadam',
+                                    mr: 'उदा. रमेश पां. कदम',
+                                    hi: 'उदा. रमेश पां. कदम',
+                                  ),
+                                ),
+                              ),
                             ],
-                            onChanged: (val) {
-                              if (val != null) setModalState(() => gender = val);
-                            },
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Mobile', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: mobileController,
-                            keyboardType: TextInputType.phone,
-                            decoration: desktopInputDecoration(hintText: '98XXXXXXXX'),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Name (English)',
+                                  mr: 'नाव (इंग्रजी)',
+                                  hi: 'नाम (अंग्रेज़ी)',
+                                ),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: nameEnController,
+                                decoration: desktopInputDecoration(hintText: 'e.g. Ramesh Pandurang Kadam'),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                // House No & Address
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('House No', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: houseNoController,
-                            decoration: desktopInputDecoration(hintText: 'A-102'),
+                    // EPIC & Booth
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'EPIC No. *',
+                                  mr: 'ओळखपत्र क्र. (EPIC) *',
+                                  hi: 'मतदाता पहचान पत्र क्र. *',
+                                ),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: epicController,
+                                onChanged: (_) {
+                                  if (epicError != null) {
+                                    setModalState(() => epicError = null);
+                                  }
+                                },
+                                decoration: desktopInputDecoration(
+                                  hintText: 'ABC1234567',
+                                  errorText: epicError,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(lang, en: 'Booth No', mr: 'बूथ क्र.', hi: 'बूथ क्र.'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: boothController,
+                                decoration: desktopInputDecoration(
+                                  hintText: AppTranslations.pick(lang, en: 'e.g. 104', mr: 'उदा. १०४', hi: 'उदा. १०४'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Address', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: addressController,
-                            decoration: desktopInputDecoration(hintText: 'Lane No. 3, Shaniwar Peth, Pune'),
+                    const SizedBox(height: 16),
+
+                    // Age, Gender, Mobile
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(lang, en: 'Age', mr: 'वय', hi: 'आयु'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: ageController,
+                                keyboardType: TextInputType.number,
+                                decoration: desktopInputDecoration(hintText: AppTranslations.formatDigits('35', lang)),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(lang, en: 'Gender', mr: 'लिंग', hi: 'लिंग'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              AppDropdown<String>(
+                                value: gender,
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: const Color(0xFFE2E8F0),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'M',
+                                    child: Padding(
+                                      padding: EdgeInsets.zero,
+                                      child: Text(AppTranslations.getGender('M', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'F',
+                                    child: Padding(
+                                      padding: EdgeInsets.zero,
+                                      child: Text(AppTranslations.getGender('F', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'O',
+                                    child: Padding(
+                                      padding: EdgeInsets.zero,
+                                      child: Text(AppTranslations.getGender('O', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => gender = val);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(lang, en: 'Mobile', mr: 'मोबाईल', hi: 'मोबाइल'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: mobileController,
+                                keyboardType: TextInputType.phone,
+                                decoration: desktopInputDecoration(
+                                  hintText: AppTranslations.formatDigits('98XXXXXXXX', lang),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // House No & Address
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(lang, en: 'House No', mr: 'घर क्र.', hi: 'मकान नं.'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: houseNoController,
+                                decoration: desktopInputDecoration(
+                                  hintText: AppTranslations.pick(lang, en: 'A-102', mr: 'ए-१०२', hi: 'ए-१०२'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppTranslations.pick(lang, en: 'Address', mr: 'पत्ता', hi: 'पता'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: addressController,
+                                decoration: desktopInputDecoration(
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'Lane No. 3, Shaniwar Peth, Pune',
+                                    mr: 'गल्ली क्र. ३, शनिवार पेठ, पुणे',
+                                    hi: 'गली नं. ३, शनिवार पेठ, पुणे',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
@@ -329,36 +453,39 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(desktopLanguageProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          _buildHeader(),
+          _buildHeader(lang),
           const SizedBox(height: 20),
 
           // Filters Row
-          _buildFiltersRow(),
+          _buildFiltersRow(lang),
           const SizedBox(height: 24),
 
           // Grid or Table View
           if (_loading)
             _buildLoadingGrid()
           else if (_viewMode == 'table')
-            _buildTableView()
+            _buildTableView(lang)
           else
-            _buildGridView(),
+            _buildGridView(lang),
 
           const SizedBox(height: 24),
           // Pagination Controls
-          _buildPaginationControls(),
+          _buildPaginationControls(lang),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String lang) {
+    final formattedTotal = AppTranslations.formatDigits(_totalCount, lang);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -367,9 +494,9 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
           children: [
             Row(
               children: [
-                const Text(
-                  'Voter Search',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                Text(
+                  AppTranslations.pick(lang, en: 'Voter Search', mr: 'मतदार शोध', hi: 'मतदाता खोज'),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
                 ),
                 const SizedBox(width: 10),
                 Container(
@@ -379,14 +506,27 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
-                  child: Text('Total: $_totalCount', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))),
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Total: $formattedTotal',
+                      mr: 'एकूण: $formattedTotal',
+                      hi: 'कुल: $formattedTotal',
+                    ),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Voter directory, polling booths, family trees and voting favor',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Voter directory, polling booths, family trees and voting favor',
+                mr: 'मतदार यादी, मतदान केंद्रे, कुटुंब वृक्ष आणि मतदार कल',
+                hi: 'मतदाता सूची, मतदान केंद्र, परिवार वृक्ष और मतदाता रुझान',
+              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -400,11 +540,12 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                   context: context,
                   voters: _voters,
                   totalCount: _totalCount,
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -428,12 +569,12 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.add, size: 16, color: Colors.white),
-                  SizedBox(width: 8),
+                children: [
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    'Add Voter',
-                    style: TextStyle(
+                    AppTranslations.pick(lang, en: 'Add Voter', mr: 'मतदार जोडा', hi: 'मतदाता जोड़ें'),
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -477,7 +618,10 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
     );
   }
 
-  Widget _buildFiltersRow() {
+  Widget _buildFiltersRow(String lang) {
+    final searchTooltip = AppTranslations.pick(lang, en: 'Search', mr: 'शोधा', hi: 'खोजें');
+    final clearTooltip = AppTranslations.pick(lang, en: 'Clear', mr: 'साफ करा', hi: 'साफ़ करें');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -509,10 +653,16 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                       _fetchVoters();
                     },
                     decoration: InputDecoration(
-                      hintText: 'Search voter by name, EPIC, mobile...',
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Search voter by name, EPIC, mobile...',
+                        mr: 'नाव, EPIC, मोबाईलद्वारे मतदार शोधा...',
+                        hi: 'नाम, EPIC, मोबाइल से मतदाता खोजें...',
+                      ),
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                       suffixIcon: IconButton(
+                        tooltip: searchTooltip,
                         icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0284C7)),
                         onPressed: () {
                           _searchQuery = _searchController.text;
@@ -546,11 +696,17 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                       _fetchVoters();
                     },
                     decoration: InputDecoration(
-                      hintText: 'Search Address...',
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Search Address...',
+                        mr: 'पत्ता शोधा...',
+                        hi: 'पता खोजें...',
+                      ),
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
                       suffixIcon: _addressFilter.isNotEmpty
                           ? IconButton(
+                              tooltip: clearTooltip,
                               icon: const Icon(Icons.clear, size: 16),
                               onPressed: () {
                                 _addressController.clear();
@@ -586,11 +742,12 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                       _fetchVoters();
                     },
                     decoration: InputDecoration(
-                      hintText: 'House No',
+                      hintText: AppTranslations.pick(lang, en: 'House No', mr: 'घर क्र.', hi: 'मकान नं.'),
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       prefixIcon: const Icon(Icons.home_outlined, size: 18, color: Color(0xFF94A3B8)),
                       suffixIcon: _houseNoFilter.isNotEmpty
                           ? IconButton(
+                              tooltip: clearTooltip,
                               icon: const Icon(Icons.clear, size: 16),
                               onPressed: () {
                                 _houseNoController.clear();
@@ -626,11 +783,17 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                       _fetchVoters();
                     },
                     decoration: InputDecoration(
-                      hintText: 'Caste / Community...',
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Caste / Community...',
+                        mr: 'जात / समाज...',
+                        hi: 'जाति / समुदाय...',
+                      ),
                       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       prefixIcon: const Icon(Icons.filter_list_rounded, size: 18, color: Color(0xFF94A3B8)),
                       suffixIcon: _casteFilter.isNotEmpty
                           ? IconButton(
+                              tooltip: clearTooltip,
                               icon: const Icon(Icons.clear, size: 16),
                               onPressed: () {
                                 _casteController.clear();
@@ -657,12 +820,26 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
               AppDropdown<String>(
                 value: _selectedBooth,
                 height: 40,
-                width: 135,
+                width: 145,
                 prefixIcon: const Icon(Icons.how_to_vote_outlined, size: 16, color: Color(0xFF94A3B8)),
                 backgroundColor: Colors.white,
                 borderColor: const Color(0xFFE2E8F0),
                 items: _availableBooths.map((b) {
-                  return DropdownMenuItem(value: b, child: Text(b == 'All' ? 'All Booths' : 'Booth $b'));
+                  final label = b == 'All'
+                      ? AppTranslations.pick(lang, en: 'All Booths', mr: 'सर्व बूथ', hi: 'सभी बूथ')
+                      : AppTranslations.pick(
+                          lang,
+                          en: 'Booth ${AppTranslations.formatDigits(b, lang)}',
+                          mr: 'बूथ ${AppTranslations.formatDigits(b, lang)}',
+                          hi: 'बूथ ${AppTranslations.formatDigits(b, lang)}',
+                        );
+                  return DropdownMenuItem(
+                    value: b,
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  );
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) {
@@ -678,16 +855,66 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
               AppDropdown<String>(
                 value: _selectedAgeRange,
                 height: 40,
-                width: 135,
+                width: 145,
                 prefixIcon: const Icon(Icons.cake_outlined, size: 16, color: Color(0xFF94A3B8)),
                 backgroundColor: Colors.white,
                 borderColor: const Color(0xFFE2E8F0),
-                items: const [
-                  DropdownMenuItem(value: 'All', child: Text('All Ages')),
-                  DropdownMenuItem(value: '18-25', child: Text('18 - 25 yrs')),
-                  DropdownMenuItem(value: '26-40', child: Text('26 - 40 yrs')),
-                  DropdownMenuItem(value: '41-60', child: Text('41 - 60 yrs')),
-                  DropdownMenuItem(value: '60+', child: Text('60+ yrs')),
+                items: [
+                  DropdownMenuItem(
+                    value: 'All',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: 'All Ages', mr: 'सर्व वयोगट', hi: 'सभी आयु'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: '18-25',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: '18 - 25 yrs', mr: '१८ - २५ वर्षे', hi: '१८ - २५ वर्ष'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: '26-40',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: '26 - 40 yrs', mr: '२६ - ४० वर्षे', hi: '२६ - ४० वर्ष'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: '41-60',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: '41 - 60 yrs', mr: '४१ - ६० वर्षे', hi: '४१ - ६० वर्ष'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: '60+',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: '60+ yrs', mr: '६०+ वर्षे', hi: '६०+ वर्ष'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
                 ],
                 onChanged: (val) {
                   if (val != null) {
@@ -703,15 +930,43 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
               AppDropdown<String>(
                 value: _selectedGender,
                 height: 40,
-                width: 130,
+                width: 140,
                 prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
                 backgroundColor: Colors.white,
                 borderColor: const Color(0xFFE2E8F0),
-                items: const [
-                  DropdownMenuItem(value: 'All', child: Text('All Genders')),
-                  DropdownMenuItem(value: 'M', child: Text('Male')),
-                  DropdownMenuItem(value: 'F', child: Text('Female')),
-                  DropdownMenuItem(value: 'O', child: Text('Other')),
+                items: [
+                  DropdownMenuItem(
+                    value: 'All',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: 'All Genders', mr: 'सर्व लिंग', hi: 'सभी लिंग'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'M',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(AppTranslations.getGender('M', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'F',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(AppTranslations.getGender('F', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'O',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(AppTranslations.getGender('O', lang), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ),
                 ],
                 onChanged: (val) {
                   if (val != null) {
@@ -727,16 +982,66 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
               AppDropdown<String>(
                 value: _selectedFavour,
                 height: 40,
-                width: 140,
+                width: 150,
                 prefixIcon: const Icon(Icons.sentiment_satisfied_alt_outlined, size: 16, color: Color(0xFF94A3B8)),
                 backgroundColor: Colors.white,
                 borderColor: const Color(0xFFE2E8F0),
-                items: const [
-                  DropdownMenuItem(value: 'All', child: Text('All Favour')),
-                  DropdownMenuItem(value: 'Favourable', child: Text('Favourable')),
-                  DropdownMenuItem(value: 'Neutral', child: Text('Neutral')),
-                  DropdownMenuItem(value: 'Against', child: Text('Against')),
-                  DropdownMenuItem(value: 'Swing', child: Text('Swing')),
+                items: [
+                  DropdownMenuItem(
+                    value: 'All',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: 'All Favour', mr: 'सर्व कल', hi: 'सभी रुझान'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Favourable',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: 'Favourable', mr: 'अनुकूल', hi: 'अनुकूल'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Neutral',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: 'Neutral', mr: 'तटस्थ', hi: 'तटस्थ'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Against',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: 'Against', mr: 'प्रतिकूल', hi: 'प्रतिकूल'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Swing',
+                    child: Padding(
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        AppTranslations.pick(lang, en: 'Swing', mr: 'अनिश्चित', hi: 'अनिश्चित'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
                 ],
                 onChanged: (val) {
                   if (val != null) {
@@ -777,12 +1082,15 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: const Color(0xFFCBD5E1)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF475569)),
-                      SizedBox(width: 6),
-                      Text('Reset', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                      const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF475569)),
+                      const SizedBox(width: 6),
+                      Text(
+                        AppTranslations.pick(lang, en: 'Reset', mr: 'रीसेट', hi: 'रीसेट'),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                      ),
                     ],
                   ),
                 ),
@@ -801,14 +1109,14 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                   children: [
                     _buildViewToggleButton(
                       icon: Icons.grid_view_rounded,
-                      label: 'Grid',
+                      label: AppTranslations.pick(lang, en: 'Grid', mr: 'ग्रिड', hi: 'ग्रिड'),
                       isActive: _viewMode == 'grid',
                       onTap: () => setState(() => _viewMode = 'grid'),
                     ),
                     const SizedBox(width: 4),
                     _buildViewToggleButton(
                       icon: Icons.table_rows_rounded,
-                      label: 'Table',
+                      label: AppTranslations.pick(lang, en: 'Table', mr: 'तक्ता', hi: 'तालिका'),
                       isActive: _viewMode == 'table',
                       onTap: () => setState(() => _viewMode = 'table'),
                     ),
@@ -822,7 +1130,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
     );
   }
 
-  Widget _buildGridView() {
+  Widget _buildGridView(String lang) {
     if (_voters.isEmpty) {
       return Container(
         width: double.infinity,
@@ -833,10 +1141,18 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
-          children: const [
-            Icon(Icons.how_to_reg_outlined, size: 48, color: Color(0xFFCBD5E1)),
-            SizedBox(height: 12),
-            const Text('No voters found matching criteria', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          children: [
+            const Icon(Icons.how_to_reg_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No voters found matching criteria',
+                mr: 'निकषांशी जुळणारे मतदार आढळले नाहीत',
+                hi: 'मानदंडों से मेल खाने वाले कोई मतदाता नहीं मिले',
+              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );
@@ -858,6 +1174,10 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
           ),
           itemBuilder: (context, index) {
             final voter = _voters[index];
+            final srText = voter.serialNo != null ? AppTranslations.formatDigits(voter.serialNo, lang) : '-';
+            final boothText = AppTranslations.formatDigits(voter.booth, lang);
+            final ageText = AppTranslations.formatDigits(voter.age, lang);
+            final yrsLabel = AppTranslations.pick(lang, en: 'yrs', mr: 'वर्षे', hi: 'वर्ष');
 
             return Container(
               decoration: BoxDecoration(
@@ -875,13 +1195,16 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text(
-                          voter.displayName,
+                        child: AppTranslatedText(
+                          voter.displayNameFor(lang),
+                          isName: true,
+                          targetLanguage: lang,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
@@ -889,7 +1212,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
-                          voter.favourLabelMarathi,
+                          voter.favourLabel(lang),
                           style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _favourColor(voter.favour)),
                         ),
                       ),
@@ -906,9 +1229,25 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                         child: Text(voter.epicNo, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace', color: Color(0xFF334155))),
                       ),
                       const SizedBox(width: 8),
-                      Text('Sr No: ${voter.serialNo ?? '-'}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Sr No: $srText',
+                          mr: 'अनु. क्र.: $srText',
+                          hi: 'क्र. सं.: $srText',
+                        ),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
                       const Spacer(),
-                      Text('Booth: ${voter.booth}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7))),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Booth: $boothText',
+                          mr: 'बूथ: $boothText',
+                          hi: 'बूथ: $boothText',
+                        ),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -916,12 +1255,18 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                   // Age, Gender, Mobile
                   Row(
                     children: [
-                      Text('${voter.gender == "M" ? "Male" : "Female"} · ${voter.age} yrs', style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                      Text(
+                        '${voter.genderLabel(lang)} · $ageText $yrsLabel',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                      ),
                       const Spacer(),
                       if (voter.mobile != null && voter.mobile!.isNotEmpty) ...[
                         const Icon(Icons.phone_outlined, size: 12, color: Color(0xFF16A34A)),
                         const SizedBox(width: 4),
-                        Text(voter.mobile!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF16A34A))),
+                        Text(
+                          AppTranslations.formatDigits(voter.mobile!, lang),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF16A34A)),
+                        ),
                       ],
                     ],
                   ),
@@ -929,8 +1274,9 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
 
                   // Address
                   Expanded(
-                    child: Text(
+                    child: AppTranslatedText(
                       voter.address,
+                      targetLanguage: lang,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), height: 1.3),
@@ -941,11 +1287,26 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _favourButton('Favourable', 'Favourable', voter.id, voter.favour == 'Favourable'),
+                      _favourButton(
+                        AppTranslations.pick(lang, en: 'Favourable', mr: 'अनुकूल', hi: 'अनुकूल'),
+                        'Favourable',
+                        voter.id,
+                        voter.favour == 'Favourable',
+                      ),
                       const SizedBox(width: 6),
-                      _favourButton('Neutral', 'Neutral', voter.id, voter.favour == 'Neutral'),
+                      _favourButton(
+                        AppTranslations.pick(lang, en: 'Neutral', mr: 'तटस्थ', hi: 'तटस्थ'),
+                        'Neutral',
+                        voter.id,
+                        voter.favour == 'Neutral',
+                      ),
                       const SizedBox(width: 6),
-                      _favourButton('Against', 'Against', voter.id, voter.favour == 'Against'),
+                      _favourButton(
+                        AppTranslations.pick(lang, en: 'Against', mr: 'प्रतिकूल', hi: 'प्रतिकूल'),
+                        'Against',
+                        voter.id,
+                        voter.favour == 'Against',
+                      ),
                     ],
                   ),
                 ],
@@ -998,7 +1359,10 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
     }
   }
 
-  Widget _buildTableView() {
+  Widget _buildTableView(String lang) {
+    if (_voters.isEmpty) {
+      return _buildGridView(lang);
+    }
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1008,49 +1372,123 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-          columnSpacing: 24,
-          horizontalMargin: 20,
-          columns: const [
-            const DataColumn(label: Text('Voter Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            DataColumn(label: Text('EPIC No.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Age / Gender', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Booth No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-            const DataColumn(label: Text('Favour', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-          ],
-          rows: _voters.map((v) {
-            return DataRow(
-              cells: [
-                DataCell(Text(v.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)))),
-                DataCell(Text(v.epicNo, style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Color(0xFF334155)))),
-                DataCell(Text('${v.age} / ${v.genderLabelMarathi}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
-                DataCell(Text(v.booth, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0284C7)))),
-                DataCell(Text(v.address, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))),
-                DataCell(
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: _favourColor(v.favour).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(100)),
-                    child: Text(v.favourLabelMarathi, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _favourColor(v.favour))),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: DataTable(
+                headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+                columnSpacing: 24,
+                horizontalMargin: 20,
+                columns: [
+                  DataColumn(
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'Voter Name', mr: 'मतदाराचे नाव', hi: 'मतदाता का नाम'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                    ),
                   ),
-                ),
-              ],
-            );
-          }).toList(),
+                  DataColumn(
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'EPIC No.', mr: 'ओळखपत्र क्र.', hi: 'मतदाता कार्ड क्र.'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'Age / Gender', mr: 'वय / लिंग', hi: 'आयु / लिंग'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'Booth No', mr: 'बूथ क्र.', hi: 'बूथ क्र.'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'Address', mr: 'पत्ता', hi: 'पता'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'Favour', mr: 'कल', hi: 'रुझान'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                    ),
+                  ),
+                ],
+                rows: _voters.map((v) {
+                  return DataRow(
+                    cells: [
+                      DataCell(
+                        AppTranslatedText(
+                          v.displayNameFor(lang),
+                          isName: true,
+                          targetLanguage: lang,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      DataCell(Text(v.epicNo, style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Color(0xFF334155)))),
+                      DataCell(
+                        Text(
+                          '${AppTranslations.formatDigits(v.age, lang)} / ${v.genderLabel(lang)}',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          AppTranslations.formatDigits(v.booth, lang),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0284C7)),
+                        ),
+                      ),
+                      DataCell(
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 260),
+                          child: AppTranslatedText(
+                            v.address,
+                            targetLanguage: lang,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                      ),
+                      DataCell(
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(color: _favourColor(v.favour).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(100)),
+                          child: Text(v.favourLabel(lang), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _favourColor(v.favour))),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPaginationControls() {
+  Widget _buildPaginationControls(String lang) {
     final maxPages = (_totalCount / _pageSize).ceil();
+    final pageText = AppTranslations.formatDigits(_currentPage, lang);
+    final maxPagesText = AppTranslations.formatDigits(maxPages, lang);
+    final totalText = AppTranslations.formatDigits(_totalCount, lang);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Page $_currentPage of $maxPages (Total $_totalCount voters)',
+          AppTranslations.pick(
+            lang,
+            en: 'Page $pageText of $maxPagesText (Total $totalText voters)',
+            mr: 'पान $pageText / $maxPagesText (एकूण $totalText मतदार)',
+            hi: 'पृष्ठ $pageText / $maxPagesText (कुल $totalText मतदाता)',
+          ),
           style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
         ),
         Row(
@@ -1062,7 +1500,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                       _fetchVoters();
                     }
                   : null,
-              child: const Text('Previous'),
+              child: Text(AppTranslations.pick(lang, en: 'Previous', mr: 'मागील', hi: 'पिछला')),
             ),
             const SizedBox(width: 8),
             ElevatedButton(
@@ -1073,7 +1511,10 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
                     }
                   : null,
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-              child: const Text('Next', style: TextStyle(color: Colors.white)),
+              child: Text(
+                AppTranslations.pick(lang, en: 'Next', mr: 'पुढील', hi: 'अगला'),
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -1095,7 +1536,7 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
             mainAxisSpacing: 18,
             mainAxisExtent: 220,
           ),
-          itemBuilder: (_, __) => Container(
+          itemBuilder: (_, _) => Container(
             decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(14)),
           ),
         );

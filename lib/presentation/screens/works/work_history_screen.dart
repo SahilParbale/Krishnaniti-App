@@ -8,7 +8,6 @@ import '../../../core/localization/app_translations.dart';
 import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -85,31 +84,39 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
     return list;
   }
 
+  String _formatWorkDate(String raw, String lang) {
+    if (raw.trim().isEmpty) return '-';
+    final dt = DateTime.tryParse(raw.trim());
+    if (dt != null) {
+      return AppTranslations.formatDate(dt, lang, pattern: 'MMM d, yyyy');
+    }
+    return AppTranslations.formatDigits(raw, lang);
+  }
+
   // Date Suggestions with counts matching WorkHistory.tsx lines 237-246
-  List<Map<String, dynamic>> get _dateSuggestions {
-    final Map<String, int> stats = {};
+  List<Map<String, dynamic>> _buildDateSuggestions(String lang) {
+    final Map<String, ({String label, int count})> stats = {};
     for (final item in _items) {
       if (item.date.isNotEmpty) {
-        String dateStr;
-        try {
-          final dt = DateTime.parse(item.date);
-          dateStr = DateFormat('MMM d, yyyy').format(dt);
-        } catch (_) {
-          dateStr = item.date;
-        }
-        stats[dateStr] = (stats[dateStr] ?? 0) + 1;
+        final dt = DateTime.tryParse(item.date);
+        final keyStr = dt != null ? DateFormat('MMM d, yyyy').format(dt) : item.date;
+        final labelStr = _formatWorkDate(item.date, lang);
+        final prev = stats[keyStr];
+        stats[keyStr] = (label: labelStr, count: (prev?.count ?? 0) + 1);
       }
     }
-    final list = stats.entries.map((e) => {'date': e.key, 'count': e.value}).toList();
+    final list = stats.entries
+        .map((e) => {'date': e.key, 'label': e.value.label, 'count': e.value.count})
+        .toList();
     list.sort((a, b) => b['date'].toString().compareTo(a['date'].toString()));
     return list;
   }
 
   // Filtered Items matching lines 248-262
   List<WorkHistoryModel> get _filteredItems {
-    final search = _searchCtrl.text.trim().toLowerCase();
-    final areaSearch = _areaSearchCtrl.text.trim().toLowerCase();
-    final dateSearch = _dateSearchCtrl.text.trim().toLowerCase();
+    final search = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim()).toLowerCase();
+    final areaSearch = AppTranslations.normalizeAsciiDigits(_areaSearchCtrl.text.trim()).toLowerCase();
+    final dateSearch = AppTranslations.normalizeAsciiDigits(_dateSearchCtrl.text.trim()).toLowerCase();
 
     return _items.where((item) {
       final matchesSearch = search.isEmpty ||
@@ -127,7 +134,9 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
 
       final matchesDate = dateSearch.isEmpty ||
           formattedDate.toLowerCase().contains(dateSearch) ||
-          item.date.toLowerCase().contains(dateSearch);
+          item.date.toLowerCase().contains(dateSearch) ||
+          AppTranslations.normalizeAsciiDigits(_formatWorkDate(item.date, 'mr')).toLowerCase().contains(dateSearch) ||
+          AppTranslations.normalizeAsciiDigits(_formatWorkDate(item.date, 'hi')).toLowerCase().contains(dateSearch);
 
       return matchesSearch && matchesArea && matchesDate;
     }).toList();
@@ -233,7 +242,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
 
   // Create Work Modal matching lines 625-715
   void _openAddWorkModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController();
@@ -291,10 +300,13 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                   // 1. FIXED HEADER
                   AppModalHeader(
                     icon: Icons.handyman_rounded,
-                    title: isMr ? 'नवीन विकास काम नोंदवा' : 'Add New Development Work',
-                    subtitle: isMr
-                        ? 'कामाचा तपशील, स्थान व खर्च नोंदवा'
-                        : 'Record project title, ward location and cost',
+                    title: AppTranslations.pick(lang, en: 'Add New Development Work', mr: 'नवीन विकास काम नोंदवा', hi: 'नया विकास कार्य दर्ज करें'),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Record project title, ward location and cost',
+                      mr: 'कामाचा तपशील, स्थान व खर्च नोंदवा',
+                      hi: 'कार्य का विवरण, स्थान और लागत दर्ज करें',
+                    ),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
 
@@ -306,28 +318,38 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                       children: [
                         // Project Title
                         AppFieldLabel(
-                          label: isMr ? 'कामाचे नाव / प्रकल्प शीर्षक' : 'Project Title',
+                          label: AppTranslations.pick(lang, en: 'Project Title', mr: 'कामाचे नाव / प्रकल्प शीर्षक', hi: 'कार्य का नाम / परियोजना शीर्षक'),
                           isRequired: true,
                         ),
                         TextField(
                           controller: titleCtrl,
                           decoration: inputDec(
-                            hint: isMr ? 'प्रकल्पाचे नाव / कामाचे वर्णन प्रविष्ट करा...' : 'Enter project name / tender description...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Enter project name / tender description...',
+                              mr: 'प्रकल्पाचे नाव / कामाचे वर्णन प्रविष्ट करा...',
+                              hi: 'परियोजना का नाम / कार्य विवरण दर्ज करें...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
 
                         // Description
                         AppFieldLabel(
-                          label: isMr ? 'कामाचा तपशील / वर्णन' : 'Description',
+                          label: AppTranslations.pick(lang, en: 'Description', mr: 'कामाचा तपशील / वर्णन', hi: 'कार्य का विवरण'),
                           isRequired: false,
-                          optionalHint: isMr ? 'ऐच्छिक' : 'Optional',
+                          optionalHint: AppTranslations.pick(lang, en: 'Optional', mr: 'ऐच्छिक', hi: 'वैकल्पिक'),
                         ),
                         TextField(
                           controller: descCtrl,
                           maxLines: 3,
                           decoration: inputDec(
-                            hint: isMr ? 'कामाचा विस्तृत तपशील, आवश्यकता किंवा उद्दिष्ट...' : 'Detailed scope of civil work...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Detailed scope of civil work...',
+                              mr: 'कामाचा विस्तृत तपशील, आवश्यकता किंवा उद्दिष्ट...',
+                              hi: 'विकास कार्य का विस्तृत विवरण...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -341,12 +363,14 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'स्थान / लँडमार्क' : 'Location / Landmark',
+                                    label: AppTranslations.pick(lang, en: 'Location / Landmark', mr: 'स्थान / लँडमार्क', hi: 'स्थान / लैंडमार्क'),
                                     isRequired: false,
                                   ),
                                   TextField(
                                     controller: locCtrl,
-                                    decoration: inputDec(hint: isMr ? 'उदा. मुख्य चौक, मंदिर परिसर' : 'Landmark / Chowk...'),
+                                    decoration: inputDec(
+                                      hint: AppTranslations.pick(lang, en: 'Landmark / Chowk...', mr: 'उदा. मुख्य चौक, मंदिर परिसर', hi: 'उदा. मुख्य चौक, मंदिर परिसर'),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -357,12 +381,17 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'परिसर / प्रभाग' : 'Area / Locality',
+                                    label: AppTranslations.pick(lang, en: 'Area / Locality', mr: 'परिसर / प्रभाग', hi: 'क्षेत्र / वार्ड'),
                                     isRequired: false,
                                   ),
                                   TextField(
                                     controller: areaCtrl,
-                                    decoration: inputDec(hint: isMr ? 'उदा. सेक्टर ५, प्रभाग १२' : 'e.g. Sector 5, Prabhag 12...'),
+                                    decoration: inputDec(
+                                      hint: AppTranslations.formatDigits(
+                                        AppTranslations.pick(lang, en: 'e.g. Sector 5, Prabhag 12...', mr: 'उदा. सेक्टर 5, प्रभाग 12', hi: 'उदा. सेक्टर 5, वार्ड 12'),
+                                        lang,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -380,7 +409,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'अंदाजित / पूर्ण तारीख' : 'Completion Date',
+                                    label: AppTranslations.pick(lang, en: 'Completion Date', mr: 'अंदाजित / पूर्ण तारीख', hi: 'पूर्ण होने की तिथि'),
                                     isRequired: false,
                                   ),
                                   TextField(
@@ -396,13 +425,18 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'लाभार्थी संख्या' : 'People Benefited',
+                                    label: AppTranslations.pick(lang, en: 'People Benefited', mr: 'लाभार्थी संख्या', hi: 'लाभान्वित नागरिक'),
                                     isRequired: false,
                                   ),
                                   TextField(
                                     controller: benCtrl,
                                     keyboardType: TextInputType.number,
-                                    decoration: inputDec(hint: 'उदा. 5000'),
+                                    decoration: inputDec(
+                                      hint: AppTranslations.formatDigits(
+                                        AppTranslations.pick(lang, en: 'e.g. 5000', mr: 'उदा. 5000', hi: 'उदा. 5000'),
+                                        lang,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -413,100 +447,122 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
 
                         // Total Amount Spent
                         AppFieldLabel(
-                          label: isMr ? 'एकूण खर्च रक्कम (₹)' : 'Total Amount Spent (₹)',
+                          label: AppTranslations.pick(lang, en: 'Total Amount Spent (₹)', mr: 'एकूण खर्च रक्कम (₹)', hi: 'कुल व्यय राशि (₹)'),
                           isRequired: false,
                         ),
                         TextField(
                           controller: amtCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: inputDec(hint: 'उदा. 1450000', prefixText: '₹ '),
+                          decoration: inputDec(
+                            hint: AppTranslations.formatDigits(
+                              AppTranslations.pick(lang, en: 'e.g. 1450000', mr: 'उदा. 1450000', hi: 'उदा. 1450000'),
+                              lang,
+                            ),
+                            prefixText: '₹ ',
+                          ),
                         ),
                         const SizedBox(height: 14),
 
                         // Image Upload via Camera & Phone Storage
                         AppImagePickerField(
-                          label: isMr ? 'कामाचा फोटो (कॅमेरा व मोबाइल स्टोरेज)' : 'Work Progress Photo (Camera & Phone Storage)',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Work Progress Photo (Camera & Phone Storage)',
+                            mr: 'कामाचा फोटो (कॅमेरा व मोबाइल स्टोरेज)',
+                            hi: 'कार्य प्रगति फ़ोटो (कैमरा और फ़ोन स्टोरेज)',
+                          ),
                           isRequired: false,
-                          isMarathi: isMr,
+                          isMarathi: lang == 'mr',
                           onFilesChanged: (_) {},
                         ),
                         const SizedBox(height: 20),
 
                         // Action Buttons (Scrolls together with form)
                         Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 13),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                side: const BorderSide(color: Color(0xFFCBD5E1)),
-                              ),
-                              onPressed: () => Navigator.pop(sheetCtx),
-                              child: Text(
-                                isMr ? 'रद्द करा' : 'Cancel',
-                                style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                ),
+                                onPressed: () => Navigator.pop(sheetCtx),
+                                child: Text(
+                                  AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                                  style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0284C7),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 13),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              icon: const Icon(Icons.save_rounded, size: 18),
-                              label: Text(
-                                isMr ? 'काम जतन करा' : 'Save Project',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              onPressed: () async {
-                                if (titleCtrl.text.trim().isEmpty) {
-                                  ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                                    SnackBar(content: Text(isMr ? 'कृपया कामाचे नाव प्रविष्ट करा' : 'Please enter project title')),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0284C7),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                icon: const Icon(Icons.save_rounded, size: 18),
+                                label: Text(
+                                  AppTranslations.pick(lang, en: 'Save Project', mr: 'काम जतन करा', hi: 'कार्य सहेजें'),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                onPressed: () async {
+                                  if (titleCtrl.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          AppTranslations.pick(lang, en: 'Please enter project title', mr: 'कृपया कामाचे नाव प्रविष्ट करा', hi: 'कृपया कार्य का नाम दर्ज करें'),
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  final newWork = WorkHistoryModel(
+                                    id: 'work-${DateTime.now().millisecondsSinceEpoch}',
+                                    source: 'Manual',
+                                    title: titleCtrl.text.trim(),
+                                    description: descCtrl.text.trim().isNotEmpty
+                                        ? descCtrl.text.trim()
+                                        : 'Development work initiated for Prabhag residents.',
+                                    location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12',
+                                    area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
+                                    status: status,
+                                    date: AppTranslations.normalizeAsciiDigits(dateCtrl.text.trim()),
+                                    peopleBenefited: int.tryParse(AppTranslations.normalizeAsciiDigits(benCtrl.text.trim())),
+                                    amount: double.tryParse(AppTranslations.normalizeAsciiDigits(amtCtrl.text.trim())),
+                                    feedbackRating: 5.0,
+                                    feedbackCount: 0,
                                   );
-                                  return;
-                                }
 
-                                final newWork = WorkHistoryModel(
-                                  id: 'work-${DateTime.now().millisecondsSinceEpoch}',
-                                  source: 'Manual',
-                                  title: titleCtrl.text.trim(),
-                                  description: descCtrl.text.trim().isNotEmpty
-                                      ? descCtrl.text.trim()
-                                      : 'Development work initiated for Prabhag residents.',
-                                  location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12',
-                                  area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
-                                  status: status,
-                                  date: dateCtrl.text.trim(),
-                                  peopleBenefited: int.tryParse(benCtrl.text.trim()),
-                                  amount: double.tryParse(amtCtrl.text.trim()),
-                                  feedbackRating: 5.0,
-                                  feedbackCount: 0,
-                                );
+                                  final repo = ref.read(workHistoryRepoProvider);
+                                  await repo.addWork(newWork);
+                                  await _fetchData();
 
-                                final repo = ref.read(workHistoryRepoProvider);
-                                await repo.addWork(newWork);
-                                await _fetchData();
-
-                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(isMr ? 'नवीन विकास काम यशस्वीरित्या जोडले गेले!' : 'New work project added successfully!'),
-                                      backgroundColor: const Color(0xFF16A34A),
-                                    ),
-                                  );
-                                }
-                              },
+                                  if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'New work project added successfully!',
+                                            mr: 'नवीन विकास काम यशस्वीरित्या जोडले गेले!',
+                                            hi: 'नया विकास कार्य सफलतापूर्वक जोड़ा गया!',
+                                          ),
+                                        ),
+                                        backgroundColor: const Color(0xFF16A34A),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -524,8 +580,8 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final filtered = _filteredItems;
+    final dateSuggestions = _buildDateSuggestions(lang);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -545,7 +601,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(lang, en: 'Open Menu Drawer', mr: 'मेनू उघडा', hi: 'मेनू खोलें'),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -701,7 +757,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                      '${_selectedWorkIds.length}',
+                                      AppTranslations.formatDigits('${_selectedWorkIds.length}', lang),
                                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                                     ),
                                   ),
@@ -786,7 +842,12 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                               onChanged: (_) => setState(() => _displayedLimit = 20),
                               style: const TextStyle(fontSize: 13),
                               decoration: InputDecoration(
-                                hintText: isMr ? 'कामे, वर्णन किंवा ठिकाण शोधा...' : 'Search works, description or location...',
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'Search works, description or location...',
+                                  mr: 'कामे, वर्णन किंवा ठिकाण शोधा...',
+                                  hi: 'कार्य, विवरण या स्थान खोजें...',
+                                ),
                                 hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                 prefixIcon: const Icon(Icons.search, size: 19, color: Color(0xFF94A3B8)),
                                 suffixIcon: _searchCtrl.text.isNotEmpty
@@ -823,7 +884,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                     onChanged: (_) => setState(() => _showAreaDropdown = true),
                                     style: const TextStyle(fontSize: 12.5),
                                     decoration: InputDecoration(
-                                      hintText: isMr ? 'परिसर शोधा...' : 'Search area...',
+                                      hintText: AppTranslations.pick(lang, en: 'Search area...', mr: 'परिसर शोधा...', hi: 'क्षेत्र खोजें...'),
                                       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                       prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
                                       suffixIcon: _areaSearchCtrl.text.isNotEmpty
@@ -858,7 +919,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                     onChanged: (_) => setState(() => _showDateDropdown = true),
                                     style: const TextStyle(fontSize: 12.5),
                                     decoration: InputDecoration(
-                                      hintText: isMr ? 'तारीख फिल्टर...' : 'Filter date...',
+                                      hintText: AppTranslations.pick(lang, en: 'Filter date...', mr: 'तारीख फिल्टर...', hi: 'तिथि फ़िल्टर...'),
                                       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                       prefixIcon: const Icon(Icons.calendar_today_outlined, size: 17, color: Color(0xFF94A3B8)),
                                       suffixIcon: _dateSearchCtrl.text.isNotEmpty
@@ -906,7 +967,11 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                   return ListTile(
                                     dense: true,
                                     visualDensity: VisualDensity.compact,
-                                    title: Text(item['area'] as String, style: const TextStyle(fontSize: 12.5)),
+                                    title: AppTranslatedText(
+                                      item['area'] as String,
+                                      targetLanguage: lang,
+                                      style: const TextStyle(fontSize: 12.5),
+                                    ),
                                     trailing: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                       decoration: BoxDecoration(
@@ -914,7 +979,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        '${item['count']}',
+                                        AppTranslations.formatDigits('${item['count']}', lang),
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -931,7 +996,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                           ],
 
                           // Date Dropdown Box if open
-                          if (_showDateDropdown && _dateSuggestions.isNotEmpty) ...[
+                          if (_showDateDropdown && dateSuggestions.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Container(
                               constraints: const BoxConstraints(maxHeight: 180),
@@ -949,15 +1014,18 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                               ),
                               child: ListView(
                                 shrinkWrap: true,
-                                children: _dateSuggestions
-                                    .where((d) =>
-                                        _dateSearchCtrl.text.isEmpty ||
-                                        d['date'].toString().toLowerCase().contains(_dateSearchCtrl.text.toLowerCase()))
+                                children: dateSuggestions
+                                    .where((d) {
+                                      if (_dateSearchCtrl.text.isEmpty) return true;
+                                      final q = AppTranslations.normalizeAsciiDigits(_dateSearchCtrl.text).toLowerCase();
+                                      return d['date'].toString().toLowerCase().contains(q) ||
+                                          AppTranslations.normalizeAsciiDigits(d['label'].toString()).toLowerCase().contains(q);
+                                    })
                                     .map((item) {
                                   return ListTile(
                                     dense: true,
                                     visualDensity: VisualDensity.compact,
-                                    title: Text(item['date'] as String, style: const TextStyle(fontSize: 12.5)),
+                                    title: Text(item['label'] as String, style: const TextStyle(fontSize: 12.5)),
                                     trailing: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                       decoration: BoxDecoration(
@@ -965,7 +1033,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        '${item['count']}',
+                                        AppTranslations.formatDigits('${item['count']}', lang),
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -1002,7 +1070,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                           setState(() => _displayedLimit += 20);
                         },
                         label: lang == 'mr' ? 'कामे' : (lang == 'hi' ? 'कार्य' : 'works'),
-                        isMarathi: isMr,
+                        isMarathi: lang == 'mr',
                       ),
 
                     const SizedBox(height: 20),
@@ -1057,7 +1125,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (ctx, idx) {
           final item = items[idx];
           final isSelected = _selectedWorkIds.contains(item.id);
@@ -1184,11 +1252,11 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${item.feedbackCount} ${lang == 'mr' ? "नागरिक अभिप्राय" : (lang == 'hi' ? "नागरिक प्रतिक्रिया" : "Feedbacks")}',
+                            '${AppTranslations.formatDigits('${item.feedbackCount}', lang)} ${lang == 'mr' ? "नागरिक अभिप्राय" : (lang == 'hi' ? "नागरिक प्रतिक्रिया" : "Feedbacks")}',
                             style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                           ),
                           Text(
-                            '${item.feedbackRating} ★',
+                            AppTranslations.formatDigits('${item.feedbackRating} ★', lang),
                             style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                           ),
                         ],
@@ -1208,14 +1276,14 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                           const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF64748B)),
                           const SizedBox(width: 4),
                           Text(
-                            item.date,
+                            _formatWorkDate(item.date, lang),
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),
                       if (item.amount != null)
                         Text(
-                          '₹ ${item.amount!.toStringAsFixed(0)}',
+                          AppTranslations.formatDigits('₹ ${item.amount!.toStringAsFixed(0)}', lang),
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                         ),
                     ],
@@ -1227,8 +1295,9 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                         const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(
+                          child: AppTranslatedText(
                             '${item.location}${item.area.isNotEmpty ? " (${item.area})" : ""}',
+                            targetLanguage: lang,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
@@ -1271,7 +1340,10 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${lang == "mr" ? "अहवाल तक्ता" : (lang == "hi" ? "रिपोर्ट तालिका" : "Report View")} (${items.length})',
+                  AppTranslations.formatDigits(
+                    '${lang == "mr" ? "अहवाल तक्ता" : (lang == "hi" ? "रिपोर्ट तालिका" : "Report View")} (${items.length})',
+                    lang,
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                 ),
                 AppPdfButton.outlined(
@@ -1310,7 +1382,7 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                 return DataRow(
                   onSelectChanged: (_) => _handleCardClick(item),
                   cells: [
-                    DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 12))),
+                    DataCell(Text(AppTranslations.formatDigits('${idx + 1}', lang), style: const TextStyle(fontSize: 12))),
                     DataCell(
                       SizedBox(
                         width: 170,
@@ -1337,8 +1409,9 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                     DataCell(
                       SizedBox(
                         width: 130,
-                        child: Text(
+                        child: AppTranslatedText(
                           '${item.location}${item.area.isNotEmpty ? " (${item.area})" : ""}',
+                          targetLanguage: lang,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -1351,16 +1424,27 @@ class _WorkHistoryScreenState extends ConsumerState<WorkHistoryScreen> {
                         children: [
                           const Icon(Icons.build_outlined, size: 12, color: Color(0xFF2563EB)),
                           const SizedBox(width: 4),
-                          Text(item.source, style: const TextStyle(fontSize: 11.5)),
+                          item.source == 'Manual'
+                              ? Text(
+                                  AppTranslations.pick(lang, en: 'Manual', mr: 'मॅन्युअल', hi: 'मैनुअल'),
+                                  style: const TextStyle(fontSize: 11.5),
+                                )
+                              : AppTranslatedText(
+                                  item.source,
+                                  targetLanguage: lang,
+                                  style: const TextStyle(fontSize: 11.5),
+                                ),
                         ],
                       ),
                     ),
                     DataCell(
-                      Text(item.date, style: const TextStyle(fontSize: 12)),
+                      Text(_formatWorkDate(item.date, lang), style: const TextStyle(fontSize: 12)),
                     ),
                     DataCell(
                       Text(
-                        item.amount != null ? '₹ ${item.amount!.toStringAsFixed(0)}' : '--',
+                        item.amount != null
+                            ? AppTranslations.formatDigits('₹ ${item.amount!.toStringAsFixed(0)}', lang)
+                            : '--',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                       ),
                     ),

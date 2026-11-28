@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/models/staff_model.dart';
 import '../../../data/repositories/letters_repository.dart';
 import '../../../data/repositories/complaints_repository.dart';
 import '../../../data/repositories/voters_repository.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_image_picker.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
@@ -209,23 +210,40 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     } catch (_) {}
   }
 
-  List<DropdownMenuItem<String>> _buildLetterTypeDropdownItems(bool isMr) {
-    final Map<String, LetterTypeOption> optionsMap = {
-      for (final opt in kLetterTypeOptions) opt.key: opt,
+  List<DropdownMenuItem<String>> _buildLetterTypeDropdownItems(String lang) {
+    final Map<String, ({LetterTypeOption option, bool isFromDb})> optionsMap = {
+      for (final opt in kLetterTypeOptions) opt.key: (option: opt, isFromDb: false),
     };
 
     for (final dbType in _dbLetterTypes) {
-      optionsMap[dbType.name] = LetterTypeOption(
-        key: dbType.name,
-        en: dbType.name,
-        mr: dbType.nameMarathi?.isNotEmpty == true ? dbType.nameMarathi! : dbType.name,
+      final isCustom = !optionsMap.containsKey(dbType.name);
+      final existing = optionsMap[dbType.name]?.option;
+      optionsMap[dbType.name] = (
+        option: LetterTypeOption(
+          key: dbType.name,
+          en: existing?.en ?? dbType.name,
+          mr: dbType.nameMarathi?.isNotEmpty == true
+              ? dbType.nameMarathi!
+              : (existing?.mr ?? dbType.name),
+          hi: existing?.hi ?? dbType.name,
+        ),
+        isFromDb: isCustom,
       );
     }
 
-    return optionsMap.values.map((t) {
+    return optionsMap.values.map((entry) {
+      final t = entry.option;
+      final label = t.getLabel(lang);
       return DropdownMenuItem<String>(
         value: t.key,
-        child: Text(isMr ? t.mr : t.en, overflow: TextOverflow.ellipsis),
+        child: entry.isFromDb
+            ? AppTranslatedText(
+                label,
+                targetLanguage: lang,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            : Text(label, overflow: TextOverflow.ellipsis),
       );
     }).toList();
   }
@@ -315,6 +333,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   }
 
   void _handleClearAllDrafts() {
+    final lang = ref.read(appLanguageProvider);
     setState(() {
       _selectedVoterId = null;
       _linkedVoterDisplay = null;
@@ -342,7 +361,14 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Draft cleared'),
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Draft cleared',
+            mr: 'मसुदा साफ केला',
+            hi: 'ड्राफ्ट साफ़ किया गया',
+          ),
+        ),
         backgroundColor: const Color(0xFF64748B),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -351,6 +377,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   }
 
   Future<void> _handleSubmit() async {
+    final lang = ref.read(appLanguageProvider);
     if (_activeTab == 'outgoing') {
       final fName = _firstNameCtrl.text.trim();
       final lName = _lastNameCtrl.text.trim();
@@ -359,15 +386,39 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
       final mobile = (rawMobile == '+91' || rawMobile == '+91 ') ? '' : rawMobile;
 
       if (fName.isEmpty) {
-        _showToast('Please enter First Name (पहिले नाव आवश्यक आहे)', isError: true);
+        _showToast(
+          AppTranslations.pick(
+            lang,
+            en: 'Please enter First Name',
+            mr: 'कृपया पहिले नाव प्रविष्ट करा',
+            hi: 'कृपया पहला नाम दर्ज करें',
+          ),
+          isError: true,
+        );
         return;
       }
       if (lName.isEmpty) {
-        _showToast('Please enter Last Name (आडनाव आवश्यक आहे)', isError: true);
+        _showToast(
+          AppTranslations.pick(
+            lang,
+            en: 'Please enter Last Name',
+            mr: 'कृपया आडनाव प्रविष्ट करा',
+            hi: 'कृपया उपनाम दर्ज करें',
+          ),
+          isError: true,
+        );
         return;
       }
       if (mobile.isEmpty) {
-        _showToast('Please enter Mobile Number (मोबाईल नंबर आवश्यक आहे)', isError: true);
+        _showToast(
+          AppTranslations.pick(
+            lang,
+            en: 'Please enter Mobile Number',
+            mr: 'कृपया मोबाईल नंबर प्रविष्ट करा',
+            hi: 'कृपया मोबाइल नंबर दर्ज करें',
+          ),
+          isError: true,
+        );
         return;
       }
 
@@ -400,11 +451,23 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         );
 
         if (mounted) {
-          _showToast('Letter Request created successfully! (पत्र विनंती तयार झाली)');
+          _showToast(
+            AppTranslations.pick(
+              lang,
+              en: 'Letter request created successfully!',
+              mr: 'पत्र विनंती यशस्वीरित्या तयार झाली!',
+              hi: 'पत्र अनुरोध सफलतापूर्वक बनाया गया!',
+            ),
+          );
           Navigator.pop(context, true);
         }
       } catch (e) {
-        if (mounted) _showToast('Failed to save request: $e', isError: true);
+        if (mounted) {
+          _showToast(
+            '${AppTranslations.pick(lang, en: 'Failed to save request', mr: 'विनंती जतन करण्यात अयशस्वी', hi: 'अनुरोध सहेजने में विफल')}: $e',
+            isError: true,
+          );
+        }
       } finally {
         if (mounted) setState(() => _isSubmitting = false);
       }
@@ -412,7 +475,15 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
       // Incoming Letter
       final title = _incomingTitleCtrl.text.trim();
       if (title.isEmpty) {
-        _showToast('Please enter Letter Title (पत्राचे शीर्षक आवश्यक आहे)', isError: true);
+        _showToast(
+          AppTranslations.pick(
+            lang,
+            en: 'Please enter Letter Title',
+            mr: 'कृपया पत्राचे शीर्षक प्रविष्ट करा',
+            hi: 'कृपया पत्र का शीर्षक दर्ज करें',
+          ),
+          isError: true,
+        );
         return;
       }
 
@@ -444,11 +515,23 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         );
 
         if (mounted) {
-          _showToast('Incoming letter uploaded successfully! (आवक पत्र जतन झाले)');
+          _showToast(
+            AppTranslations.pick(
+              lang,
+              en: 'Incoming letter uploaded successfully!',
+              mr: 'आवक पत्र यशस्वीरित्या जतन झाले!',
+              hi: 'आवक पत्र सफलतापूर्वक अपलोड किया गया!',
+            ),
+          );
           Navigator.pop(context, true);
         }
       } catch (e) {
-        if (mounted) _showToast('Failed to upload letter: $e', isError: true);
+        if (mounted) {
+          _showToast(
+            '${AppTranslations.pick(lang, en: 'Failed to upload letter', mr: 'पत्र अपलोड करण्यात अयशस्वी', hi: 'पत्र अपलोड करने में विफल')}: $e',
+            isError: true,
+          );
+        }
       } finally {
         if (mounted) setState(() => _isSubmitting = false);
       }
@@ -483,7 +566,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
     return defaults.contains(key);
   }
 
-  void _openAddFieldDialog(bool isMr) {
+  void _openAddFieldDialog(String lang) {
     final available = kDynamicFieldDefinitions.keys
         .where((k) => !_activeDynamicFieldKeys.contains(k))
         .toList();
@@ -513,8 +596,18 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
             // 1. FIXED STANDARDIZED HEADER
             AppModalHeader(
               icon: Icons.add_circle_outline_rounded,
-              title: isMr ? 'अतिरिक्त माहितीचे फील्ड जोडा' : 'Add Additional Field',
-              subtitle: isMr ? 'पत्रासाठी आवश्यक फील्ड निवडा' : 'Select field for certificate or letter',
+              title: AppTranslations.pick(
+                lang,
+                en: 'Add Additional Field',
+                mr: 'अतिरिक्त माहितीचे फील्ड जोडा',
+                hi: 'अतिरिक्त जानकारी फ़ील्ड जोड़ें',
+              ),
+              subtitle: AppTranslations.pick(
+                lang,
+                en: 'Select field for certificate or letter',
+                mr: 'पत्रासाठी आवश्यक फील्ड निवडा',
+                hi: 'प्रमाणपत्र या पत्र के लिए फ़ील्ड चुनें',
+              ),
               onClose: () => Navigator.pop(ctx),
             ),
 
@@ -531,7 +624,12 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                         child: TextField(
                           controller: customFieldCtrl,
                           decoration: appInputDecoration(
-                            hint: isMr ? 'किंवा नवीन फील्डचे नाव टाका...' : 'Or enter custom field name...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Or enter custom field name...',
+                              mr: 'किंवा नवीन फील्डचे नाव टाका...',
+                              hi: 'या कस्टम फ़ील्ड नाम दर्ज करें...',
+                            ),
                           ),
                         ),
                       ),
@@ -556,14 +654,22 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: Text(isMr ? 'जोडा' : 'Add', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Add', mr: 'जोडा', hi: 'जोड़ें'),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 16),
                   Text(
-                    isMr ? 'किंवा यादीतून निवडा:' : 'Or choose from standard fields:',
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Or choose from standard fields:',
+                      mr: 'किंवा यादीतून निवडा:',
+                      hi: 'या मानक फ़ील्ड में से चुनें:',
+                    ),
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(height: 8),
@@ -582,11 +688,11 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                         leading: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0284C7), size: 20),
                         title: Text(
-                          isMr ? meta.mrLabel : meta.enLabel,
+                          meta.getLabel(lang),
                           style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                         ),
                         subtitle: Text(
-                          isMr ? meta.enLabel : meta.mrLabel,
+                          lang == 'en' ? meta.mrLabel : meta.enLabel,
                           style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                         ),
                         onTap: () {
@@ -693,17 +799,20 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 768;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     final titleText = _activeTab == 'outgoing'
-        ? (isMr ? 'नवीन पत्र विनंती' : 'New Letter Request')
-        : (isMr ? 'आवक पत्र अपलोड करा' : 'Upload Incoming Letter');
+        ? AppTranslations.pick(lang, en: 'New Letter Request', mr: 'नवीन पत्र विनंती', hi: 'नया पत्र अनुरोध')
+        : AppTranslations.pick(lang, en: 'Upload Incoming Letter', mr: 'आवक पत्र अपलोड करा', hi: 'आवक पत्र अपलोड करें');
 
-    final subtitleText = isMr
-        ? 'अधिकृत पत्र विनंत्यांचा मागोवा घ्या आणि व्यवस्थापित करा'
-        : 'Track and manage official correspondence';
+    final subtitleText = AppTranslations.pick(
+      lang,
+      en: 'Track and manage official correspondence',
+      mr: 'अधिकृत पत्र विनंत्यांचा मागोवा घ्या आणि व्यवस्थापित करा',
+      hi: 'आधिकारिक पत्राचार को ट्रैक और प्रबंधित करें',
+    );
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -738,7 +847,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
             ),
 
             // Tab Selector: Outgoing vs Incoming
-            _buildTabSelector(isMr),
+            _buildTabSelector(lang),
 
             // Linked voter / Draft autosave status bar
             if (_linkedVoterDisplay != null || _hasAnyDraft)
@@ -754,8 +863,19 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                       const Icon(Icons.link_rounded, size: 16, color: Color(0xFF0284C7)),
                       const SizedBox(width: 6),
                       Text(
-                        '${isMr ? "जोडलेले मतदार:" : "Linked:"} $_linkedVoterDisplay',
+                        AppTranslations.pick(lang, en: 'Linked:', mr: 'जोडलेले मतदार:', hi: 'जुड़ा मतदाता:'),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: AppTranslatedText(
+                          _linkedVoterDisplay!,
+                          isName: true,
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
@@ -772,14 +892,14 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        isMr ? 'मसुदा सेव्ह केला' : 'Draft autosaved',
+                        AppTranslations.pick(lang, en: 'Draft autosaved', mr: 'मसुदा सेव्ह केला', hi: 'ड्राफ्ट स्वतः सहेजा गया'),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF047857)),
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: _handleClearAllDrafts,
                         child: Text(
-                          isMr ? 'काढून टाका' : 'Clear draft',
+                          AppTranslations.pick(lang, en: 'Clear draft', mr: 'काढून टाका', hi: 'ड्राफ्ट हटाएँ'),
                           style: const TextStyle(fontSize: 11, color: Color(0xFFDC2626), decoration: TextDecoration.underline),
                         ),
                       ),
@@ -796,14 +916,14 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 children: [
                   if (_activeTab == 'outgoing')
-                    _buildOutgoingForm(isMr)
+                    _buildOutgoingForm(lang)
                   else
-                    _buildIncomingForm(isMr),
+                    _buildIncomingForm(lang),
 
                   const SizedBox(height: 20),
 
                   // Submit Action Button (Scrolls together with form)
-                  _buildSubmitButton(isMr),
+                  _buildSubmitButton(lang),
                   const SizedBox(height: 8),
                 ],
               ),
@@ -817,7 +937,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   // ---------------------------------------------------------------------------
   // TAB SELECTOR: OUTGOING vs INCOMING
   // ---------------------------------------------------------------------------
-  Widget _buildTabSelector(bool isMr) {
+  Widget _buildTabSelector(String lang) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       padding: const EdgeInsets.all(4),
@@ -830,7 +950,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         children: [
           Expanded(
             child: _TabPill(
-              label: isMr ? 'जावक पत्र (Outgoing)' : 'Outgoing Letters',
+              label: AppTranslations.pick(lang, en: 'Outgoing Letters', mr: 'जावक पत्र (Outgoing)', hi: 'जावक पत्र (Outgoing)'),
               icon: Icons.send_rounded,
               isActive: _activeTab == 'outgoing',
               onTap: () {
@@ -842,7 +962,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
           const SizedBox(width: 4),
           Expanded(
             child: _TabPill(
-              label: isMr ? 'आवक पत्र (Incoming)' : 'Incoming Letters',
+              label: AppTranslations.pick(lang, en: 'Incoming Letters', mr: 'आवक पत्र (Incoming)', hi: 'आवक पत्र (Incoming)'),
               icon: Icons.move_to_inbox_rounded,
               isActive: _activeTab == 'incoming',
               onTap: () {
@@ -859,18 +979,18 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   // ---------------------------------------------------------------------------
   // 1. OUTGOING LETTER FORM (matching LetterForm.tsx lines 430-639)
   // ---------------------------------------------------------------------------
-  Widget _buildOutgoingForm(bool isMr) {
+  Widget _buildOutgoingForm(String lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Section 1: Applicant Name & Voter Details
         _CardSection(
-          title: isMr ? 'नाव (अर्जदार)' : 'Applicant Name',
+          title: AppTranslations.pick(lang, en: 'Applicant Name', mr: 'नाव (अर्जदार)', hi: 'आवेदक का नाम'),
           icon: Icons.person_outline_rounded,
           action: OutlinedButton.icon(
             onPressed: _openVoterSearchSheet,
             icon: const Icon(Icons.search_rounded, size: 15),
-            label: Text(isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List'),
+            label: Text(AppTranslations.pick(lang, en: 'Search from Voter List', mr: 'मतदार यादीतून शोधा', hi: 'मतदाता सूची से खोजें')),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF0284C7),
               backgroundColor: const Color(0xFFF0F9FF),
@@ -896,10 +1016,19 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                     children: [
                       const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 18),
                       const SizedBox(width: 8),
+                      Text(
+                        AppTranslations.pick(lang, en: 'Linked Voter:', mr: 'जोडलेले मतदार:', hi: 'जुड़ा मतदाता:'),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF065F46)),
+                      ),
+                      const SizedBox(width: 4),
                       Expanded(
-                        child: Text(
-                          '${isMr ? "जोडलेले मतदार:" : "Linked Voter:"} $_linkedVoterDisplay',
+                        child: AppTranslatedText(
+                          _linkedVoterDisplay!,
+                          isName: true,
+                          targetLanguage: lang,
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF065F46)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       IconButton(
@@ -918,8 +1047,8 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                   Expanded(
                     child: _buildTextField(
                       controller: _firstNameCtrl,
-                      label: isMr ? 'पहिले नाव' : 'First Name',
-                      placeholder: isMr ? 'पहिले नाव' : 'First Name',
+                      label: AppTranslations.pick(lang, en: 'First Name', mr: 'पहिले नाव', hi: 'पहला नाम'),
+                      placeholder: AppTranslations.pick(lang, en: 'First Name', mr: 'पहिले नाव', hi: 'पहला नाम'),
                       required: true,
                     ),
                   ),
@@ -927,16 +1056,16 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                   Expanded(
                     child: _buildTextField(
                       controller: _middleNameCtrl,
-                      label: isMr ? 'मधले नाव' : 'Middle Name',
-                      placeholder: isMr ? 'मधले नाव' : 'Middle Name',
+                      label: AppTranslations.pick(lang, en: 'Middle Name', mr: 'मधले नाव', hi: 'मध्य नाम'),
+                      placeholder: AppTranslations.pick(lang, en: 'Middle Name', mr: 'मधले नाव', hi: 'मध्य नाम'),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildTextField(
                       controller: _lastNameCtrl,
-                      label: isMr ? 'आडनाव' : 'Last Name',
-                      placeholder: isMr ? 'आडनाव' : 'Last Name',
+                      label: AppTranslations.pick(lang, en: 'Last Name', mr: 'आडनाव', hi: 'उपनाम'),
+                      placeholder: AppTranslations.pick(lang, en: 'Last Name', mr: 'आडनाव', hi: 'उपनाम'),
                       required: true,
                     ),
                   ),
@@ -946,8 +1075,8 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
               // Mobile Number
               _buildTextField(
                 controller: _mobileCtrl,
-                label: isMr ? 'मोबाईल नंबर' : 'Mobile Number',
-                placeholder: '+91 98765 43210',
+                label: AppTranslations.pick(lang, en: 'Mobile Number', mr: 'मोबाईल नंबर', hi: 'मोबाइल नंबर'),
+                placeholder: AppTranslations.formatDigits('+91 98765 43210', lang),
                 prefixIcon: Icons.phone_rounded,
                 keyboardType: TextInputType.phone,
                 required: true,
@@ -960,7 +1089,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
 
         // Section 2: Letter Details (Type, Gender, Area, Subject, Address, Purpose)
         _CardSection(
-          title: isMr ? 'पत्राचा तपशील' : 'Letter Details',
+          title: AppTranslations.pick(lang, en: 'Letter Details', mr: 'पत्राचा तपशील', hi: 'पत्र विवरण'),
           icon: Icons.description_outlined,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -971,13 +1100,17 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                   Expanded(
                     flex: 2,
                     child: _buildDropdown(
-                      label: isMr ? 'लिंग' : 'Gender',
+                      label: AppTranslations.pick(lang, en: 'Gender', mr: 'लिंग', hi: 'लिंग'),
                       value: _selectedGender,
                       items: kGenderOptions.map((g) {
                         return DropdownMenuItem(
                           value: g,
                           child: Text(
-                            g == 'Male' ? (isMr ? 'पुरुष' : 'Male') : (g == 'Female' ? (isMr ? 'महिला' : 'Female') : (isMr ? 'इतर' : 'Other')),
+                            g == 'Male'
+                                ? AppTranslations.pick(lang, en: 'Male', mr: 'पुरुष', hi: 'पुरुष')
+                                : (g == 'Female'
+                                    ? AppTranslations.pick(lang, en: 'Female', mr: 'महिला', hi: 'महिला')
+                                    : AppTranslations.pick(lang, en: 'Other', mr: 'इतर', hi: 'अन्य')),
                           ),
                         );
                       }).toList(),
@@ -990,9 +1123,9 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                   Expanded(
                     flex: 3,
                     child: _buildDropdown(
-                      label: isMr ? 'पत्राचा प्रकार' : 'Letter Type',
+                      label: AppTranslations.pick(lang, en: 'Letter Type', mr: 'पत्राचा प्रकार', hi: 'पत्र का प्रकार'),
                       value: _selectedLetterType,
-                      items: _buildLetterTypeDropdownItems(isMr),
+                      items: _buildLetterTypeDropdownItems(lang),
                       onChanged: (val) {
                         if (val != null) {
                           setState(() => _selectedLetterType = val);
@@ -1009,8 +1142,11 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
               // Area
               _buildTextField(
                 controller: _areaCtrl,
-                label: isMr ? 'क्षेत्र / परिसर' : 'Area',
-                placeholder: isMr ? 'उदा. गणेश नगर, लेन ३' : 'e.g. Ganesh Nagar, Lane 3',
+                label: AppTranslations.pick(lang, en: 'Area', mr: 'क्षेत्र / परिसर', hi: 'क्षेत्र / परिसर'),
+                placeholder: AppTranslations.formatDigits(
+                  AppTranslations.pick(lang, en: 'e.g. Ganesh Nagar, Lane 3', mr: 'उदा. गणेश नगर, लेन ३', hi: 'उदा. गणेश नगर, गली 3'),
+                  lang,
+                ),
               ),
 
               const SizedBox(height: 14),
@@ -1018,8 +1154,8 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
               // Subject
               _buildTextField(
                 controller: _subjectCtrl,
-                label: isMr ? 'पत्राचा विषय' : 'Subject',
-                placeholder: isMr ? 'पत्राचा विषय...' : 'Subject of the letter...',
+                label: AppTranslations.pick(lang, en: 'Subject', mr: 'पत्राचा विषय', hi: 'पत्र का विषय'),
+                placeholder: AppTranslations.pick(lang, en: 'Subject of the letter...', mr: 'पत्राचा विषय...', hi: 'पत्र का विषय...'),
               ),
 
               const SizedBox(height: 14),
@@ -1027,10 +1163,13 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
               // Address / Details (3 rows, matching LetterForm.tsx line 576)
               _buildTextField(
                 controller: _addressCtrl,
-                label: isMr ? 'पत्ता / तपशील' : 'Address / Details',
-                placeholder: isMr
-                    ? 'सध्याचा रहिवासी पत्ता किंवा विशिष्ट तपशील...'
-                    : 'Current resident address or specific details...',
+                label: AppTranslations.pick(lang, en: 'Address / Details', mr: 'पत्ता / तपशील', hi: 'पता / विवरण'),
+                placeholder: AppTranslations.pick(
+                  lang,
+                  en: 'Current resident address or specific details...',
+                  mr: 'सध्याचा रहिवासी पत्ता किंवा विशिष्ट तपशील...',
+                  hi: 'वर्तमान निवास पता या विशिष्ट विवरण...',
+                ),
                 maxLines: 3,
               ),
 
@@ -1039,25 +1178,39 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
               // Purpose (matching LetterForm.tsx line 590)
               _buildTextField(
                 controller: _purposeCtrl,
-                label: isMr ? 'उद्देश / कारण' : 'Purpose',
-                placeholder: isMr ? 'पत्राचे कारण / उद्देश...' : 'Purpose of the letter...',
+                label: AppTranslations.pick(lang, en: 'Purpose', mr: 'उद्देश / कारण', hi: 'उद्देश्य / कारण'),
+                placeholder: AppTranslations.pick(lang, en: 'Purpose of the letter...', mr: 'पत्राचे कारण / उद्देश...', hi: 'पत्र का उद्देश्य...'),
               ),
 
               const SizedBox(height: 14),
 
               // Added By (Staff) - ALWAYS VISIBLE matching pattern
               _buildDropdown(
-                label: isMr ? 'कर्मचारी (नोंदणीकर्ता) - ऐच्छिक' : 'Added By (Staff)',
+                label: AppTranslations.pick(lang, en: 'Added By (Staff)', mr: 'कर्मचारी (नोंदणीकर्ता) - ऐच्छिक', hi: 'कर्मचारी (दर्जकर्ता) - वैकल्पिक'),
                 value: _selectedStaffId ?? '',
                 items: [
                   DropdownMenuItem(
                     value: '',
-                    child: Text(isMr ? 'कर्मचारी निवडा (ऐच्छिक)' : 'Select Staff (Optional)'),
+                    child: Text(AppTranslations.pick(lang, en: 'Select Staff (Optional)', mr: 'कर्मचारी निवडा (ऐच्छिक)', hi: 'कर्मचारी चुनें (वैकल्पिक)')),
                   ),
                   ..._staffList.map((s) {
+                    final roleLabel = AppTranslations.getRoleName(s.role ?? 'Staff', lang);
                     return DropdownMenuItem(
                       value: s.id,
-                      child: Text('${s.name} (${s.role})', overflow: TextOverflow.ellipsis),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: AppTranslatedText(
+                              s.name,
+                              isName: true,
+                              targetLanguage: lang,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(' ($roleLabel)', overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
                     );
                   }),
                 ],
@@ -1072,12 +1225,12 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
         const SizedBox(height: 16),
 
         // Section 3: Additional Details (अतिरिक्त माहिती - matching LetterForm.tsx lines 600-628)
-        _buildAdditionalDetailsSection(isMr),
+        _buildAdditionalDetailsSection(lang),
 
         const SizedBox(height: 16),
 
         // Section 4: Attachments
-        _buildAttachmentsSection(isMr),
+        _buildAttachmentsSection(lang),
       ],
     );
   }
@@ -1085,25 +1238,33 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   // ---------------------------------------------------------------------------
   // 2. INCOMING LETTER FORM (matching IncomingLetterUpload.tsx lines 347-518)
   // ---------------------------------------------------------------------------
-  Widget _buildIncomingForm(bool isMr) {
+  Widget _buildIncomingForm(String lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Section 1: File Upload Box (matching IncomingLetterUpload.tsx lines 349-408)
         _CardSection(
-          title: isMr ? 'स्कॅन / फोटो दस्तऐवज' : 'Scan / Photo Document',
+          title: AppTranslations.pick(lang, en: 'Scan / Photo Document', mr: 'स्कॅन / फोटो दस्तऐवज', hi: 'स्कैन / फोटो दस्तावेज़'),
           icon: Icons.upload_file_rounded,
           action: Text(
-            isMr ? 'कमाल १० MB' : 'Max 10MB',
+            AppTranslations.formatDigits(
+              AppTranslations.pick(lang, en: 'Max 10MB', mr: 'कमाल 10 MB', hi: 'अधिकतम 10 MB'),
+              lang,
+            ),
             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppImagePickerField(
-                label: isMr ? 'आवक पत्राचा फोटो किंवा स्कॅन कॉपी जोडा' : 'Add photo or scanned copy of incoming letter',
+                label: AppTranslations.pick(
+                  lang,
+                  en: 'Add photo or scanned copy of incoming letter',
+                  mr: 'आवक पत्राचा फोटो किंवा स्कॅन कॉपी जोडा',
+                  hi: 'आवक पत्र की फोटो या स्कैन कॉपी जोड़ें',
+                ),
                 isRequired: false,
-                isMarathi: isMr,
+                isMarathi: lang == 'mr',
                 allowMultiple: true,
                 initialFiles: _pickedFiles,
                 onFilesChanged: (files) {
@@ -1121,15 +1282,15 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
 
         // Section 2: Incoming Letter Details (Title, Description, Area, Received Date)
         _CardSection(
-          title: isMr ? 'पत्राचा तपशील' : 'Letter Details',
+          title: AppTranslations.pick(lang, en: 'Letter Details', mr: 'पत्राचा तपशील', hi: 'पत्र विवरण'),
           icon: Icons.mark_email_read_outlined,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTextField(
                 controller: _incomingTitleCtrl,
-                label: isMr ? 'पत्राचे शीर्षक' : 'Letter Title',
-                placeholder: isMr ? 'पत्राचे शीर्षक...' : 'Letter Title...',
+                label: AppTranslations.pick(lang, en: 'Letter Title', mr: 'पत्राचे शीर्षक', hi: 'पत्र का शीर्षक'),
+                placeholder: AppTranslations.pick(lang, en: 'Letter Title...', mr: 'पत्राचे शीर्षक...', hi: 'पत्र का शीर्षक...'),
                 required: true,
               ),
 
@@ -1137,10 +1298,13 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
 
               _buildTextField(
                 controller: _incomingDescCtrl,
-                label: isMr ? 'वर्णन' : 'Description',
-                placeholder: isMr
-                    ? 'पत्राबद्दल तपशील किंवा इतर माहिती...'
-                    : 'Add any notes or details about this letter...',
+                label: AppTranslations.pick(lang, en: 'Description', mr: 'वर्णन', hi: 'विवरण'),
+                placeholder: AppTranslations.pick(
+                  lang,
+                  en: 'Add any notes or details about this letter...',
+                  mr: 'पत्राबद्दल तपशील किंवा इतर माहिती...',
+                  hi: 'इस पत्र के बारे में विवरण या टिप्पणी जोड़ें...',
+                ),
                 maxLines: 3,
               ),
 
@@ -1151,8 +1315,8 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                   Expanded(
                     child: _buildTextField(
                       controller: _incomingAreaCtrl,
-                      label: isMr ? 'क्षेत्र / परिसर' : 'Area',
-                      placeholder: isMr ? 'क्षेत्र शोधा...' : 'Search Area...',
+                      label: AppTranslations.pick(lang, en: 'Area', mr: 'क्षेत्र / परिसर', hi: 'क्षेत्र / परिसर'),
+                      placeholder: AppTranslations.pick(lang, en: 'Search Area...', mr: 'क्षेत्र शोधा...', hi: 'क्षेत्र खोजें...'),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -1161,7 +1325,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isMr ? 'प्राप्त झाल्याची तारीख' : 'Received Date',
+                          AppTranslations.pick(lang, en: 'Received Date', mr: 'प्राप्त झाल्याची तारीख', hi: 'प्राप्ति तिथि'),
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                         ),
                         const SizedBox(height: 6),
@@ -1181,7 +1345,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    DateFormat('dd/MM/yyyy').format(_receivedDate),
+                                    AppTranslations.formatDate(_receivedDate, lang, pattern: 'dd/MM/yyyy'),
                                     style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A), fontWeight: FontWeight.w600),
                                   ),
                                 ),
@@ -1199,17 +1363,31 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
 
               // Added By (Staff) - ALWAYS VISIBLE
               _buildDropdown(
-                label: isMr ? 'कर्मचारी (नोंदणीकर्ता) - ऐच्छिक' : 'Added By (Staff)',
+                label: AppTranslations.pick(lang, en: 'Added By (Staff)', mr: 'कर्मचारी (नोंदणीकर्ता) - ऐच्छिक', hi: 'कर्मचारी (दर्जकर्ता) - वैकल्पिक'),
                 value: _selectedStaffId ?? '',
                 items: [
                   DropdownMenuItem(
                     value: '',
-                    child: Text(isMr ? 'कर्मचारी निवडा (ऐच्छिक)' : 'Select Staff (Optional)'),
+                    child: Text(AppTranslations.pick(lang, en: 'Select Staff (Optional)', mr: 'कर्मचारी निवडा (ऐच्छिक)', hi: 'कर्मचारी चुनें (वैकल्पिक)')),
                   ),
                   ..._staffList.map((s) {
+                    final roleLabel = AppTranslations.getRoleName(s.role ?? 'Staff', lang);
                     return DropdownMenuItem(
                       value: s.id,
-                      child: Text('${s.name} (${s.role})', overflow: TextOverflow.ellipsis),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: AppTranslatedText(
+                              s.name,
+                              isName: true,
+                              targetLanguage: lang,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(' ($roleLabel)', overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
                     );
                   }),
                 ],
@@ -1225,12 +1403,12 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
 
         // Section 3: Bearer Details (matching IncomingLetterUpload.tsx lines 469-516)
         _CardSection(
-          title: isMr ? 'पत्र घेऊन येणाऱ्याची माहिती' : 'Bearer Details',
+          title: AppTranslations.pick(lang, en: 'Bearer Details', mr: 'पत्र घेऊन येणाऱ्याची माहिती', hi: 'पत्र वाहक का विवरण'),
           icon: Icons.person_pin_circle_outlined,
           action: OutlinedButton.icon(
             onPressed: _openVoterSearchSheet,
             icon: const Icon(Icons.search_rounded, size: 15),
-            label: Text(isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List'),
+            label: Text(AppTranslations.pick(lang, en: 'Search from Voter List', mr: 'मतदार यादीतून शोधा', hi: 'मतदाता सूची से खोजें')),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF0284C7),
               backgroundColor: const Color(0xFFF0F9FF),
@@ -1248,24 +1426,24 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                   Expanded(
                     child: _buildTextField(
                       controller: _bearerFirstNameCtrl,
-                      label: isMr ? 'पहिले नाव' : 'First Name',
-                      placeholder: isMr ? 'पहिले नाव' : 'First Name',
+                      label: AppTranslations.pick(lang, en: 'First Name', mr: 'पहिले नाव', hi: 'पहला नाम'),
+                      placeholder: AppTranslations.pick(lang, en: 'First Name', mr: 'पहिले नाव', hi: 'पहला नाम'),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildTextField(
                       controller: _bearerMiddleNameCtrl,
-                      label: isMr ? 'मधले नाव' : 'Middle Name',
-                      placeholder: isMr ? 'मधले नाव' : 'Middle Name',
+                      label: AppTranslations.pick(lang, en: 'Middle Name', mr: 'मधले नाव', hi: 'मध्य नाम'),
+                      placeholder: AppTranslations.pick(lang, en: 'Middle Name', mr: 'मधले नाव', hi: 'मध्य नाम'),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildTextField(
                       controller: _bearerLastNameCtrl,
-                      label: isMr ? 'आडनाव' : 'Last Name',
-                      placeholder: isMr ? 'आडनाव' : 'Last Name',
+                      label: AppTranslations.pick(lang, en: 'Last Name', mr: 'आडनाव', hi: 'उपनाम'),
+                      placeholder: AppTranslations.pick(lang, en: 'Last Name', mr: 'आडनाव', hi: 'उपनाम'),
                     ),
                   ),
                 ],
@@ -1273,8 +1451,8 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
               const SizedBox(height: 12),
               _buildTextField(
                 controller: _bearerMobileCtrl,
-                label: isMr ? 'मोबाईल नंबर' : 'Mobile Number',
-                placeholder: '+91 98765 43210',
+                label: AppTranslations.pick(lang, en: 'Mobile Number', mr: 'मोबाईल नंबर', hi: 'मोबाइल नंबर'),
+                placeholder: AppTranslations.formatDigits('+91 98765 43210', lang),
                 prefixIcon: Icons.phone_rounded,
                 keyboardType: TextInputType.phone,
               ),
@@ -1288,12 +1466,12 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   // ---------------------------------------------------------------------------
   // SECTION: ADDITIONAL DETAILS (अतिरिक्त माहिती - matching LetterForm.tsx lines 600-628)
   // ---------------------------------------------------------------------------
-  Widget _buildAdditionalDetailsSection(bool isMr) {
+  Widget _buildAdditionalDetailsSection(String lang) {
     return _CardSection(
-      title: isMr ? 'अतिरिक्त माहिती' : 'Additional Details',
+      title: AppTranslations.pick(lang, en: 'Additional Details', mr: 'अतिरिक्त माहिती', hi: 'अतिरिक्त विवरण'),
       icon: Icons.playlist_add_check_rounded,
       action: InkWell(
-        onTap: () => _openAddFieldDialog(isMr),
+        onTap: () => _openAddFieldDialog(lang),
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -1308,7 +1486,7 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
               const Icon(Icons.add_rounded, size: 15, color: Color(0xFF0284C7)),
               const SizedBox(width: 4),
               Text(
-                isMr ? 'फील्ड जोडा' : 'Add Field',
+                AppTranslations.pick(lang, en: 'Add Field', mr: 'फील्ड जोडा', hi: 'फ़ील्ड जोड़ें'),
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -1335,9 +1513,12 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    isMr
-                        ? 'निवडलेल्या दाखल्यानुसार खालील तपशील भरा किंवा नवीन फील्ड जोडा'
-                        : 'Fill in the specific details below or add custom fields',
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Fill in the specific details below or add custom fields',
+                      mr: 'निवडलेल्या दाखल्यानुसार खालील तपशील भरा किंवा नवीन फील्ड जोडा',
+                      hi: 'नीचे विशिष्ट विवरण भरें या कस्टम फ़ील्ड जोड़ें',
+                    ),
                     style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -1350,7 +1531,12 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
-                  isMr ? 'कोणतेही अतिरिक्त फील्ड नाही' : 'No additional fields added',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'No additional fields added',
+                    mr: 'कोणतेही अतिरिक्त फील्ड नाही',
+                    hi: 'कोई अतिरिक्त फ़ील्ड नहीं जोड़ा गया',
+                  ),
                   style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                 ),
               ),
@@ -1359,11 +1545,11 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
             ..._activeDynamicFieldKeys.map((fieldKey) {
               final meta = kDynamicFieldDefinitions[fieldKey];
               final label = meta != null
-                  ? (isMr ? meta.mrLabel : meta.enLabel)
+                  ? meta.getLabel(lang)
                   : fieldKey.replaceAll('_', ' ').toUpperCase();
               final placeholder = meta != null
-                  ? (isMr ? meta.placeholderMr : meta.placeholderEn)
-                  : (isMr ? '$label प्रविष्ट करा' : 'Enter $label');
+                  ? meta.getPlaceholder(lang)
+                  : AppTranslations.pick(lang, en: 'Enter $label', mr: '$label प्रविष्ट करा', hi: '$label दर्ज करें');
               final keyboardType = meta?.keyboardType ?? TextInputType.text;
 
               final ctrl = _dynamicControllers.putIfAbsent(fieldKey, () => TextEditingController());
@@ -1422,17 +1608,25 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   // ---------------------------------------------------------------------------
   // SECTION: ATTACHMENTS
   // ---------------------------------------------------------------------------
-  Widget _buildAttachmentsSection(bool isMr) {
+  Widget _buildAttachmentsSection(String lang) {
     return _CardSection(
-      title: isMr ? 'संलग्न फाईल्स' : 'Attachments (Photos & Documents)',
+      title: AppTranslations.pick(
+        lang,
+        en: 'Attachments (Photos & Documents)',
+        mr: 'संलग्न फाईल्स',
+        hi: 'संलग्न फ़ाइलें (फ़ोटो व दस्तावेज़)',
+      ),
       icon: Icons.attach_file_rounded,
       action: Text(
-        isMr ? 'कमाल १०० MB' : 'Max 100MB',
+        AppTranslations.formatDigits(
+          AppTranslations.pick(lang, en: 'Max 100MB', mr: 'कमाल 100 MB', hi: 'अधिकतम 100 MB'),
+          lang,
+        ),
         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
       ),
       child: AppImagePickerField(
         isRequired: false,
-        isMarathi: isMr,
+        isMarathi: lang == 'mr',
         allowMultiple: true,
         initialFiles: _pickedFiles,
         onFilesChanged: (files) {
@@ -1448,10 +1642,10 @@ class _NewLetterBottomSheetState extends ConsumerState<NewLetterBottomSheet> {
   // ---------------------------------------------------------------------------
   // SUBMIT BUTTON
   // ---------------------------------------------------------------------------
-  Widget _buildSubmitButton(bool isMr) {
+  Widget _buildSubmitButton(String lang) {
     final buttonText = _activeTab == 'outgoing'
-        ? (isMr ? 'विनंती तयार करा' : 'Create Request')
-        : (isMr ? 'आवक पत्र जतन करा' : 'Upload Letter');
+        ? AppTranslations.pick(lang, en: 'Create Request', mr: 'विनंती तयार करा', hi: 'अनुरोध बनाएँ')
+        : AppTranslations.pick(lang, en: 'Upload Letter', mr: 'आवक पत्र जतन करा', hi: 'पत्र अपलोड करें');
 
     return ElevatedButton(
       onPressed: _isSubmitting ? null : _handleSubmit,
@@ -1697,7 +1891,7 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
     try {
       final repo = ref.read(votersRepoProvider);
       final query = _nameFilterCtrl.text.trim();
-      final ageText = _ageFilterCtrl.text.trim();
+      final ageText = AppTranslations.normalizeAsciiDigits(_ageFilterCtrl.text.trim());
 
       final list = await repo.searchVoters(
         query: query.isNotEmpty ? query : null,
@@ -1706,7 +1900,7 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
         pageSize: 40,
       );
 
-      final house = _houseNoFilterCtrl.text.trim().toLowerCase();
+      final house = AppTranslations.normalizeAsciiDigits(_houseNoFilterCtrl.text.trim()).toLowerCase();
       final addr = _addressFilterCtrl.text.trim().toLowerCase();
 
       final filtered = list.where((v) {
@@ -1729,7 +1923,7 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 768;
 
     return Container(
@@ -1748,8 +1942,8 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
           // 1. FIXED STANDARDIZED HEADER
           AppModalHeader(
             icon: Icons.person_search_rounded,
-            title: isMr ? 'मतदार यादीतून शोधा' : 'Search from Voter List',
-            subtitle: isMr ? 'नाव, घर क्र. किंवा पत्त्यानुसार शोधा' : 'Filter voters from electoral roll',
+            title: AppTranslations.pick(lang, en: 'Search from Voter List', mr: 'मतदार यादीतून शोधा', hi: 'मतदाता सूची से खोजें'),
+            subtitle: AppTranslations.pick(lang, en: 'Filter voters from electoral roll', mr: 'नाव, घर क्र. किंवा पत्त्यानुसार शोधा', hi: 'नाम, मकान नं. या पते से खोजें'),
             onClose: () => Navigator.pop(context),
           ),
 
@@ -1768,7 +1962,7 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
                         controller: _nameFilterCtrl,
                         onChanged: (_) => _executeSearch(),
                         decoration: InputDecoration(
-                          hintText: isMr ? 'नावाने शोधा' : 'Search by Name',
+                          hintText: AppTranslations.pick(lang, en: 'Search by Name', mr: 'नावाने शोधा', hi: 'नाम से खोजें'),
                           hintStyle: const TextStyle(fontSize: 12),
                           prefixIcon: const Icon(Icons.search_rounded, size: 18),
                           filled: true,
@@ -1788,7 +1982,7 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
                         controller: _houseNoFilterCtrl,
                         onChanged: (_) => _executeSearch(),
                         decoration: InputDecoration(
-                          hintText: isMr ? 'घर क्र. शोधा' : 'Search House No',
+                          hintText: AppTranslations.pick(lang, en: 'Search House No', mr: 'घर क्र. शोधा', hi: 'मकान नं. खोजें'),
                           hintStyle: const TextStyle(fontSize: 12),
                           filled: true,
                           fillColor: Colors.white,
@@ -1812,7 +2006,10 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
                         controller: _ageFilterCtrl,
                         onChanged: (_) => _executeSearch(),
                         decoration: InputDecoration(
-                          hintText: isMr ? 'वय / मर्यादा (उदा. १८-२४)' : 'Age / Range (e.g. 18-24)',
+                          hintText: AppTranslations.formatDigits(
+                            AppTranslations.pick(lang, en: 'Age / Range (e.g. 18-24)', mr: 'वय / मर्यादा (उदा. 18-24)', hi: 'आयु / सीमा (उदा. 18-24)'),
+                            lang,
+                          ),
                           hintStyle: const TextStyle(fontSize: 12),
                           filled: true,
                           fillColor: Colors.white,
@@ -1830,10 +2027,10 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
                         value: _selectedGender,
                         height: 44,
                         items: [
-                          DropdownMenuItem(value: '', child: Text(isMr ? 'सर्व लिंग' : 'All Genders', style: const TextStyle(fontSize: 12))),
-                          const DropdownMenuItem(value: 'M', child: Text('Male', style: TextStyle(fontSize: 12))),
-                          const DropdownMenuItem(value: 'F', child: Text('Female', style: TextStyle(fontSize: 12))),
-                          const DropdownMenuItem(value: 'O', child: Text('Other', style: TextStyle(fontSize: 12))),
+                          DropdownMenuItem(value: '', child: Text(AppTranslations.pick(lang, en: 'All Genders', mr: 'सर्व लिंग', hi: 'सभी लिंग'), style: const TextStyle(fontSize: 12))),
+                          DropdownMenuItem(value: 'M', child: Text(AppTranslations.pick(lang, en: 'Male', mr: 'पुरुष', hi: 'पुरुष'), style: const TextStyle(fontSize: 12))),
+                          DropdownMenuItem(value: 'F', child: Text(AppTranslations.pick(lang, en: 'Female', mr: 'महिला', hi: 'महिला'), style: const TextStyle(fontSize: 12))),
+                          DropdownMenuItem(value: 'O', child: Text(AppTranslations.pick(lang, en: 'Other', mr: 'इतर', hi: 'अन्य'), style: const TextStyle(fontSize: 12))),
                         ],
                         onChanged: (val) {
                           setState(() => _selectedGender = val ?? '');
@@ -1850,7 +2047,7 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
                   controller: _addressFilterCtrl,
                   onChanged: (_) => _executeSearch(),
                   decoration: InputDecoration(
-                    hintText: isMr ? 'पत्त्यानुसार शोधा' : 'Search Address',
+                    hintText: AppTranslations.pick(lang, en: 'Search Address', mr: 'पत्त्यानुसार शोधा', hi: 'पते से खोजें'),
                     hintStyle: const TextStyle(fontSize: 12),
                     prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
                     filled: true,
@@ -1877,7 +2074,10 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
                           children: [
                             Icon(Icons.search_off_rounded, size: 40, color: Colors.grey.shade400),
                             const SizedBox(height: 8),
-                            Text(isMr ? 'कोणतेही मतदार सापडले नाहीत' : 'No voters found', style: TextStyle(color: Colors.grey.shade600)),
+                            Text(
+                              AppTranslations.pick(lang, en: 'No voters found', mr: 'कोणतेही मतदार सापडले नाहीत', hi: 'कोई मतदाता नहीं मिला'),
+                              style: TextStyle(color: Colors.grey.shade600),
+                            ),
                           ],
                         ),
                       )
@@ -1886,12 +2086,22 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
                         separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade100),
                         itemBuilder: (context, idx) {
                           final v = _results[idx];
-                          final displayName = isMr ? v.nameMarathi : v.nameEnglish;
+                          final displayName = lang == 'en'
+                              ? (v.nameEnglish.isNotEmpty ? v.nameEnglish : v.nameMarathi)
+                              : (v.nameMarathi.isNotEmpty ? v.nameMarathi : v.nameEnglish);
+                          final genderShort = v.gender.toUpperCase() == 'M'
+                              ? AppTranslations.pick(lang, en: 'M', mr: 'पु.', hi: 'पु.')
+                              : (v.gender.toUpperCase() == 'F'
+                                  ? AppTranslations.pick(lang, en: 'F', mr: 'म.', hi: 'म.')
+                                  : AppTranslations.pick(lang, en: 'O', mr: 'इ.', hi: 'अ.'));
+                          final yrLabel = AppTranslations.pick(lang, en: 'Y', mr: 'वर्षे', hi: 'वर्ष');
 
                           return ListTile(
                             onTap: () => widget.onSelect(v),
-                            title: Text(
+                            title: AppTranslatedText(
                               displayName,
+                              isName: true,
+                              targetLanguage: lang,
                               style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                             subtitle: Column(
@@ -1907,27 +2117,28 @@ class _VoterSearchModalSheetState extends ConsumerState<_VoterSearchModalSheet> 
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
-                                        '${v.age} Y • ${v.gender}',
+                                        AppTranslations.formatDigits('${v.age} $yrLabel • $genderShort', lang),
                                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                                       ),
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'EPIC: ${v.epicNo}',
+                                      AppTranslations.formatDigits('EPIC: ${v.epicNo}', lang),
                                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                     ),
                                     if (v.mobile != null && v.mobile!.isNotEmpty) ...[
                                       const SizedBox(width: 6),
                                       Text(
-                                        '| 📱 ${v.mobile}',
+                                        AppTranslations.formatDigits('| ${v.mobile}', lang),
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7)),
                                       ),
                                     ],
                                   ],
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
+                                AppTranslatedText(
                                   v.address,
+                                  targetLanguage: lang,
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,

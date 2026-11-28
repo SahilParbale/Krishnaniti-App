@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../widgets/krishnaniti_logo.dart';
@@ -53,13 +55,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     HapticFeedback.mediumImpact();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            isMr ? 'कृपया ईमेल आणि पासवर्ड दोन्ही प्रविष्ट करा' : 'Please enter both Email and Password',
+            AppTranslations.pick(
+              lang,
+              en: 'Please enter both Email and Password',
+              mr: 'कृपया ईमेल आणि पासवर्ड दोन्ही प्रविष्ट करा',
+              hi: 'कृपया ईमेल और पासवर्ड दोनों दर्ज करें',
+            ),
           ),
           backgroundColor: const Color(0xFFDC2626),
         ),
@@ -93,19 +100,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             rawMsg.toLowerCase().contains('errno = 7') ||
             rawMsg.toLowerCase().contains('authretryablefetchexception') ||
             rawMsg.toLowerCase().contains('clientexception');
-        final displayMsg = isNetwork
-            ? (isMr
-                ? 'इंटरनेट कनेक्शन उपलब्ध नाही. कृपया इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.'
-                : 'No internet connection. Please check your network connection and try again.')
-            : rawMsg;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isMr ? 'लॉगिन अयशस्वी: $displayMsg' : 'Sign in failed: $displayMsg',
-            ),
-            backgroundColor: const Color(0xFFDC2626),
-          ),
+        final prefix = AppTranslations.pick(
+          lang,
+          en: 'Sign in failed: ',
+          mr: 'लॉगिन अयशस्वी: ',
+          hi: 'साइन इन विफल: ',
         );
+        if (isNetwork) {
+          final netMsg = AppTranslations.pick(
+            lang,
+            en: 'No internet connection. Please check your network connection and try again.',
+            mr: 'इंटरनेट कनेक्शन उपलब्ध नाही. कृपया इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.',
+            hi: 'इंटरनेट कनेक्शन उपलब्ध नहीं है। कृपया नेटवर्क जाँचें और पुनः प्रयास करें।',
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$prefix$netMsg'),
+              backgroundColor: const Color(0xFFDC2626),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: AppTranslatedText(
+                '$prefix$rawMsg',
+                targetLanguage: lang,
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: const Color(0xFFDC2626),
+            ),
+          );
+        }
       }
     }
   }
@@ -128,10 +153,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSigningIn = false);
+        final lang = ref.read(appLanguageProvider);
         final rawMsg = e.toString().replaceFirst('Exception: ', '');
+        final prefix = AppTranslations.pick(
+          lang,
+          en: 'Demo sign-in failed: ',
+          mr: 'डेमो लॉगिन अयशस्वी: ',
+          hi: 'डेमो साइन इन विफल: ',
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Demo sign-in failed: $rawMsg'),
+            content: AppTranslatedText(
+              '$prefix$rawMsg',
+              targetLanguage: lang,
+              style: const TextStyle(color: Colors.white),
+            ),
             backgroundColor: const Color(0xFFDC2626),
           ),
         );
@@ -139,7 +175,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _showForgotPasswordSheet(BuildContext context, bool isMr) {
+  void _showForgotPasswordSheet(BuildContext context, String lang) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -157,7 +193,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      isMr ? 'पासवर्ड विसरलात?' : 'Forgot Password?',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Forgot Password?',
+                        mr: 'पासवर्ड विसरलात?',
+                        hi: 'पासवर्ड भूल गए?',
+                      ),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -166,15 +207,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded, size: 20),
+                      tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  isMr
-                      ? 'सुरक्षिततेच्या कारणास्तव पासवर्ड रीसेट करण्यासाठी आपल्या प्रभाग प्रशासक किंवा कृष्णनीती सपोर्टशी संपर्क साधा.'
-                      : 'For administrative security, password resets are handled via your ward system administrator or Krishnaniti IT desk.',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'For administrative security, password resets are handled via your ward system administrator or Krishnaniti IT desk.',
+                    mr: 'सुरक्षिततेच्या कारणास्तव पासवर्ड रीसेट करण्यासाठी आपल्या प्रभाग प्रशासक किंवा कृष्णनीती सपोर्टशी संपर्क साधा.',
+                    hi: 'प्रशासनिक सुरक्षा के लिए, पासवर्ड रीसेट आपके वार्ड सिस्टम व्यवस्थापक या कृष्णनीति आईटी डेस्क के माध्यम से किया जाता है।',
+                  ),
                   style: const TextStyle(fontSize: 13.5, color: Color(0xFF475569), height: 1.45),
                 ),
                 const SizedBox(height: 18),
@@ -186,14 +231,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Row(
-                    children: const [
-                      Icon(Icons.headset_mic_rounded, color: Color(0xFF0284C7), size: 22),
-                      SizedBox(width: 12),
+                    children: [
+                      const Icon(Icons.headset_mic_rounded, color: Color(0xFF0284C7), size: 22),
+                      const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Helpline: +91 98220 12345', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                          Text('support@krishnaniti.in', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                          Text(
+                            AppTranslations.formatDigits(
+                              '${AppTranslations.pick(lang, en: 'Helpline', mr: 'हेल्पलाइन', hi: 'हेल्पलाइन')}: +91 98220 12345',
+                              lang,
+                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          ),
+                          const Text('support@krishnaniti.in', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
                         ],
                       ),
                     ],
@@ -210,7 +261,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: Text(isMr ? 'समजले' : 'Got it'),
+                    child: Text(
+                      AppTranslations.pick(lang, en: 'Got it', mr: 'समजले', hi: 'समझ गया'),
+                    ),
                   ),
                 ),
               ],
@@ -223,7 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final authState = ref.watch(authStateProvider);
     final isLoading = _isSigningIn || authState.isLoading;
 
@@ -243,7 +296,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           scrolledUnderElevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: Color(0xFF0F172A)),
-            tooltip: 'Back',
+            tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'पीछे'),
             onPressed: () {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
@@ -275,9 +328,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Krishnaniti',
-                          style: TextStyle(
+                        Text(
+                          AppTranslations.pick(lang, en: 'Krishnaniti', mr: 'कृष्णनीती', hi: 'कृष्णनीति'),
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             color: Color(0xFF0F172A),
@@ -285,7 +338,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         Text(
-                          isMr ? 'प्रशासकीय पोर्टल' : 'Administrative Portal',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Administrative Portal',
+                            mr: 'प्रशासकीय पोर्टल',
+                            hi: 'प्रशासनिक पोर्टल',
+                          ),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -301,7 +359,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // Welcome Heading
                 Text(
-                  isMr ? 'आपल्या खात्यात प्रवेश करा' : 'Sign in to your account',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Sign in to your account',
+                    mr: 'आपल्या खात्यात प्रवेश करा',
+                    hi: 'अपने खाते में साइन इन करें',
+                  ),
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -311,9 +374,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isMr
-                      ? 'आपल्या भूमिकेनुसार पोर्टल निवडून लॉगिन करा.'
-                      : 'Select your representative role to proceed.',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Select your representative role to proceed.',
+                    mr: 'आपल्या भूमिकेनुसार पोर्टल निवडून लॉगिन करा.',
+                    hi: 'आगे बढ़ने के लिए अपनी प्रतिनिधि भूमिका चुनें।',
+                  ),
                   style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                 ),
 
@@ -321,7 +387,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // 1. Role Selector Tabs (Nagarsevak, Amdar, Khasdar, Minister)
                 Text(
-                  isMr ? 'भूमिका निवडा' : 'Select Role',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Select Role',
+                    mr: 'भूमिका निवडा',
+                    hi: 'भूमिका चुनें',
+                  ),
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
@@ -335,25 +406,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Row(
                     children: [
                       _buildRolePill(
-                        label: isMr ? 'नगरसेवक' : 'Nagarsevak',
+                        label: AppTranslations.getRoleName('nagarsevak', lang),
                         roleKey: 'nagarsevak',
                         icon: Icons.account_balance_rounded,
                       ),
                       const SizedBox(width: 8),
                       _buildRolePill(
-                        label: isMr ? 'आमदार' : 'Amdar',
+                        label: AppTranslations.getRoleName('amdar', lang),
                         roleKey: 'amdar',
                         icon: Icons.gavel_rounded,
                       ),
                       const SizedBox(width: 8),
                       _buildRolePill(
-                        label: isMr ? 'खासदार' : 'Khasdar',
+                        label: AppTranslations.getRoleName('khasdar', lang),
                         roleKey: 'khasdar',
                         icon: Icons.assured_workload_rounded,
                       ),
                       const SizedBox(width: 8),
                       _buildRolePill(
-                        label: isMr ? 'मंत्री' : 'Minister',
+                        label: AppTranslations.getRoleName('minister', lang),
                         roleKey: 'minister',
                         icon: Icons.military_tech_rounded,
                       ),
@@ -402,7 +473,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    isMr ? 'नगरसेवक' : 'Nagarsevak',
+                                    AppTranslations.getRoleName('nagarsevak', lang),
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       fontWeight: _subRole == 'nagarsevak' ? FontWeight.w800 : FontWeight.w600,
@@ -443,7 +514,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    isMr ? 'कार्यालय कर्मचारी' : 'Office Staff',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Office Staff',
+                                      mr: 'कार्यालय कर्मचारी',
+                                      hi: 'कार्यालय स्टाफ',
+                                    ),
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       fontWeight: _subRole == 'staff' ? FontWeight.w800 : FontWeight.w600,
@@ -463,7 +539,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // 2. Email Address Input
                 Text(
-                  isMr ? 'ईमेल किंवा युझरनेम' : 'Email Address / Username',
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Email Address / Username',
+                    mr: 'ईमेल किंवा युझरनेम',
+                    hi: 'ईमेल पता / उपयोगकर्ता नाम',
+                  ),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -483,7 +564,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     textInputAction: TextInputAction.next,
                     style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
                     decoration: InputDecoration(
-                      hintText: isMr ? 'उदा. नाव@krishnaniti.in किंवा १०-अंकी मोबाईल' : 'e.g. name@krishnaniti.in or 10-digit mobile',
+                      hintText: AppTranslations.formatDigits(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'e.g. name@krishnaniti.in or 10-digit mobile',
+                          mr: 'उदा. नाव@krishnaniti.in किंवा 10-अंकी मोबाईल',
+                          hi: 'उदा. नाम@krishnaniti.in या 10-अंकीय मोबाइल',
+                        ),
+                        lang,
+                      ),
                       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       prefixIcon: const Icon(Icons.alternate_email_rounded, color: Color(0xFF64748B), size: 19),
                       border: InputBorder.none,
@@ -499,7 +588,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      isMr ? 'पासवर्ड' : 'Password',
+                      AppTranslations.pick(lang, en: 'Password', mr: 'पासवर्ड', hi: 'पासवर्ड'),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -507,9 +596,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     InkWell(
-                      onTap: () => _showForgotPasswordSheet(context, isMr),
+                      onTap: () => _showForgotPasswordSheet(context, lang),
                       child: Text(
-                        isMr ? 'पासवर्ड विसरलात?' : 'Forgot Password?',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Forgot Password?',
+                          mr: 'पासवर्ड विसरलात?',
+                          hi: 'पासवर्ड भूल गए?',
+                        ),
                         style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
@@ -576,7 +670,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                isMr ? 'लॉगिन करा' : 'Sign In',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Sign In',
+                                  mr: 'लॉगिन करा',
+                                  hi: 'साइन इन करें',
+                                ),
                                 style: const TextStyle(
                                   fontSize: 15.5,
                                   fontWeight: FontWeight.w800,
@@ -599,7 +698,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: isLoading ? null : _signInDemo,
                     icon: const Icon(Icons.flash_on_rounded, size: 18, color: Color(0xFF0284C7)),
                     label: Text(
-                      isMr ? 'डेमो लॉगिन (सर्व वैशिष्ट्ये पहा)' : 'Instant Demo Login (demo_nagarsevak@demo.com)',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Instant Demo Login (demo_nagarsevak@demo.com)',
+                        mr: 'डेमो लॉगिन (सर्व वैशिष्ट्ये पहा)',
+                        hi: 'तुरंत डेमो लॉगिन (सभी सुविधाएँ देखें)',
+                      ),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -633,7 +737,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const Icon(Icons.security_rounded, size: 14, color: Color(0xFF059669)),
                         const SizedBox(width: 6),
                         Text(
-                          isMr ? '२५६-बिट सुरक्षित नागरिक प्रशासन' : '256-Bit Secure Civic Authentication',
+                          AppTranslations.formatDigits(
+                            AppTranslations.pick(
+                              lang,
+                              en: '256-Bit Secure Civic Authentication',
+                              mr: '256-बिट सुरक्षित नागरिक प्रशासन',
+                              hi: '256-बिट सुरक्षित नागरिक प्रमाणीकरण',
+                            ),
+                            lang,
+                          ),
                           style: const TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,

@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/team_model.dart';
 import '../../../data/repositories/team_repository.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -71,13 +73,14 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   List<TeamMemberModel> get _filteredMembers {
     final q = _searchCtrl.text.trim().toLowerCase();
     if (q.isEmpty) return _allMembers;
+    final normQ = AppTranslations.normalizeAsciiDigits(q);
 
     return _allMembers.where((m) {
       final inKeywords = m.keywords.any((k) => k.toLowerCase().contains(q));
       return m.name.toLowerCase().contains(q) ||
           (m.nameMarathi?.toLowerCase().contains(q) ?? false) ||
           m.role.toLowerCase().contains(q) ||
-          m.mobile.contains(q) ||
+          m.mobile.contains(normQ) ||
           (m.area?.toLowerCase().contains(q) ?? false) ||
           (m.partyWing?.toLowerCase().contains(q) ?? false) ||
           (m.societyName?.toLowerCase().contains(q) ?? false) ||
@@ -86,24 +89,35 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   }
 
   void _callMember(String mobile) async {
-    final url = Uri.parse('tel:+91$mobile');
+    final clean = AppTranslations.normalizeAsciiDigits(mobile).replaceAll(RegExp(r'[^0-9+]'), '');
+    final url = Uri.parse('tel:+91$clean');
     try {
       await launchUrl(url);
     } catch (_) {}
   }
 
-  void _messageOnWhatsApp(TeamMemberModel member) async {
-    final msg = Uri.encodeComponent(
-      'Greetings ${member.displayName},\n'
-      'Contacting you from Ward 12 Corporator Office.',
+  void _messageOnWhatsApp(TeamMemberModel member, String lang) async {
+    final translatedName = await DynamicTranslationService.translateOrRaw(
+      member.displayNameFor(lang),
+      lang,
+      isName: true,
     );
-    final url = Uri.parse('https://wa.me/91${member.mobile}?text=$msg');
+    final greeting = AppTranslations.pick(
+      lang,
+      en: 'Greetings $translatedName,\nContacting you from Ward 12 Corporator Office.',
+      mr: 'नमस्कार $translatedName,\nप्रभाग १२ नगरसेवक कार्यालयातून संपर्क साधत आहोत.',
+      hi: 'नमस्ते $translatedName,\nवार्ड १२ पार्षद कार्यालय से आपसे संपर्क कर रहे हैं।',
+    );
+    final cleanPhone = AppTranslations.normalizeAsciiDigits(member.mobile).replaceAll(RegExp(r'[^0-9]'), '');
+    final msg = Uri.encodeComponent(greeting);
+    final url = Uri.parse('https://wa.me/91$cleanPhone?text=$msg');
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (_) {}
   }
 
   void _showHelpGuide() {
+    final lang = ref.read(appLanguageProvider);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -134,23 +148,23 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7).withOpacity(0.12),
+                    color: const Color(0xFF0284C7).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.groups_rounded, color: Color(0xFF0284C7)),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'My Team Guide',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                        AppTranslations.pick(lang, en: 'My Team Guide', mr: 'माझी टीम मार्गदर्शिका', hi: 'मेरी टीम गाइड'),
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'Staff and Task Allocation System',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        AppTranslations.pick(lang, en: 'Staff and Task Allocation System', mr: 'कर्मचारी आणि काम वाटप प्रणाली', hi: 'कर्मचारी और कार्य आवंटन प्रणाली'),
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -160,26 +174,46 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             const SizedBox(height: 18),
             _buildHelpPoint(
               icon: Icons.business_rounded,
-              title: '1. Office Team',
-              desc: 'Office admin, PR officer, driver, peon, and assistants.',
+              title: AppTranslations.pick(lang, en: '1. Office Team', mr: '१. कार्यालयीन टीम', hi: '१. कार्यालय टीम'),
+              desc: AppTranslations.pick(
+                lang,
+                en: 'Office admin, PR officer, driver, peon, and assistants.',
+                mr: 'कार्यालय प्रशासक, जनसंपर्क अधिकारी, चालक, शिपाई आणि सहाय्यक.',
+                hi: 'कार्यालय प्रशासक, जनसंपर्क अधिकारी, चालक, चपरासी और सहायक।',
+              ),
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.flag_rounded,
-              title: '2. Party & Organization Cadre',
-              desc: 'Youth wing, women wing, social media cell, and senior citizens cell functionaries.',
+              title: AppTranslations.pick(lang, en: '2. Party & Organization Cadre', mr: '२. पक्ष आणि संघटना कार्यकर्ते', hi: '२. पार्टी और संगठन कार्यकर्ता'),
+              desc: AppTranslations.pick(
+                lang,
+                en: 'Youth wing, women wing, social media cell, and senior citizens cell functionaries.',
+                mr: 'युवक आघाडी, महिला आघाडी, सोशल मीडिया सेल आणि ज्येष्ठ नागरिक सेलचे पदाधिकारी.',
+                hi: 'युवा मोर्चा, महिला मोर्चा, सोशल मीडिया सेल और वरिष्ठ नागरिक प्रकोष्ठ के पदाधिकारी।',
+              ),
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.handshake_rounded,
-              title: '3. Municipal & Cooperative Staff',
-              desc: 'Municipal drainage, water supply, electricity utility staff, and society chairman representatives.',
+              title: AppTranslations.pick(lang, en: '3. Municipal & Cooperative Staff', mr: '३. महापालिका व सहकारी कर्मचारी', hi: '३. नगर निगम और सहकारी कर्मचारी'),
+              desc: AppTranslations.pick(
+                lang,
+                en: 'Municipal drainage, water supply, electricity utility staff, and society chairman representatives.',
+                mr: 'महापालिकेचे ड्रेनेज, पाणीपुरवठा, वीज कर्मचारी आणि सोसायटी अध्यक्ष प्रतिनिधी.',
+                hi: 'नगर निगम के ड्रेनेज, जल आपूर्ति, बिजली कर्मचारी और सोसायटी अध्यक्ष प्रतिनिधि।',
+              ),
             ),
             const SizedBox(height: 12),
             _buildHelpPoint(
               icon: Icons.auto_fix_high_rounded,
-              title: '4. Auto Assignment Rules',
-              desc: 'Citizen complaints automatically route to the relevant staff based on topic keywords (water, light, waste, etc.).',
+              title: AppTranslations.pick(lang, en: '4. Auto Assignment Rules', mr: '४. स्वयंचलित कार्य वाटप नियम', hi: '४. स्वचालित कार्य आवंटन नियम'),
+              desc: AppTranslations.pick(
+                lang,
+                en: 'Citizen complaints automatically route to the relevant staff based on topic keywords (water, light, waste, etc.).',
+                mr: 'विषय कीवर्ड्सनुसार (पाणी, वीज, कचरा इ.) नागरिकांच्या तक्रारी संबंधित कर्मचाऱ्यांकडे आपोआप पाठवल्या जातात.',
+                hi: 'विषय कीवर्ड (पानी, बिजली, कचरा आदि) के आधार पर नागरिक शिकायतें स्वतः संबंधित कर्मचारियों को भेजी जाती हैं।',
+              ),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -191,7 +225,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(
+                  AppTranslations.pick(lang, en: 'Got it', mr: 'समजले', hi: 'समझ गया'),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
@@ -223,14 +260,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   void _showAddMemberModal() => _showMemberModal();
 
   void _showMemberModal({TeamMemberModel? memberToEdit}) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameCtrl = TextEditingController(text: memberToEdit?.name ?? '');
     final mobileCtrl = TextEditingController(text: memberToEdit?.mobile ?? '');
     final emailCtrl = TextEditingController(text: memberToEdit?.email ?? '');
     final passwordCtrl = TextEditingController();
     bool showPassword = false;
     final roleCtrl = TextEditingController(text: memberToEdit?.role ?? '');
-    final areaCtrl = TextEditingController(text: memberToEdit?.area ?? 'Ward 12, Shaniwar Peth');
+    final areaCtrl = TextEditingController(
+      text: memberToEdit?.area ??
+          AppTranslations.pick(lang, en: 'Ward 12, Shaniwar Peth', mr: 'प्रभाग १२, शनिवार पेठ', hi: 'वार्ड १२, शनिवार पेठ'),
+    );
     final societyCtrl = TextEditingController(text: memberToEdit?.societyName ?? '');
     final keywordsCtrl = TextEditingController(text: memberToEdit?.keywords.join(', ') ?? '');
 
@@ -241,12 +281,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     bool canAssignWork = memberToEdit?.canAssignWork ?? true;
 
     final complaintCategories = [
-      {'id': 'Road', 'label': isMr ? 'रस्ते (Roads)' : 'Roads (रस्ते)'},
-      {'id': 'Water', 'label': isMr ? 'पाणीपुरवठा (Water Supply)' : 'Water Supply (पाणीपुरवठा)'},
-      {'id': 'StreetLight', 'label': isMr ? 'वीज/लाईट (Street Lights)' : 'Electricity/Street Lights (वीज/लाईट)'},
-      {'id': 'Cleaning', 'label': isMr ? 'कचरा/स्वच्छता (Cleaning)' : 'Cleaning/Waste (कचरा/स्वच्छता)'},
-      {'id': 'Drainage', 'label': isMr ? 'गटार/ड्रेनेज (Drainage)' : 'Drainage (गटार/ड्रेनेज)'},
-      {'id': 'Other', 'label': isMr ? 'इतर (Other)' : 'Other (इतर)'},
+      {'id': 'Road', 'label': AppTranslations.pick(lang, en: 'Roads', mr: 'रस्ते (Roads)', hi: 'सड़कें (Roads)')},
+      {'id': 'Water', 'label': AppTranslations.pick(lang, en: 'Water Supply', mr: 'पाणीपुरवठा', hi: 'जल आपूर्ति')},
+      {'id': 'StreetLight', 'label': AppTranslations.pick(lang, en: 'Electricity / Street Lights', mr: 'वीज / पथदिवे', hi: 'बिजली / स्ट्रीट लाइट')},
+      {'id': 'Cleaning', 'label': AppTranslations.pick(lang, en: 'Cleaning / Waste', mr: 'कचरा / स्वच्छता', hi: 'सफाई / कचरा')},
+      {'id': 'Drainage', 'label': AppTranslations.pick(lang, en: 'Drainage', mr: 'गटार / ड्रेनेज', hi: 'नाली / ड्रेनेज')},
+      {'id': 'Other', 'label': AppTranslations.pick(lang, en: 'Other', mr: 'इतर', hi: 'अन्य')},
     ];
 
     List<String> selectedCategories = (memberToEdit?.keywords ?? [])
@@ -254,73 +294,73 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         .toList();
 
     final availablePermissions = [
-      {'id': 'complaints', 'label': isMr ? 'तक्रारी व विनंत्या' : 'Complaints & Requests'},
-      {'id': 'letters', 'label': isMr ? 'पत्रव्यवहार व अर्ज' : 'Letters & Applications'},
-      {'id': 'tasks', 'label': isMr ? 'कामे व कार्ये' : 'Task Management'},
-      {'id': 'visitors', 'label': isMr ? 'अभ्यागत नोंद' : 'Visitor Log'},
-      {'id': 'schemes', 'label': isMr ? 'शासकीय योजना' : 'Government Schemes'},
-      {'id': 'ward_problems', 'label': isMr ? 'प्रभाग समस्या' : 'Ward Problems'},
-      {'id': 'ward_info', 'label': isMr ? 'प्रभाग नकाशा' : 'Ward Map'},
-      {'id': 'work_history', 'label': isMr ? 'कामांचा इतिहास' : 'Work History'},
-      {'id': 'improvements', 'label': isMr ? 'प्रभाग सुधारणा' : 'Ward Improvements'},
-      {'id': 'provision', 'label': isMr ? 'प्रभाग तरतूद' : 'Ward Provision'},
-      {'id': 'gb_register', 'label': isMr ? 'जीबी रजिस्टर' : 'GB Register / Diary'},
-      {'id': 'budget', 'label': isMr ? 'प्रभाग अंदाजपत्रक' : 'Ward Budget'},
-      {'id': 'gov_office', 'label': isMr ? 'शासकीय कार्यालये' : 'Government Offices'},
-      {'id': 'social', 'label': isMr ? 'सोशल मीडिया ॲनालिटिक्स' : 'Social Media Analytics'},
-      {'id': 'newspaper', 'label': isMr ? 'वर्तमानपत्र कात्रणे' : 'Newspaper Clippings'},
-      {'id': 'media_tracking', 'label': isMr ? 'मीडिया ट्रॅकिंग' : 'Media Tracking'},
-      {'id': 'bot', 'label': isMr ? 'व्हॉट्सॲप बॉट' : 'WhatsApp Bot'},
-      {'id': 'ai_content', 'label': isMr ? 'एआय कंटेंट स्टुडिओ' : 'AI Content Studio'},
-      {'id': 'events', 'label': isMr ? 'कार्यक्रम व निमंत्रणे' : 'Events & Invites'},
-      {'id': 'gallery', 'label': isMr ? 'फोटो गॅलरी' : 'Media Gallery'},
-      {'id': 'results', 'label': isMr ? 'निवडणूक निकाल' : 'Election Results'},
-      {'id': 'sadasya', 'label': isMr ? 'पक्ष सदस्य' : 'Party Members (Sadasya)'},
-      {'id': 'surveys', 'label': isMr ? 'जनमत चाचण्या' : 'Surveys'},
-      {'id': 'voters', 'label': isMr ? 'मतदार यादी शोध' : 'Voter Search'},
-      {'id': 'social_organizations', 'label': isMr ? 'मंडळ व संस्था' : 'NGO & Mandals Info'},
-      {'id': 'staff', 'label': isMr ? 'संघ व्यवस्थापन' : 'Staff Management'},
+      {'id': 'complaints', 'label': AppTranslations.pick(lang, en: 'Complaints & Requests', mr: 'तक्रारी व विनंत्या', hi: 'शिकायतें और अनुरोध')},
+      {'id': 'letters', 'label': AppTranslations.pick(lang, en: 'Letters & Applications', mr: 'पत्रव्यवहार व अर्ज', hi: 'पत्र और आवेदन')},
+      {'id': 'tasks', 'label': AppTranslations.pick(lang, en: 'Task Management', mr: 'कामे व कार्ये', hi: 'कार्य प्रबंधन')},
+      {'id': 'visitors', 'label': AppTranslations.pick(lang, en: 'Visitor Log', mr: 'अभ्यागत नोंद', hi: 'आगंतुक रजिस्टर')},
+      {'id': 'schemes', 'label': AppTranslations.pick(lang, en: 'Government Schemes', mr: 'शासकीय योजना', hi: 'सरकारी योजनाएं')},
+      {'id': 'ward_problems', 'label': AppTranslations.pick(lang, en: 'Ward Problems', mr: 'प्रभाग समस्या', hi: 'वार्ड समस्याएं')},
+      {'id': 'ward_info', 'label': AppTranslations.pick(lang, en: 'Ward Map', mr: 'प्रभाग नकाशा', hi: 'वार्ड मानचित्र')},
+      {'id': 'work_history', 'label': AppTranslations.pick(lang, en: 'Work History', mr: 'कामांचा इतिहास', hi: 'कार्य इतिहास')},
+      {'id': 'improvements', 'label': AppTranslations.pick(lang, en: 'Ward Improvements', mr: 'प्रभाग सुधारणा', hi: 'वार्ड सुधार')},
+      {'id': 'provision', 'label': AppTranslations.pick(lang, en: 'Ward Provision', mr: 'प्रभाग तरतूद', hi: 'वार्ड प्रावधान')},
+      {'id': 'gb_register', 'label': AppTranslations.pick(lang, en: 'GB Register / Diary', mr: 'जीबी रजिस्टर', hi: 'जीबी रजिस्टर / डायरी')},
+      {'id': 'budget', 'label': AppTranslations.pick(lang, en: 'Ward Budget', mr: 'प्रभाग अंदाजपत्रक', hi: 'वार्ड बजट')},
+      {'id': 'gov_office', 'label': AppTranslations.pick(lang, en: 'Government Offices', mr: 'शासकीय कार्यालये', hi: 'सरकारी कार्यालय')},
+      {'id': 'social', 'label': AppTranslations.pick(lang, en: 'Social Media Analytics', mr: 'सोशल मीडिया ॲनालिटिक्स', hi: 'सोशल मीडिया एनालिटिक्स')},
+      {'id': 'newspaper', 'label': AppTranslations.pick(lang, en: 'Newspaper Clippings', mr: 'वर्तमानपत्र कात्रणे', hi: 'समाचार पत्र कतरनें')},
+      {'id': 'media_tracking', 'label': AppTranslations.pick(lang, en: 'Media Tracking', mr: 'मीडिया ट्रॅकिंग', hi: 'मीडिया ट्रैकिंग')},
+      {'id': 'bot', 'label': AppTranslations.pick(lang, en: 'WhatsApp Bot', mr: 'व्हॉट्सॲप बॉट', hi: 'व्हाट्सएप बॉट')},
+      {'id': 'ai_content', 'label': AppTranslations.pick(lang, en: 'AI Content Studio', mr: 'एआय कंटेंट स्टुडिओ', hi: 'एआई कंटेंट स्टूडियो')},
+      {'id': 'events', 'label': AppTranslations.pick(lang, en: 'Events & Invites', mr: 'कार्यक्रम व निमंत्रणे', hi: 'कार्यक्रम और निमंत्रण')},
+      {'id': 'gallery', 'label': AppTranslations.pick(lang, en: 'Media Gallery', mr: 'फोटो गॅलरी', hi: 'मीडिया गैलरी')},
+      {'id': 'results', 'label': AppTranslations.pick(lang, en: 'Election Results', mr: 'निवडणूक निकाल', hi: 'चुनाव परिणाम')},
+      {'id': 'sadasya', 'label': AppTranslations.pick(lang, en: 'Party Members (Sadasya)', mr: 'पक्ष सदस्य', hi: 'पार्टी सदस्य')},
+      {'id': 'surveys', 'label': AppTranslations.pick(lang, en: 'Surveys', mr: 'जनमत चाचण्या', hi: 'सर्वेक्षण')},
+      {'id': 'voters', 'label': AppTranslations.pick(lang, en: 'Voter Search', mr: 'मतदार यादी शोध', hi: 'मतदाता खोज')},
+      {'id': 'social_organizations', 'label': AppTranslations.pick(lang, en: 'NGO & Mandals Info', mr: 'मंडळ व संस्था', hi: 'एनजीओ व मंडल जानकारी')},
+      {'id': 'staff', 'label': AppTranslations.pick(lang, en: 'Staff Management', mr: 'संघ व्यवस्थापन', hi: 'टीम प्रबंधन')},
     ];
 
     List<String> selectedPermissions = memberToEdit?.permissions != null
         ? List<String>.from(memberToEdit!.permissions!)
         : ['complaints', 'letters', 'tasks', 'visitors', 'ward_problems'];
 
-    final partyWingsList = [
-      'युवक आघाडी',
-      'महिला आघाडी',
-      'विद्यार्थी आघाडी',
-      'शेतकरी आघाडी',
-      'कामगार आघाडी',
-      'व्यापारी आघाडी',
-      'अल्पसंख्याक आघाडी',
-      'ओबीसी आघाडी',
-      'ज्येष्ठ नागरिक आघाडी',
-      'क्रीडा आघाडी',
-      'आयटी सेल',
-      'सोशल मीडिया सेल',
-      'जनसंपर्क विभाग',
-      'स्वयंसेवक संघटना',
+    final partyWingsOptions = [
+      (val: 'युवक आघाडी', en: 'Youth Wing', mr: 'युवक आघाडी', hi: 'युवा मोर्चा'),
+      (val: 'महिला आघाडी', en: 'Women Wing', mr: 'महिला आघाडी', hi: 'महिला मोर्चा'),
+      (val: 'विद्यार्थी आघाडी', en: 'Student Wing', mr: 'विद्यार्थी आघाडी', hi: 'छात्र मोर्चा'),
+      (val: 'शेतकरी आघाडी', en: 'Farmers Wing', mr: 'शेतकरी आघाडी', hi: 'किसान मोर्चा'),
+      (val: 'कामगार आघाडी', en: 'Labour Wing', mr: 'कामगार आघाडी', hi: 'मजदूर मोर्चा'),
+      (val: 'व्यापारी आघाडी', en: 'Traders Wing', mr: 'व्यापारी आघाडी', hi: 'व्यापारी प्रकोष्ठ'),
+      (val: 'अल्पसंख्याक आघाडी', en: 'Minority Wing', mr: 'अल्पसंख्याक आघाडी', hi: 'अल्पसंख्यक मोर्चा'),
+      (val: 'ओबीसी आघाडी', en: 'OBC Wing', mr: 'ओबीसी आघाडी', hi: 'ओबीसी मोर्चा'),
+      (val: 'ज्येष्ठ नागरिक आघाडी', en: 'Senior Citizens Wing', mr: 'ज्येष्ठ नागरिक आघाडी', hi: 'वरिष्ठ नागरिक प्रकोष्ठ'),
+      (val: 'क्रीडा आघाडी', en: 'Sports Wing', mr: 'क्रीडा आघाडी', hi: 'खेल प्रकोष्ठ'),
+      (val: 'आयटी सेल', en: 'IT Cell', mr: 'आयटी सेल', hi: 'आईटी सेल'),
+      (val: 'सोशल मीडिया सेल', en: 'Social Media Cell', mr: 'सोशल मीडिया सेल', hi: 'सोशल मीडिया सेल'),
+      (val: 'जनसंपर्क विभाग', en: 'Public Relations Dept', mr: 'जनसंपर्क विभाग', hi: 'जनसंपर्क विभाग'),
+      (val: 'स्वयंसेवक संघटना', en: 'Volunteers Organization', mr: 'स्वयंसेवक संघटना', hi: 'स्वयंसेवक संगठन'),
     ];
 
-    final partyPostsList = [
-      'अध्यक्ष (President)',
-      'उपाध्यक्ष (Vice President)',
-      'सचिव (Secretary)',
-      'सहसचिव (Joint Secretary)',
-      'कोषाध्यक्ष (Treasurer)',
-      'संघटक (Organizer)',
-      'सदस्य (Member)',
+    final partyPostsOptions = [
+      (code: 'अध्यक्ष', en: 'President', mr: 'अध्यक्ष', hi: 'अध्यक्ष'),
+      (code: 'उपाध्यक्ष', en: 'Vice President', mr: 'उपाध्यक्ष', hi: 'उपाध्यक्ष'),
+      (code: 'सचिव', en: 'Secretary', mr: 'सचिव', hi: 'सचिव'),
+      (code: 'सहसचिव', en: 'Joint Secretary', mr: 'सहसचिव', hi: 'सह-सचिव'),
+      (code: 'कोषाध्यक्ष', en: 'Treasurer', mr: 'कोषाध्यक्ष', hi: 'कोषाध्यक्ष'),
+      (code: 'संघटक', en: 'Organizer', mr: 'संघटक', hi: 'संगठक'),
+      (code: 'सदस्य', en: 'Member', mr: 'सदस्य', hi: 'सदस्य'),
     ];
 
     final roleSuggestions = [
-      'Office Admin',
-      'Personal Assistant',
-      'Ward President',
-      'Booth Pramukh',
-      'Electrician',
-      'Plumber',
-      'Sanitation Worker',
+      (val: 'Office Admin', en: 'Office Admin', mr: 'कार्यालय प्रशासक', hi: 'कार्यालय प्रशासक'),
+      (val: 'Personal Assistant', en: 'Personal Assistant', mr: 'स्वीय सहाय्यक', hi: 'निजी सहायक'),
+      (val: 'Ward President', en: 'Ward President', mr: 'प्रभाग अध्यक्ष', hi: 'वार्ड अध्यक्ष'),
+      (val: 'Booth Pramukh', en: 'Booth Pramukh', mr: 'बूथ प्रमुख', hi: 'बूथ प्रमुख'),
+      (val: 'Electrician', en: 'Electrician', mr: 'इलेक्ट्रिशियन', hi: 'इलेक्ट्रीशियन'),
+      (val: 'Plumber', en: 'Plumber', mr: 'प्लंबर', hi: 'प्लंबर'),
+      (val: 'Sanitation Worker', en: 'Sanitation Worker', mr: 'स्वच्छता कर्मचारी', hi: 'सफाई कर्मचारी'),
     ];
 
     Widget fieldLabel(String text, {bool isRequired = false, String? optionalNote}) {
@@ -380,11 +420,14 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 AppModalHeader(
                   icon: memberToEdit != null ? Icons.edit_rounded : Icons.person_add_rounded,
                   title: memberToEdit != null
-                      ? (isMr ? 'सदस्याची माहिती सुधारा' : 'Edit Staff Member')
-                      : (isMr ? 'नवीन कर्मचारी / कार्यकर्ता जोडा' : 'Add Staff Member'),
-                  subtitle: isMr
-                      ? 'प्रभागातील टीम सदस्य, कार्यालयीन कर्मचारी व पक्ष पदाधिकारी'
-                      : 'Ward team staff, office coordinators and political cadre',
+                      ? AppTranslations.pick(lang, en: 'Edit Staff Member', mr: 'सदस्याची माहिती सुधारा', hi: 'सदस्य की जानकारी संपादित करें')
+                      : AppTranslations.pick(lang, en: 'Add Staff Member', mr: 'नवीन कर्मचारी / कार्यकर्ता जोडा', hi: 'नया कर्मचारी / कार्यकर्ता जोड़ें'),
+                  subtitle: AppTranslations.pick(
+                    lang,
+                    en: 'Ward team staff, office coordinators and political cadre',
+                    mr: 'प्रभागातील टीम सदस्य, कार्यालयीन कर्मचारी व पक्ष पदाधिकारी',
+                    hi: 'वार्ड टीम कर्मचारी, कार्यालय समन्वयक और पार्टी कार्यकर्ता',
+                  ),
                   onClose: () => Navigator.pop(ctx),
                 ),
 
@@ -407,22 +450,22 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<String>(
-                                label: isMr ? 'श्रेणी / विभाग' : 'Category',
-                                isRequired: true,
-                                value: category,
+                                  label: AppTranslations.pick(lang, en: 'Category', mr: 'श्रेणी / विभाग', hi: 'श्रेणी / विभाग'),
+                                  isRequired: true,
+                                  value: category,
                                   isExpanded: true,
                                   items: [
                                     DropdownMenuItem(
                                       value: 'Office',
-                                      child: Text(isMr ? 'कार्यालयीन कर्मचारी' : 'Office Team', style: const TextStyle(fontSize: 12.5)),
+                                      child: Text(AppTranslations.pick(lang, en: 'Office Team', mr: 'कार्यालयीन कर्मचारी', hi: 'कार्यालय टीम'), style: const TextStyle(fontSize: 12.5)),
                                     ),
                                     DropdownMenuItem(
                                       value: 'Party',
-                                      child: Text(isMr ? 'पक्ष पदाधिकारी / कार्यकर्ते' : 'Party Cadre', style: const TextStyle(fontSize: 12.5)),
+                                      child: Text(AppTranslations.pick(lang, en: 'Party Cadre', mr: 'पक्ष पदाधिकारी / कार्यकर्ते', hi: 'पार्टी कार्यकर्ता'), style: const TextStyle(fontSize: 12.5)),
                                     ),
                                     DropdownMenuItem(
                                       value: 'Cooperative',
-                                      child: Text(isMr ? 'महापालिका / इतर संस्था' : 'Municipal / Co-op', style: const TextStyle(fontSize: 12.5)),
+                                      child: Text(AppTranslations.pick(lang, en: 'Municipal / Co-op', mr: 'महापालिका / इतर संस्था', hi: 'नगर निगम / सहकारी'), style: const TextStyle(fontSize: 12.5)),
                                     ),
                                   ],
                                   onChanged: (val) {
@@ -438,19 +481,19 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<String>(
-                                  label: isMr ? 'राजकीय पक्ष (पक्ष)' : 'Political Party',
+                                  label: AppTranslations.pick(lang, en: 'Political Party', mr: 'राजकीय पक्ष (पक्ष)', hi: 'राजनीतिक दल'),
                                   value: paksh,
                                   items: [
-                                    DropdownMenuItem(value: '', child: Text(isMr ? 'पक्ष निवडा' : 'Select Party', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'BJP', child: Text(isMr ? 'भाजप (भारतीय जनता पक्ष)' : 'BJP (Bharatiya Janata Party)', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'INC', child: Text(isMr ? 'काँग्रेस (आय)' : 'INC (Congress)', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'NCP', child: Text(isMr ? 'राष्ट्रवादी काँग्रेस' : 'NCP (Nationalist Congress Party)', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'SHS', child: Text(isMr ? 'शिवसेना' : 'Shiv Sena', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'UBT', child: Text(isMr ? 'शिवसेना (UBT)' : 'Shivsena (UBT)', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'MNS', child: Text(isMr ? 'मनसे (MNS)' : 'MNS', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'AAP', child: Text(isMr ? 'आप (Aam Aadmi Party)' : 'AAP', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'Independent', child: Text(isMr ? 'अपक्ष' : 'Independent', style: const TextStyle(fontSize: 12.5))),
-                                    DropdownMenuItem(value: 'Other', child: Text(isMr ? 'इतर / कोणताही नाही' : 'Other / None', style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: '', child: Text(AppTranslations.pick(lang, en: 'Select Party', mr: 'पक्ष निवडा', hi: 'पार्टी चुनें'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'BJP', child: Text(AppTranslations.pick(lang, en: 'BJP (Bharatiya Janata Party)', mr: 'भाजप (भारतीय जनता पक्ष)', hi: 'भाजपा (भारतीय जनता पार्टी)'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'INC', child: Text(AppTranslations.pick(lang, en: 'INC (Congress)', mr: 'काँग्रेस (आय)', hi: 'कांग्रेस (INC)'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'NCP', child: Text(AppTranslations.pick(lang, en: 'NCP (Nationalist Congress Party)', mr: 'राष्ट्रवादी काँग्रेस', hi: 'राकांपा (NCP)'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'SHS', child: Text(AppTranslations.pick(lang, en: 'Shiv Sena', mr: 'शिवसेना', hi: 'शिवसेना'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'UBT', child: Text(AppTranslations.pick(lang, en: 'Shivsena (UBT)', mr: 'शिवसेना (UBT)', hi: 'शिवसेना (UBT)'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'MNS', child: Text(AppTranslations.pick(lang, en: 'MNS', mr: 'मनसे (MNS)', hi: 'मनसे (MNS)'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'AAP', child: Text(AppTranslations.pick(lang, en: 'AAP', mr: 'आप (Aam Aadmi Party)', hi: 'आप (AAP)'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'Independent', child: Text(AppTranslations.pick(lang, en: 'Independent', mr: 'अपक्ष', hi: 'निर्दलीय'), style: const TextStyle(fontSize: 12.5))),
+                                    DropdownMenuItem(value: 'Other', child: Text(AppTranslations.pick(lang, en: 'Other / None', mr: 'इतर / कोणताही नाही', hi: 'अन्य / कोई नहीं'), style: const TextStyle(fontSize: 12.5))),
                                   ],
                                   onChanged: (val) {
                                     if (val != null) setModalState(() => paksh = val);
@@ -464,25 +507,25 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       const SizedBox(height: 14),
 
                       // Full Name
-                      fieldLabel(isMr ? 'पूर्ण नाव' : 'Full Name', isRequired: true),
+                      fieldLabel(AppTranslations.pick(lang, en: 'Full Name', mr: 'पूर्ण नाव', hi: 'पूरा नाम'), isRequired: true),
                       TextField(
                         controller: nameCtrl,
                         decoration: inputDec(
-                          hintText: isMr ? 'उदा. रमेश बाळासाहेब कदम' : 'e.g. Ramesh Balasaheb Kadam',
+                          hintText: AppTranslations.pick(lang, en: 'e.g. Ramesh Balasaheb Kadam', mr: 'उदा. रमेश बाळासाहेब कदम', hi: 'उदा. रमेश बालासाहेब कदम'),
                         ),
                       ),
                       const SizedBox(height: 14),
 
                       // Mobile Number (+91 prefix)
-                      fieldLabel(isMr ? 'मोबाईल नंबर' : 'Mobile Number', isRequired: true),
+                      fieldLabel(AppTranslations.pick(lang, en: 'Mobile Number', mr: 'मोबाईल नंबर', hi: 'मोबाइल नंबर'), isRequired: true),
                       TextField(
                         controller: mobileCtrl,
                         keyboardType: TextInputType.phone,
                         maxLength: 10,
                         buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
                         decoration: inputDec(
-                          prefixText: '+91 ',
-                          hintText: '9876543210',
+                          prefixText: AppTranslations.formatDigits('+91 ', lang),
+                          hintText: AppTranslations.formatDigits('9876543210', lang),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -495,7 +538,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'ईमेल (Login ID)' : 'Email (Login ID)'),
+                                fieldLabel(AppTranslations.pick(lang, en: 'Email (Login ID)', mr: 'ईमेल (Login ID)', hi: 'ईमेल (Login ID)')),
                                 TextField(
                                   controller: emailCtrl,
                                   keyboardType: TextInputType.emailAddress,
@@ -511,7 +554,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'पासवर्ड' : 'Password'),
+                                fieldLabel(AppTranslations.pick(lang, en: 'Password', mr: 'पासवर्ड', hi: 'पासवर्ड')),
                                 TextField(
                                   controller: passwordCtrl,
                                   obscureText: !showPassword,
@@ -535,11 +578,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       const SizedBox(height: 14),
 
                       // Role / Designation with quick suggestion chips
-                      fieldLabel(isMr ? 'पद / हुद्दा' : 'Role / Designation', isRequired: true),
+                      fieldLabel(AppTranslations.pick(lang, en: 'Role / Designation', mr: 'पद / हुद्दा', hi: 'पद / भूमिका'), isRequired: true),
                       TextField(
                         controller: roleCtrl,
                         decoration: inputDec(
-                          hintText: isMr ? 'उदा. कार्यालय प्रशासक, प्रभाग अध्यक्ष...' : 'e.g. Office Admin, Ward President...',
+                          hintText: AppTranslations.pick(lang, en: 'e.g. Office Admin, Ward President...', mr: 'उदा. कार्यालय प्रशासक, प्रभाग अध्यक्ष...', hi: 'उदा. कार्यालय प्रशासक, वार्ड अध्यक्ष...'),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -548,9 +591,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         runSpacing: 4,
                         children: roleSuggestions.map((r) {
                           return ActionChip(
-                            label: Text(r, style: const TextStyle(fontSize: 11)),
+                            label: Text(
+                              AppTranslations.pick(lang, en: r.en, mr: r.mr, hi: r.hi),
+                              style: const TextStyle(fontSize: 11),
+                            ),
                             backgroundColor: const Color(0xFFF1F5F9),
-                            onPressed: () => setModalState(() => roleCtrl.text = r),
+                            onPressed: () => setModalState(() => roleCtrl.text = r.val),
                           );
                         }).toList(),
                       ),
@@ -564,11 +610,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'कार्यक्षेत्र / परिसर' : 'Work Area'),
+                                fieldLabel(AppTranslations.pick(lang, en: 'Work Area', mr: 'कार्यक्षेत्र / परिसर', hi: 'कार्यक्षेत्र / क्षेत्र')),
                                 TextField(
                                   controller: areaCtrl,
                                   decoration: inputDec(
-                                    hintText: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth',
+                                    hintText: AppTranslations.pick(lang, en: 'e.g. Shaniwar Peth', mr: 'उदा. शनिवार पेठ', hi: 'उदा. शनिवार पेठ'),
                                   ),
                                 ),
                               ],
@@ -579,11 +625,14 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                fieldLabel(isMr ? 'सोसायटीचे नाव' : 'Society Name', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
+                                fieldLabel(
+                                  AppTranslations.pick(lang, en: 'Society Name', mr: 'सोसायटीचे नाव', hi: 'सोसायटी का नाम'),
+                                  optionalNote: AppTranslations.pick(lang, en: 'Optional', mr: 'ऐच्छिक', hi: 'वैकल्पिक'),
+                                ),
                                 TextField(
                                   controller: societyCtrl,
                                   decoration: inputDec(
-                                    hintText: isMr ? 'उदा. रॉयल हाईट्स' : 'e.g. Royal Heights',
+                                    hintText: AppTranslations.pick(lang, en: 'e.g. Royal Heights', mr: 'उदा. रॉयल हाईट्स', hi: 'उदा. रॉयल हाइट्स'),
                                   ),
                                 ),
                               ],
@@ -602,11 +651,14 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<String>(
-                                  label: isMr ? 'पक्ष आघाडी / सेल' : 'Party Wing',
-                                  value: partyWingsList.contains(partyWing) ? partyWing : '',
+                                  label: AppTranslations.pick(lang, en: 'Party Wing', mr: 'पक्ष आघाडी / सेल', hi: 'पार्टी प्रकोष्ठ / सेल'),
+                                  value: partyWingsOptions.any((w) => w.val == partyWing) ? partyWing : '',
                                   items: [
-                                    DropdownMenuItem(value: '', child: Text(isMr ? 'आघाडी निवडा' : 'Select Wing', style: const TextStyle(fontSize: 12.5))),
-                                    ...partyWingsList.map((w) => DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 12.5)))),
+                                    DropdownMenuItem(value: '', child: Text(AppTranslations.pick(lang, en: 'Select Wing', mr: 'आघाडी निवडा', hi: 'प्रकोष्ठ चुनें'), style: const TextStyle(fontSize: 12.5))),
+                                    ...partyWingsOptions.map((w) => DropdownMenuItem(
+                                          value: w.val,
+                                          child: Text(AppTranslations.pick(lang, en: w.en, mr: w.mr, hi: w.hi), style: const TextStyle(fontSize: 12.5)),
+                                        )),
                                   ],
                                   onChanged: (val) {
                                     if (val != null) setModalState(() => partyWing = val);
@@ -621,16 +673,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 AppDropdownFormField<String>(
-                                  label: isMr ? 'पद (आघाडीतील पद)' : 'Designation / Post',
-                                  value: partyPostsList.any((p) => p.startsWith(pad) && pad.isNotEmpty)
-                                      ? partyPostsList.firstWhere((p) => p.startsWith(pad))
-                                      : '',
+                                  label: AppTranslations.pick(lang, en: 'Designation / Post', mr: 'पद (आघाडीतील पद)', hi: 'पद (प्रकोष्ठ पद)'),
+                                  value: partyPostsOptions.any((p) => p.code == pad) ? pad : '',
                                   items: [
-                                    DropdownMenuItem(value: '', child: Text(isMr ? 'पद निवडा' : 'Select Post', style: const TextStyle(fontSize: 12.5))),
-                                    ...partyPostsList.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 12.5)))),
+                                    DropdownMenuItem(value: '', child: Text(AppTranslations.pick(lang, en: 'Select Post', mr: 'पद निवडा', hi: 'पद चुनें'), style: const TextStyle(fontSize: 12.5))),
+                                    ...partyPostsOptions.map((p) => DropdownMenuItem(
+                                          value: p.code,
+                                          child: Text(AppTranslations.pick(lang, en: p.en, mr: p.mr, hi: p.hi), style: const TextStyle(fontSize: 12.5)),
+                                        )),
                                   ],
                                   onChanged: (val) {
-                                    if (val != null) setModalState(() => pad = val.split(' ')[0]);
+                                    if (val != null) setModalState(() => pad = val);
                                   },
                                 ),
                               ],
@@ -641,25 +694,31 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       const SizedBox(height: 14),
 
                       // Auto Keywords
-                      fieldLabel(isMr ? 'ऑटो कीवर्ड्स' : 'Auto Keywords', optionalNote: isMr ? 'ऐच्छिक' : 'Optional'),
+                      fieldLabel(
+                        AppTranslations.pick(lang, en: 'Auto Keywords', mr: 'ऑटो कीवर्ड्स', hi: 'ऑटो कीवर्ड'),
+                        optionalNote: AppTranslations.pick(lang, en: 'Optional', mr: 'ऐच्छिक', hi: 'वैकल्पिक'),
+                      ),
                       TextField(
                         controller: keywordsCtrl,
                         decoration: inputDec(
-                          hintText: isMr ? 'पाणी, ड्रेनेज, वीज, कचरा' : 'water, drainage, electricity, waste',
+                          hintText: AppTranslations.pick(lang, en: 'water, drainage, electricity, waste', mr: 'पाणी, ड्रेनेज, वीज, कचरा', hi: 'पानी, ड्रेनेज, बिजली, कचरा'),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 4, bottom: 14),
                         child: Text(
-                          isMr
-                              ? 'तक्रारींचे स्वयंचलित वाटप करण्यासाठी कीवर्ड्स (स्वल्पविरामाने वेगळे करा)'
-                              : 'Keywords used to auto-assign incoming citizen complaints',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Keywords used to auto-assign incoming citizen complaints',
+                            mr: 'तक्रारींचे स्वयंचलित वाटप करण्यासाठी कीवर्ड्स (स्वल्पविरामाने वेगळे करा)',
+                            hi: 'नागरिक शिकायतों को स्वतः आवंटित करने के लिए कीवर्ड (अल्पविराम से अलग करें)',
+                          ),
                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                       ),
 
                       // Complaint Categories (Auto-Assign)
-                      fieldLabel(isMr ? 'तक्रार श्रेणी (स्वयंचलित वाटप)' : 'Complaint Categories (Auto-Assign)'),
+                      fieldLabel(AppTranslations.pick(lang, en: 'Complaint Categories (Auto-Assign)', mr: 'तक्रार श्रेणी (स्वयंचलित वाटप)', hi: 'शिकायत श्रेणियां (स्वतः आवंटन)')),
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
@@ -694,7 +753,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       const SizedBox(height: 16),
 
                       // Permissions (Access Control)
-                      fieldLabel(isMr ? 'परवानग्या व अधिकार (Access Control)' : 'Permissions (Access Control)'),
+                      fieldLabel(AppTranslations.pick(lang, en: 'Permissions (Access Control)', mr: 'परवानग्या व अधिकार (Access Control)', hi: 'अनुमतियाँ और अधिकार (Access Control)')),
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
@@ -709,7 +768,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '${selectedPermissions.length} / ${availablePermissions.length} ${isMr ? 'अधिकार निवडले' : 'selected'}',
+                                  '${AppTranslations.formatDigits('${selectedPermissions.length}', lang)} / ${AppTranslations.formatDigits('${availablePermissions.length}', lang)} ${AppTranslations.pick(lang, en: 'selected', mr: 'अधिकार निवडले', hi: 'चयनित')}',
                                   style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                                 ),
                                 TextButton(
@@ -725,8 +784,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                                   style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                                   child: Text(
                                     selectedPermissions.length == availablePermissions.length
-                                        ? (isMr ? 'सर्व काढा' : 'Deselect All')
-                                        : (isMr ? 'सर्व निवडा' : 'Select All'),
+                                        ? AppTranslations.pick(lang, en: 'Deselect All', mr: 'सर्व काढा', hi: 'सभी हटाएँ')
+                                        : AppTranslations.pick(lang, en: 'Select All', mr: 'सर्व निवडा', hi: 'सभी चुनें'),
                                     style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -789,14 +848,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isMr ? 'इतर कर्मचाऱ्यांना काम सोपवण्याची परवानगी द्या' : 'Assign Work to Other Staff',
+                                    AppTranslations.pick(lang, en: 'Assign Work to Other Staff', mr: 'इतर कर्मचाऱ्यांना काम सोपवण्याची परवानगी द्या', hi: 'अन्य कर्मचारियों को कार्य सौंपने की अनुमति दें'),
                                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF713F12)),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    isMr
-                                        ? 'या युझरला इतर कर्मचाऱ्यांना तक्रारी व कार्ये वाटप करण्याचे अधिकार मिळतील.'
-                                        : 'Allow this user to delegate tasks and citizen complaints to other staff members.',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Allow this user to delegate tasks and citizen complaints to other staff members.',
+                                      mr: 'या युझरला इतर कर्मचाऱ्यांना तक्रारी व कार्ये वाटप करण्याचे अधिकार मिळतील.',
+                                      hi: 'इस उपयोगकर्ता को अन्य कर्मचारियों को शिकायतें और कार्य आवंटित करने की अनुमति मिलेगी।',
+                                    ),
                                     style: const TextStyle(fontSize: 11, color: Color(0xFF854D0E)),
                                   ),
                                 ],
@@ -818,7 +880,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               ),
                               onPressed: () => Navigator.pop(ctx),
                               child: Text(
-                                isMr ? 'रद्द करा' : 'Cancel',
+                                AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -837,20 +899,25 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                               label: Text(
                                 memberToEdit != null
-                                    ? (isMr ? 'बदल जतन करा' : 'Save Changes')
-                                    : (isMr ? 'सदस्य जतन करा' : 'Save Member'),
+                                    ? AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल जतन करा', hi: 'बदलाव सहेजें')
+                                    : AppTranslations.pick(lang, en: 'Save Member', mr: 'सदस्य जतन करा', hi: 'सदस्य सहेजें'),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                               onPressed: () async {
                                 if (nameCtrl.text.trim().isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isMr ? 'कृपया सदस्याचे नाव प्रविष्ट करा.' : 'Please enter member name.')),
+                                    SnackBar(
+                                      content: Text(AppTranslations.pick(lang, en: 'Please enter member name.', mr: 'कृपया सदस्याचे नाव प्रविष्ट करा.', hi: 'कृपया सदस्य का नाम दर्ज करें।')),
+                                    ),
                                   );
                                   return;
                                 }
-                                if (mobileCtrl.text.trim().isEmpty) {
+                                final cleanMobile = AppTranslations.normalizeAsciiDigits(mobileCtrl.text.trim());
+                                if (cleanMobile.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(isMr ? 'कृपया मोबाईल नंबर प्रविष्ट करा.' : 'Please enter mobile number.')),
+                                    SnackBar(
+                                      content: Text(AppTranslations.pick(lang, en: 'Please enter mobile number.', mr: 'कृपया मोबाईल नंबर प्रविष्ट करा.', hi: 'कृपया मोबाइल नंबर दर्ज करें।')),
+                                    ),
                                   );
                                   return;
                                 }
@@ -862,7 +929,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                                   id: memberToEdit?.id ?? 'stf-${DateTime.now().millisecondsSinceEpoch}',
                                   name: nameCtrl.text.trim(),
                                   nameMarathi: nameCtrl.text.trim(),
-                                  mobile: mobileCtrl.text.trim(),
+                                  mobile: cleanMobile,
                                   email: emailCtrl.text.trim().isNotEmpty ? emailCtrl.text.trim() : null,
                                   role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : 'Staff',
                                   category: category,
@@ -893,8 +960,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                                   SnackBar(
                                     content: Text(
                                       memberToEdit != null
-                                          ? (isMr ? 'सदस्याची माहिती अद्यतनित केली!' : 'Member updated successfully!')
-                                          : (isMr ? 'नवीन सदस्य यशस्वीरित्या जोडला गेला!' : 'New member added successfully!'),
+                                          ? AppTranslations.pick(lang, en: 'Member updated successfully!', mr: 'सदस्याची माहिती अद्यतनित केली!', hi: 'सदस्य की जानकारी अपडेट की गई!')
+                                          : AppTranslations.pick(lang, en: 'New member added successfully!', mr: 'नवीन सदस्य यशस्वीरित्या जोडला गेला!', hi: 'नया सदस्य सफलतापूर्वक जोड़ा गया!'),
                                     ),
                                     backgroundColor: const Color(0xFF16A34A),
                                   ),
@@ -918,6 +985,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredMembers;
     final totalMembers = _teamStats['total'] ?? _allMembers.length;
     final officeCount = _teamStats['office'] ?? 0;
@@ -933,25 +1001,25 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
-            ),
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(lang, en: 'Open Menu Drawer', mr: 'मेनू उघडा', hi: 'मेनू खोलें'),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'My Team',
+              AppTranslations.pick(lang, en: 'My Team', mr: 'माझी टीम', hi: 'मेरी टीम'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -959,10 +1027,15 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               ),
             ),
             Text(
-              'Nagarsevak office staff, field coordinators and roles',
+              AppTranslations.pick(
+                lang,
+                en: 'Nagarsevak office staff, field coordinators and roles',
+                mr: 'नगरसेवक कार्यालयीन कर्मचारी, समन्वयक आणि जबाबदाऱ्या',
+                hi: 'पार्षद कार्यालय कर्मचारी, क्षेत्रीय समन्वयक और भूमिकाएं',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -970,7 +1043,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             ),
           ],
         ),
-        actions: const [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 20),
+            tooltip: AppTranslations.pick(lang, en: 'Team Guide', mr: 'टीम मार्गदर्शिका', hi: 'टीम गाइड'),
+            onPressed: _showHelpGuide,
+          ),
+          const Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: AppLanguageSegmentedSelector(isCompact: true),
+          ),
+        ],
       ),
       body: _isLoading
           ? const AppShimmerList(count: 6)
@@ -981,24 +1064,24 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 children: [
                   // KPI Header Strip
-                  _buildKpiStrip(totalMembers, officeCount, partyCount, coopCount),
+                  _buildKpiStrip(totalMembers, officeCount, partyCount, coopCount, lang),
                   const SizedBox(height: 14),
 
                   // Search Bar
-                  _buildSearchBar(filtered),
+                  _buildSearchBar(filtered, lang),
                   const SizedBox(height: 10),
 
                   // Category Tabs & View Mode Row
-                  _buildCategoryTabsBar(filtered.length),
+                  _buildCategoryTabsBar(filtered.length, lang),
                   const SizedBox(height: 14),
 
                   // Team Members List (Cards or Table)
                   if (filtered.isEmpty)
-                    _buildEmptyState()
+                    _buildEmptyState(lang)
                   else if (_viewMode == 'table')
-                    _buildTableView(_visibleMembers)
+                    _buildTableView(_visibleMembers, lang)
                   else
-                    ..._visibleMembers.map((m) => _buildTeamCard(m)),
+                    ..._visibleMembers.map((m) => _buildTeamCard(m, lang)),
 
                   if (!_isLoading && filtered.isNotEmpty)
                     AppLoadMoreFooter(
@@ -1008,8 +1091,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       onLoadMore: () {
                         setState(() => _displayedLimit += 20);
                       },
-                      label: ref.watch(isMarathiProvider) ? 'सदस्य' : 'members',
-                      isMarathi: ref.watch(isMarathiProvider),
+                      label: AppTranslations.pick(lang, en: 'members', mr: 'सदस्य', hi: 'सदस्य'),
+                      isMarathi: lang == 'mr',
                     ),
 
                   const SizedBox(height: 80),
@@ -1019,20 +1102,23 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF0284C7),
         icon: const Icon(Icons.person_add_rounded, color: Colors.white),
-        label: const Text('New Member', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(
+          AppTranslations.pick(lang, en: 'New Member', mr: 'नवीन सदस्य', hi: 'नया सदस्य'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         onPressed: _showAddMemberModal,
       ),
     );
   }
 
-  Widget _buildKpiStrip(int total, int office, int party, int coop) {
+  Widget _buildKpiStrip(int total, int office, int party, int coop, String lang) {
     return Row(
       children: [
         Expanded(
           child: _buildKpiCard(
-            title: 'Total Members',
-            value: '$total',
-            subtitle: 'My Team',
+            title: AppTranslations.pick(lang, en: 'Total Members', mr: 'एकूण सदस्य', hi: 'कुल सदस्य'),
+            value: AppTranslations.formatDigits('$total', lang),
+            subtitle: AppTranslations.pick(lang, en: 'My Team', mr: 'माझी टीम', hi: 'मेरी टीम'),
             icon: Icons.groups_rounded,
             color: const Color(0xFF0284C7),
             bg: const Color(0xFFE0F2FE),
@@ -1041,9 +1127,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'Office Team',
-            value: '$office',
-            subtitle: 'Office Staff',
+            title: AppTranslations.pick(lang, en: 'Office Team', mr: 'कार्यालयीन टीम', hi: 'कार्यालय टीम'),
+            value: AppTranslations.formatDigits('$office', lang),
+            subtitle: AppTranslations.pick(lang, en: 'Office Staff', mr: 'कार्यालयीन कर्मचारी', hi: 'कार्यालय कर्मचारी'),
             icon: Icons.business_rounded,
             color: const Color(0xFF0284C7),
             bg: const Color(0xFFE0F2FE),
@@ -1052,9 +1138,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'Party Cadre',
-            value: '$party',
-            subtitle: 'Wings & Cells',
+            title: AppTranslations.pick(lang, en: 'Party Cadre', mr: 'पक्ष कार्यकर्ते', hi: 'पार्टी कार्यकर्ता'),
+            value: AppTranslations.formatDigits('$party', lang),
+            subtitle: AppTranslations.pick(lang, en: 'Wings & Cells', mr: 'आघाडी व सेल', hi: 'प्रकोष्ठ व सेल'),
             icon: Icons.flag_rounded,
             color: const Color(0xFFD97706),
             bg: const Color(0xFFFEF3C7),
@@ -1063,9 +1149,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: _buildKpiCard(
-            title: 'Municipal / Coop',
-            value: '$coop',
-            subtitle: 'Municipal & Orgs',
+            title: AppTranslations.pick(lang, en: 'Municipal / Coop', mr: 'महापालिका / सहकार', hi: 'नगर निगम / सहकार'),
+            value: AppTranslations.formatDigits('$coop', lang),
+            subtitle: AppTranslations.pick(lang, en: 'Municipal & Orgs', mr: 'महापालिका व संस्था', hi: 'नगर निगम व संस्थाएं'),
             icon: Icons.handshake_rounded,
             color: const Color(0xFF7C3AED),
             bg: const Color(0xFFEDE9FE),
@@ -1130,7 +1216,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     );
   }
 
-  Widget _buildSearchBar(List<TeamMemberModel> filtered) {
+  Widget _buildSearchBar(List<TeamMemberModel> filtered, String lang) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -1145,7 +1231,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               controller: _searchCtrl,
               onChanged: (_) => setState(() => _displayedLimit = 20),
               decoration: InputDecoration(
-                hintText: 'Search name, role, wing, area, or keyword...',
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search name, role, wing, area, or keyword...',
+                  mr: 'नाव, पद, आघाडी, परिसर किंवा कीवर्ड शोधा...',
+                  hi: 'नाम, पद, प्रकोष्ठ, क्षेत्र या कीवर्ड खोजें...',
+                ),
                 hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0284C7), size: 20),
                 suffixIcon: _searchCtrl.text.isNotEmpty
@@ -1165,10 +1256,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           ),
 
           AppPdfButton.icon(
-            tooltip: 'Download Team Report',
+            tooltip: AppTranslations.pick(lang, en: 'Download Team Report', mr: 'टीम अहवाल डाउनलोड करा', hi: 'टीम रिपोर्ट डाउनलोड करें'),
             onPressed: () => TeamReportGenerator.generateAndPrintReport(
+              context: context,
               staffList: filtered,
               activeCategory: _selectedCategory == 'All' ? 'All Team' : _selectedCategory,
+              lang: lang,
             ),
           ),
         ],
@@ -1176,19 +1269,19 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     );
   }
 
-  Widget _buildCategoryTabsBar(int resultCount) {
+  Widget _buildCategoryTabsBar(int resultCount, String lang) {
     final categories = [
-      {'key': 'All', 'label': 'All Team'},
-      {'key': 'Office', 'label': 'Office Team'},
-      {'key': 'Party', 'label': 'Party Cadre'},
-      {'key': 'Cooperative', 'label': 'Municipal / Coop'},
+      {'key': 'All', 'label': AppTranslations.pick(lang, en: 'All Team', mr: 'सर्व टीम', hi: 'पूरी टीम')},
+      {'key': 'Office', 'label': AppTranslations.pick(lang, en: 'Office Team', mr: 'कार्यालयीन टीम', hi: 'कार्यालय टीम')},
+      {'key': 'Party', 'label': AppTranslations.pick(lang, en: 'Party Cadre', mr: 'पक्ष कार्यकर्ते', hi: 'पार्टी कार्यकर्ता')},
+      {'key': 'Cooperative', 'label': AppTranslations.pick(lang, en: 'Municipal / Coop', mr: 'महापालिका / सहकार', hi: 'नगर निगम / सहकारी')},
     ];
 
     return Row(
       children: [
         Flexible(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: Row(
               children: categories.map((cat) {
                 final isSel = _selectedCategory == cat['key'];
@@ -1231,7 +1324,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             children: [
               IconButton(
                 icon: Icon(Icons.grid_view_rounded, size: 17, color: _viewMode == 'cards' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'Card View',
+                tooltip: AppTranslations.pick(lang, en: 'Card View', mr: 'कार्ड दृश्य', hi: 'कार्ड दृश्य'),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _viewMode = 'cards'),
@@ -1239,7 +1332,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               Container(width: 1, height: 18, color: Colors.grey.shade200),
               IconButton(
                 icon: Icon(Icons.table_rows_rounded, size: 17, color: _viewMode == 'table' ? const Color(0xFF0284C7) : Colors.grey),
-                tooltip: 'Table View',
+                tooltip: AppTranslations.pick(lang, en: 'Table View', mr: 'तक्ता दृश्य', hi: 'तालिका दृश्य'),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 padding: EdgeInsets.zero,
                 onPressed: () => setState(() => _viewMode = 'table'),
@@ -1251,8 +1344,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     );
   }
 
-  Widget _buildTeamCard(TeamMemberModel member) {
-    final isMr = ref.watch(isMarathiProvider);
+  Widget _buildTeamCard(TeamMemberModel member, String lang) {
     Color catColor = const Color(0xFF0284C7);
     Color catBg = const Color(0xFFE0F2FE);
 
@@ -1264,6 +1356,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       catBg = const Color(0xFFEDE9FE);
     }
 
+    final primaryName = member.displayNameFor(lang);
+    final roleLabel = member.roleLabel(lang);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -1272,7 +1367,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -1298,9 +1393,14 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: catBg,
-                    child: Text(
-                      member.displayName.isNotEmpty ? member.displayName.substring(0, 1) : 'S',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: catColor),
+                    child: AppTranslatedText(
+                      primaryName.isNotEmpty ? primaryName : 'S',
+                      targetLanguage: lang,
+                      isName: true,
+                      builder: (ctx, translated) => Text(
+                        translated.trim().isNotEmpty ? translated.trim().substring(0, 1).toUpperCase() : 'S',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: catColor),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -1308,12 +1408,19 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          member.displayName,
+                        AppTranslatedText(
+                          primaryName,
+                          targetLanguage: lang,
+                          isName: true,
                           style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
-                        if (member.name != member.displayName)
-                          Text(member.name, style: TextStyle(fontSize: 11.5, color: Colors.grey.shade500)),
+                        if (member.name != primaryName && member.name.trim().isNotEmpty)
+                          AppTranslatedText(
+                            member.name,
+                            targetLanguage: lang,
+                            isName: true,
+                            style: TextStyle(fontSize: 11.5, color: Colors.grey.shade500),
+                          ),
                         const SizedBox(height: 3),
                         Wrap(
                           spacing: 6,
@@ -1324,10 +1431,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                               decoration: BoxDecoration(
                                 color: catBg,
                                 borderRadius: BorderRadius.circular(5),
-                                border: Border.all(color: catColor.withOpacity(0.3)),
+                                border: Border.all(color: catColor.withValues(alpha: 0.3)),
                               ),
                               child: Text(
-                                member.categoryLabelMarathi,
+                                member.categoryLabel(lang),
                                 style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: catColor),
                               ),
                             ),
@@ -1337,8 +1444,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                                 color: const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(5),
                               ),
-                              child: Text(
-                                member.roleLabelMarathi,
+                              child: AppTranslatedText(
+                                roleLabel,
+                                targetLanguage: lang,
                                 style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                               ),
                             ),
@@ -1349,7 +1457,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
-                    tooltip: isMr ? 'माहिती सुधारा' : 'Edit Member',
+                    tooltip: AppTranslations.pick(lang, en: 'Edit Member', mr: 'माहिती सुधारा', hi: 'जानकारी संपादित करें'),
                     onPressed: () => _showMemberModal(memberToEdit: member),
                   ),
                   const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
@@ -1366,9 +1474,14 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     children: [
                       const Icon(Icons.flag_outlined, size: 13, color: Color(0xFFD97706)),
                       const SizedBox(width: 4),
-                      Text(
-                        '${member.partyWing!} ${member.pad != null ? "• ${member.pad}" : ""}',
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+                      Expanded(
+                        child: AppTranslatedText(
+                          '${member.partyWing!} ${member.pad != null ? "• ${member.pad}" : ""}',
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -1382,8 +1495,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       const Icon(Icons.apartment_rounded, size: 13, color: Color(0xFF7C3AED)),
                       const SizedBox(width: 4),
                       Expanded(
-                        child: Text(
+                        child: AppTranslatedText(
                           member.societyName!,
+                          targetLanguage: lang,
+                          isName: true,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF5B21B6)),
@@ -1397,13 +1512,24 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 children: [
                   Icon(Icons.location_on_outlined, size: 13, color: Colors.grey.shade500),
                   const SizedBox(width: 4),
-                  Text(member.area ?? 'Ward 12', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+                  Flexible(
+                    child: AppTranslatedText(
+                      AppTranslations.getAreaName(member.area ?? 'Ward 12', lang),
+                      targetLanguage: lang,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Text('•', style: TextStyle(color: Colors.grey.shade400)),
                   const SizedBox(width: 8),
                   Icon(Icons.phone_iphone_rounded, size: 12, color: Colors.grey.shade500),
                   const SizedBox(width: 2),
-                  Text('+91 ${member.mobile}', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+                  Text(
+                    AppTranslations.formatDigits('+91 ${member.mobile}', lang),
+                    style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                  ),
                 ],
               ),
 
@@ -1420,8 +1546,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         color: const Color(0xFFE0F2FE),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
+                      child: AppTranslatedText(
                         k,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 10, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
                       ),
                     );
@@ -1439,7 +1566,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 children: [
                   OutlinedButton.icon(
                     icon: const Icon(Icons.assignment_add, size: 14, color: Color(0xFF0284C7)),
-                    label: const Text('Assign Task', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'Assign Task', mr: 'काम सोपवा', hi: 'कार्य सौंपें'),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                    ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -1455,19 +1585,22 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   const SizedBox(width: 6),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.send_rounded, size: 13, color: Colors.white),
-                    label: const Text('WhatsApp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'WhatsApp', mr: 'व्हॉट्सॲप', hi: 'व्हाट्सएप'),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF25D366),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       elevation: 0,
                     ),
-                    onPressed: () => _messageOnWhatsApp(member),
+                    onPressed: () => _messageOnWhatsApp(member, lang),
                   ),
                   const SizedBox(width: 6),
                   IconButton(
                     icon: const Icon(Icons.phone, size: 18, color: Color(0xFF0284C7)),
-                    tooltip: 'Call',
+                    tooltip: AppTranslations.pick(lang, en: 'Call', mr: 'कॉल करा', hi: 'कॉल करें'),
                     onPressed: () => _callMember(member.mobile),
                   ),
                 ],
@@ -1479,7 +1612,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     );
   }
 
-  Widget _buildTableView(List<TeamMemberModel> list) {
+  Widget _buildTableView(List<TeamMemberModel> list, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1492,15 +1625,15 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           scrollDirection: Axis.horizontal,
           child: DataTable(
             headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
-            columns: const [
-              DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Role / Designation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Wing / Organization', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Work Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Mobile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+            columns: [
+              DataColumn(label: Text(AppTranslations.pick(lang, en: '#', mr: 'क्र.', hi: 'क्र.'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Name', mr: 'नाव', hi: 'नाम'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Role / Designation', mr: 'पद / हुद्दा', hi: 'पद / भूमिका'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Category', mr: 'श्रेणी', hi: 'श्रेणी'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Wing / Organization', mr: 'आघाडी / संस्था', hi: 'प्रकोष्ठ / संस्था'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Work Area', mr: 'कार्यक्षेत्र', hi: 'कार्यक्षेत्र'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Mobile', mr: 'मोबाईल', hi: 'मोबाइल'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              DataColumn(label: Text(AppTranslations.pick(lang, en: 'Action', mr: 'कृती', hi: 'कार्रवाई'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
             ],
             rows: list.asMap().entries.map((entry) {
               final idx = entry.key;
@@ -1515,7 +1648,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
               return DataRow(
                 cells: [
-                  DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 11))),
+                  DataCell(Text(AppTranslations.formatDigits('${idx + 1}', lang), style: const TextStyle(fontSize: 11))),
                   DataCell(
                     InkWell(
                       onTap: () {
@@ -1524,13 +1657,21 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           MaterialPageRoute(builder: (_) => TeamMemberProfileScreen(member: m)),
                         ).then((res) { if (res == true) _loadTeam(showLoading: false); });
                       },
-                      child: Text(
-                        m.displayName,
+                      child: AppTranslatedText(
+                        m.displayNameFor(lang),
+                        targetLanguage: lang,
+                        isName: true,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0284C7)),
                       ),
                     ),
                   ),
-                  DataCell(Text(m.roleLabelMarathi, style: const TextStyle(fontSize: 11))),
+                  DataCell(
+                    AppTranslatedText(
+                      m.roleLabel(lang),
+                      targetLanguage: lang,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
                   DataCell(
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1541,7 +1682,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        m.categoryLabelMarathi,
+                        m.categoryLabel(lang),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -1552,9 +1693,19 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       ),
                     ),
                   ),
-                  DataCell(Text(sub, style: const TextStyle(fontSize: 11))),
-                  DataCell(Text(m.area ?? 'Ward 12', style: const TextStyle(fontSize: 11))),
-                  DataCell(Text('+91 ${m.mobile}', style: const TextStyle(fontSize: 11))),
+                  DataCell(
+                    sub == '-'
+                        ? const Text('-', style: TextStyle(fontSize: 11))
+                        : AppTranslatedText(sub, targetLanguage: lang, isName: m.category == 'Cooperative', style: const TextStyle(fontSize: 11)),
+                  ),
+                  DataCell(
+                    AppTranslatedText(
+                      AppTranslations.getAreaName(m.area ?? 'Ward 12', lang),
+                      targetLanguage: lang,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                  DataCell(Text(AppTranslations.formatDigits('+91 ${m.mobile}', lang), style: const TextStyle(fontSize: 11))),
                   DataCell(
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1565,7 +1716,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.send_rounded, size: 15, color: Color(0xFF25D366)),
-                          onPressed: () => _messageOnWhatsApp(m),
+                          onPressed: () => _messageOnWhatsApp(m, lang),
                         ),
                       ],
                     ),
@@ -1579,7 +1730,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String lang) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -1591,20 +1742,28 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         children: [
           Icon(Icons.groups_outlined, size: 54, color: Colors.grey.shade300),
           const SizedBox(height: 12),
-          const Text(
-            'No team members found',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          Text(
+            AppTranslations.pick(lang, en: 'No team members found', mr: 'कोणतेही टीम सदस्य आढळले नाहीत', hi: 'कोई टीम सदस्य नहीं मिला'),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
           ),
           const SizedBox(height: 6),
           Text(
-            'Check your search terms or add a new team member.',
+            AppTranslations.pick(
+              lang,
+              en: 'Check your search terms or add a new team member.',
+              mr: 'तुमचा शोध तपासा किंवा नवीन टीम सदस्य जोडा.',
+              hi: 'अपने खोज शब्द जांचें या नया टीम सदस्य जोड़ें।',
+            ),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 14),
           ElevatedButton.icon(
             icon: const Icon(Icons.add, size: 16, color: Colors.white),
-            label: const Text('Add New Member', style: TextStyle(color: Colors.white)),
+            label: Text(
+              AppTranslations.pick(lang, en: 'Add New Member', mr: 'नवीन सदस्य जोडा', hi: 'नया सदस्य जोड़ें'),
+              style: const TextStyle(color: Colors.white),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0284C7),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

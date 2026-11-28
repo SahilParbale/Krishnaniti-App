@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
+import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nagarsevak_mobile/data/models/ward_map_point_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/ward_map_repository.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
+import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart';
 import 'package:nagarsevak_mobile/presentation/screens/ward_map/ward_map_report_generator.dart';
 
 /// Desktop Ward Map View matching WardMap.tsx verbatim:
@@ -28,12 +29,12 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
   WardMapPointModel? _selectedPoint;
 
   static const List<Map<String, String>> _categories = [
-    {'id': 'All', 'en': 'All Places', 'mr': 'All Places'},
-    {'id': 'Booth', 'en': 'Polling Booths', 'mr': 'Polling Booths'},
-    {'id': 'CivilWorks', 'en': 'Civil Works', 'mr': 'Civil Works'},
-    {'id': 'Amenity', 'en': 'Civic Amenities', 'mr': 'Civic Amenities'},
-    {'id': 'ProblemSpot', 'en': 'Problem Spots', 'mr': 'Problem Spots'},
-    {'id': 'Office', 'en': 'Ward Office', 'mr': 'Ward Office'},
+    {'id': 'All', 'en': 'All Places', 'mr': 'सर्व ठिकाणे', 'hi': 'सभी स्थान'},
+    {'id': 'Booth', 'en': 'Polling Booths', 'mr': 'मतदान केंद्रे', 'hi': 'मतदान केंद्र'},
+    {'id': 'CivilWorks', 'en': 'Civil Works', 'mr': 'विकासकामे', 'hi': 'नागरिक कार्य'},
+    {'id': 'Amenity', 'en': 'Civic Amenities', 'mr': 'नागरी सुविधा', 'hi': 'नागरिक सुविधाएं'},
+    {'id': 'ProblemSpot', 'en': 'Problem Spots', 'mr': 'समस्या ठिकाणे', 'hi': 'समस्या स्थल'},
+    {'id': 'Office', 'en': 'Ward Office', 'mr': 'प्रभाग कार्यालय', 'hi': 'वार्ड कार्यालय'},
   ];
 
   @override
@@ -92,16 +93,26 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
   }
 
   void _copyAddress(WardMapPointModel point) {
+    final lang = ref.read(desktopLanguageProvider);
     Clipboard.setData(ClipboardData(text: '${point.title}\n${point.address}'));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Address copied to clipboard!'), duration: Duration(seconds: 2)),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Address copied to clipboard!',
+            mr: 'पत्ता क्लिपबोर्डवर कॉपी केला!',
+            hi: 'पता क्लिपबोर्ड पर कॉपी किया गया!',
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
     final items = _filteredPoints;
 
     return Scaffold(
@@ -112,17 +123,17 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Header (matching WardMap.tsx lines 200-225)
-            _buildHeader(isMr),
+            _buildHeader(lang),
 
             const SizedBox(height: 16),
 
             // 2. Control Toolbar: Category pills + Map controls
-            _buildControlBar(isMr),
+            _buildControlBar(lang),
 
             const SizedBox(height: 16),
 
             // 3. Map Viewport with Red Boundary Polygon & Floating Card
-            _buildMapContainer(items, isMr),
+            _buildMapContainer(items, lang),
           ],
         ),
       ),
@@ -130,32 +141,38 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
   }
 
   // --- Header ---
-  Widget _buildHeader(bool isMr) {
+  Widget _buildHeader(String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.map_outlined, size: 26, color: Color(0xFF0369A1)),
-                const SizedBox(width: 10),
-                Text(
-                  'Ward Map',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF0F172A), letterSpacing: -0.5),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.map_outlined, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
+                  Text(
+                    AppTranslations.getNavTitle('ward_map', lang),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Interactive ward boundary, polling booths and civic landmarks',
+                  mr: 'अधिकृत प्रभाग सीमा, मतदान केंद्रे आणि नागरी सुविधा नकाशा',
+                  hi: 'आधिकारिक वार्ड सीमा, मतदान केंद्र और नागरिक सुविधा मानचित्र',
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              isMr
-                  ? 'Official ward boundary, polling booths and civic infrastructure map'
-                  : 'Interactive ward boundary, polling booths and civic landmarks',
-              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-            ),
-          ],
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 16),
 
         // Download Report matching WardMap.tsx
         OutlinedButton.icon(
@@ -164,11 +181,12 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
               context: context,
               points: _allPoints,
               categoryFilter: _activeCategory,
+              lang: lang,
             );
           },
           icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
           label: Text(
-            AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+            AppTranslations.getDownloadReport(lang),
             style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
           ),
           style: OutlinedButton.styleFrom(
@@ -183,43 +201,51 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
   }
 
   // --- Control Bar ---
-  Widget _buildControlBar(bool isMr) {
+  Widget _buildControlBar(String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Category Pills
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _categories.map((c) {
-              final isSel = _activeCategory == c['id'];
-              final label = isMr ? c['mr']! : c['en']!;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: InkWell(
-                  onTap: () => setState(() => _activeCategory = c['id']!),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isSel ? const Color(0xFF0284C7) : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isSel ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0)),
-                    ),
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                        color: isSel ? Colors.white : const Color(0xFF475569),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _categories.map((c) {
+                final isSel = _activeCategory == c['id'];
+                final label = AppTranslations.pick(
+                  lang,
+                  en: c['en']!,
+                  mr: c['mr']!,
+                  hi: c['hi']!,
+                );
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    onTap: () => setState(() => _activeCategory = c['id']!),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isSel ? const Color(0xFF0284C7) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: isSel ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                          color: isSel ? Colors.white : const Color(0xFF475569),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
         ),
+        const SizedBox(width: 12),
 
         // Controls: Satellite Toggle + Zoom controls
         Row(
@@ -239,7 +265,9 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
                     Icon(Icons.layers_outlined, size: 16, color: _isSatelliteMode ? Colors.white : const Color(0xFF475569)),
                     const SizedBox(width: 6),
                     Text(
-                      _isSatelliteMode ? 'Satellite' : 'Roadmap',
+                      _isSatelliteMode
+                          ? AppTranslations.pick(lang, en: 'Satellite', mr: 'सॅटेलाइट', hi: 'सैटेलाइट')
+                          : AppTranslations.pick(lang, en: 'Roadmap', mr: 'रोडमॅप', hi: 'रोडमैप'),
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isSatelliteMode ? Colors.white : const Color(0xFF475569)),
                     ),
                   ],
@@ -257,11 +285,23 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
               ),
               child: Row(
                 children: [
-                  IconButton(icon: const Icon(Icons.add, size: 16), onPressed: _zoomIn, tooltip: 'Zoom In'),
+                  IconButton(
+                    icon: const Icon(Icons.add, size: 16),
+                    onPressed: _zoomIn,
+                    tooltip: AppTranslations.pick(lang, en: 'Zoom In', mr: 'झूम इन', hi: 'ज़ूम इन'),
+                  ),
                   const VerticalDivider(width: 1),
-                  IconButton(icon: const Icon(Icons.remove, size: 16), onPressed: _zoomOut, tooltip: 'Zoom Out'),
+                  IconButton(
+                    icon: const Icon(Icons.remove, size: 16),
+                    onPressed: _zoomOut,
+                    tooltip: AppTranslations.pick(lang, en: 'Zoom Out', mr: 'झूम आउट', hi: 'ज़ूम आउट'),
+                  ),
                   const VerticalDivider(width: 1),
-                  IconButton(icon: const Icon(Icons.center_focus_strong_outlined, size: 16), onPressed: _resetZoom, tooltip: 'Reset Center'),
+                  IconButton(
+                    icon: const Icon(Icons.center_focus_strong_outlined, size: 16),
+                    onPressed: _resetZoom,
+                    tooltip: AppTranslations.pick(lang, en: 'Reset Center', mr: 'केंद्र रीसेट करा', hi: 'केंद्र रीसेट करें'),
+                  ),
                 ],
               ),
             ),
@@ -272,7 +312,7 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
   }
 
   // --- Map Viewport Container ---
-  Widget _buildMapContainer(List<WardMapPointModel> items, bool isMr) {
+  Widget _buildMapContainer(List<WardMapPointModel> items, String lang) {
     return Container(
       height: 600,
       clipBehavior: Clip.antiAlias,
@@ -321,8 +361,9 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
                                     BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 4),
                                   ],
                                 ),
-                                child: Text(
+                                child: AppTranslatedText(
                                   pt.title,
+                                  targetLanguage: lang,
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -374,8 +415,9 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
+                          child: AppTranslatedText(
                             _selectedPoint!.title,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -384,6 +426,7 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
                           icon: const Icon(Icons.close_rounded, size: 18),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
+                          tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                           onPressed: () => setState(() => _selectedPoint = null),
                         ),
                       ],
@@ -396,14 +439,20 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        _selectedPoint!.category,
+                        _selectedPoint!.categoryDisplayFor(lang),
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _selectedPoint!.color),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    AppTranslatedText(
                       _selectedPoint!.address,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.35),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${AppTranslations.pick(lang, en: 'GPS', mr: 'GPS', hi: 'GPS')}: ${AppTranslations.formatDigits('${_selectedPoint!.latitude.toStringAsFixed(4)}, ${_selectedPoint!.longitude.toStringAsFixed(4)}', lang)}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -412,7 +461,10 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
                           child: OutlinedButton.icon(
                             onPressed: () => _openDirections(_selectedPoint!),
                             icon: const Icon(Icons.navigation_rounded, size: 14),
-                            label: const Text('Directions', style: TextStyle(fontSize: 12)),
+                            label: Text(
+                              AppTranslations.pick(lang, en: 'Directions', mr: 'दिशा पहा', hi: 'दिशा-निर्देश'),
+                              style: const TextStyle(fontSize: 12),
+                            ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF0284C7),
                               side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -424,7 +476,7 @@ class _DesktopWardMapViewState extends ConsumerState<DesktopWardMapView> {
                         IconButton(
                           icon: const Icon(Icons.copy_rounded, size: 18, color: Color(0xFF64748B)),
                           onPressed: () => _copyAddress(_selectedPoint!),
-                          tooltip: 'Copy Address',
+                          tooltip: AppTranslations.pick(lang, en: 'Copy Address', mr: 'पत्ता कॉपी करा', hi: 'पता कॉपी करें'),
                         ),
                       ],
                     ),

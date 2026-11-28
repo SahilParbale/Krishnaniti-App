@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/krishnaniti_logo.dart';
 import '../auth/login_screen.dart';
 import '../../navigation/adaptive_scaffold.dart';
@@ -24,10 +27,13 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
       icon: Icons.chat_bubble_outline_rounded,
       badge: 'Civic Grievances',
       badgeMr: 'नागरिक तक्रारी',
+      badgeHi: 'नागरिक शिकायतें',
       title: 'Fast & Transparent\nWard Grievance Redressal',
       titleMr: 'जलद आणि पारदर्शक\nप्रभाग तक्रार निवारण',
+      titleHi: 'तेज़ और पारदर्शी\nवार्ड शिकायत निवारण',
       description: 'Register citizen complaints, assign ward staff, and send instant status updates via WhatsApp.',
       descriptionMr: 'नागरिकांच्या तक्रारी नोंदवा, कर्मचाऱ्यांवर जबाबदारी सोपवा आणि व्हॉट्सअ‍ॅपवर प्रगती कळवा.',
+      descriptionHi: 'नागरिक शिकायतें दर्ज करें, वार्ड कर्मचारियों को सौंपें और व्हाट्सऐप पर तुरंत अपडेट भेजें।',
       gradientColors: [Color(0xFF0284C7), Color(0xFF0369A1)],
       lightBg: Color(0xFFE0F2FE),
     ),
@@ -35,10 +41,13 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
       icon: Icons.people_outline_rounded,
       badge: 'Voter Directory',
       badgeMr: 'मतदार यादी',
+      badgeHi: 'मतदाता सूची',
       title: 'Complete Citizen &\nVoter CRM at Your Fingertips',
       titleMr: 'नागरिक व मतदार नोंद\nआपल्या बोटांवर',
+      titleHi: 'संपूर्ण नागरिक व मतदाता CRM\nआपकी उंगलियों पर',
       description: 'Search voters by booth, family head, building, or mobile number with intelligent analytics.',
       descriptionMr: 'बूथ, कुटुंब प्रमुख, इमारत किंवा मोबाईल नंबरनुसार मतदारांचा शोध घ्या.',
+      descriptionHi: 'बूथ, परिवार मुखिया, इमारत या मोबाइल नंबर से मतदाताओं को स्मार्ट विश्लेषण के साथ खोजें।',
       gradientColors: [Color(0xFF4F46E5), Color(0xFF3730A3)],
       lightBg: Color(0xFFEEF2FF),
     ),
@@ -46,10 +55,13 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
       icon: Icons.apartment_rounded,
       badge: 'Development Works',
       badgeMr: 'विकासकामे व निधी',
+      badgeHi: 'विकास कार्य और निधि',
       title: 'Track Infrastructure &\nWard Development Works',
       titleMr: 'पायाभूत सुविधा व\nप्रभाग विकासकामांचा मागोवा',
+      titleHi: 'बुनियादी ढाँचा व\nवार्ड विकास कार्यों की निगरानी',
       description: 'Monitor ongoing civil projects, ward budgets, contractor milestones, and site photos.',
       descriptionMr: 'सुरू असलेली विकासकामे, खर्च, निधी आणि प्रत्यक्ष कामाचे फोटो पहा.',
+      descriptionHi: 'चल रहे निर्माण कार्यों, वार्ड बजट, ठेकेदार के चरणों और साइट की फ़ोटो की निगरानी करें।',
       gradientColors: [Color(0xFF0891B2), Color(0xFF155E75)],
       lightBg: Color(0xFFECFEFF),
     ),
@@ -57,10 +69,13 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
       icon: Icons.mail_outline_rounded,
       badge: 'Official Correspondence',
       badgeMr: 'पत्रव्यवहार',
+      badgeHi: 'आधिकारिक पत्राचार',
       title: 'Inward & Outward\nMunicipal Letters Management',
       titleMr: 'आवक व जावक\nअधिकृत पत्रव्यवहार',
+      titleHi: 'आवक और जावक\nमहानगरपालिका पत्र प्रबंधन',
       description: 'Draft recommendation letters, NOCs, certificates, and scan incoming government notices.',
       descriptionMr: 'शिफारस पत्रे, ना हरकत प्रमाणपत्रे तयार करा आणि शासकीय नोटीसा स्कॅन करा.',
+      descriptionHi: 'सिफारिश पत्र, एनओसी, प्रमाणपत्र तैयार करें और आने वाली सरकारी सूचनाएँ स्कैन करें।',
       gradientColors: [Color(0xFF059669), Color(0xFF047857)],
       lightBg: Color(0xFFECFDF5),
     ),
@@ -127,10 +142,21 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final lang = ref.read(appLanguageProvider);
         final errorMsg = e.toString().replaceFirst('Exception: ', '');
+        final prefix = AppTranslations.pick(
+          lang,
+          en: 'Sign in failed: ',
+          mr: 'लॉगिन अयशस्वी: ',
+          hi: 'साइन इन विफल: ',
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sign in failed: $errorMsg'),
+            content: AppTranslatedText(
+              '$prefix$errorMsg',
+              targetLanguage: lang,
+              style: const TextStyle(color: Colors.white),
+            ),
             backgroundColor: const Color(0xFFDC2626),
           ),
         );
@@ -140,7 +166,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final user = ref.watch(currentUserProvider);
     final isLoggedIn = user != null;
 
@@ -171,9 +197,14 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Krishnaniti',
-                              style: TextStyle(
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Krishnaniti',
+                                mr: 'कृष्णनीती',
+                                hi: 'कृष्णनीति',
+                              ),
+                              style: const TextStyle(
                                 fontSize: 19,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF0F172A),
@@ -181,7 +212,12 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                               ),
                             ),
                             Text(
-                              isMr ? 'नगरसेवक अ‍ॅप' : 'Nagarsevak App',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Nagarsevak App',
+                                mr: 'नगरसेवक अ‍ॅप',
+                                hi: 'नगरसेवक ऐप',
+                              ),
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -193,37 +229,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                       ],
                     ),
 
-                    // Language Switch Pill
-                    InkWell(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        ref.read(isMarathiProvider.notifier).toggle();
-                      },
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.language_rounded, size: 15, color: Color(0xFF0284C7)),
-                            const SizedBox(width: 5),
-                            Text(
-                              isMr ? 'English' : 'मराठी',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF0284C7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // 3-Language Switcher (EN | मराठी | हिंदी)
+                    const AppLanguageSegmentedSelector(isCompact: true),
                   ],
                 ),
               ),
@@ -238,7 +245,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                   itemCount: _slides.length,
                   itemBuilder: (ctx, idx) {
                     final slide = _slides[idx];
-                    return _buildSlideCard(slide, isMr);
+                    return _buildSlideCard(slide, lang);
                   },
                 ),
               ),
@@ -270,7 +277,12 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isMr ? 'थेट प्रवेश निवडा' : 'Choose Your Portal',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Choose Your Portal',
+                        mr: 'थेट प्रवेश निवडा',
+                        hi: 'अपना पोर्टल चुनें',
+                      ),
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
@@ -282,25 +294,25 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                     Row(
                       children: [
                         _buildQuickRoleChip(
-                          title: isMr ? 'नगरसेवक' : 'Nagarsevak',
+                          title: AppTranslations.getRoleName('nagarsevak', lang),
                           role: 'nagarsevak',
                           icon: Icons.account_balance_rounded,
                         ),
                         const SizedBox(width: 8),
                         _buildQuickRoleChip(
-                          title: isMr ? 'आमदार' : 'Amdar',
+                          title: AppTranslations.getRoleName('amdar', lang),
                           role: 'amdar',
                           icon: Icons.gavel_rounded,
                         ),
                         const SizedBox(width: 8),
                         _buildQuickRoleChip(
-                          title: isMr ? 'खासदार' : 'Khasdar',
+                          title: AppTranslations.getRoleName('khasdar', lang),
                           role: 'khasdar',
                           icon: Icons.assured_workload_rounded,
                         ),
                         const SizedBox(width: 8),
                         _buildQuickRoleChip(
-                          title: isMr ? 'मंत्री' : 'Minister',
+                          title: AppTranslations.getRoleName('minister', lang),
                           role: 'minister',
                           icon: Icons.military_tech_rounded,
                         ),
@@ -343,8 +355,18 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                           children: [
                             Text(
                               isLoggedIn
-                                  ? (isMr ? 'डॅशबोर्डवर जा' : 'Go to Dashboard')
-                                  : (isMr ? 'लॉगिन करा' : 'Sign In to Account'),
+                                  ? AppTranslations.pick(
+                                      lang,
+                                      en: 'Go to Dashboard',
+                                      mr: 'डॅशबोर्डवर जा',
+                                      hi: 'डैशबोर्ड पर जाएँ',
+                                    )
+                                  : AppTranslations.pick(
+                                      lang,
+                                      en: 'Sign In to Account',
+                                      mr: 'लॉगिन करा',
+                                      hi: 'खाते में साइन इन करें',
+                                    ),
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -366,7 +388,12 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                         child: Text(
-                          isMr ? 'डेमो खात्याद्वारे थेट पहा →' : 'Explore with Demo Account →',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Explore with Demo Account →',
+                            mr: 'डेमो खात्याद्वारे थेट पहा →',
+                            hi: 'डेमो खाते से तुरंत देखें →',
+                          ),
                           style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -386,7 +413,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
   }
 
   // Mobile Slide Card inside Carousel
-  Widget _buildSlideCard(_OnboardingSlide slide, bool isMr) {
+  Widget _buildSlideCard(_OnboardingSlide slide, String lang) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Container(
@@ -414,7 +441,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
                     ],
                   ),
                   child: Text(
-                    isMr ? slide.badgeMr : slide.badge,
+                    AppTranslations.pick(lang, en: slide.badge, mr: slide.badgeMr, hi: slide.badgeHi),
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w700,
@@ -442,7 +469,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
 
             // Title
             Text(
-              isMr ? slide.titleMr : slide.title,
+              AppTranslations.pick(lang, en: slide.title, mr: slide.titleMr, hi: slide.titleHi),
               style: const TextStyle(
                 fontSize: 21,
                 fontWeight: FontWeight.w900,
@@ -456,7 +483,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
 
             // Description
             Text(
-              isMr ? slide.descriptionMr : slide.description,
+              AppTranslations.pick(lang, en: slide.description, mr: slide.descriptionMr, hi: slide.descriptionHi),
               style: const TextStyle(
                 fontSize: 13,
                 color: Color(0xFF475569),
@@ -517,10 +544,13 @@ class _OnboardingSlide {
   final IconData icon;
   final String badge;
   final String badgeMr;
+  final String badgeHi;
   final String title;
   final String titleMr;
+  final String titleHi;
   final String description;
   final String descriptionMr;
+  final String descriptionHi;
   final List<Color> gradientColors;
   final Color lightBg;
 
@@ -528,10 +558,13 @@ class _OnboardingSlide {
     required this.icon,
     required this.badge,
     required this.badgeMr,
+    required this.badgeHi,
     required this.title,
     required this.titleMr,
+    required this.titleHi,
     required this.description,
     required this.descriptionMr,
+    required this.descriptionHi,
     required this.gradientColors,
     required this.lightBg,
   });

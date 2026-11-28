@@ -100,6 +100,28 @@ class AppTranslations {
       'High': 'उच्च',
       'Medium': 'मध्यम',
       'Low': 'कमी',
+      'Normal': 'सामान्य',
+      'Approved': 'मंजूर',
+      'Rejected': 'नाकारलेले',
+      'Completed': 'पूर्ण',
+      'Planned': 'नियोजित',
+      'Active': 'सक्रिय',
+      'Inactive': 'निष्क्रिय',
+      'Connected': 'कनेक्टेड',
+      'Disconnected': 'डिस्कनेक्टेड',
+      'Apply': 'लागू करा',
+      'Submit': 'सबमिट करा',
+      'Close': 'बंद करा',
+      'Select': 'निवडा',
+      'Select Option': 'पर्याय निवडा',
+      'Anonymous': 'निनावी',
+      'Unassigned': 'अनियुक्त',
+      'Unknown': 'अज्ञात',
+      'Yes': 'होय',
+      'No': 'नाही',
+      'Positive': 'सकारात्मक',
+      'Negative': 'नकारात्मक',
+      'Neutral': 'तटस्थ',
     },
     'hi': {
       'Dhankawadi': 'धनकवडी',
@@ -189,6 +211,70 @@ class AppTranslations {
       'High': 'उच्च',
       'Medium': 'मध्यम',
       'Low': 'कम',
+      'Normal': 'सामान्य',
+      'Approved': 'स्वीकृत',
+      'Rejected': 'अस्वीकृत',
+      'Completed': 'पूर्ण',
+      'Planned': 'योजनाबद्ध',
+      'Active': 'सक्रिय',
+      'Inactive': 'निष्क्रिय',
+      'Connected': 'कनेक्टेड',
+      'Disconnected': 'डिस्कनेक्टेड',
+      'Apply': 'लागू करें',
+      'Submit': 'जमा करें',
+      'Close': 'बंद करें',
+      'Select': 'चुनें',
+      'Select Option': 'विकल्प चुनें',
+      'Anonymous': 'अनाम',
+      'Unassigned': 'अनियुक्त',
+      'Unknown': 'अज्ञात',
+      'Yes': 'हाँ',
+      'No': 'नहीं',
+      'Positive': 'सकारात्मक',
+      'Negative': 'नकारात्मक',
+      'Neutral': 'तटस्थ',
+    },
+    'en': {
+      'प्रलंबित': 'Pending',
+      'लंबित': 'Pending',
+      'काम चालू': 'In Progress',
+      'प्रगति पर': 'In Progress',
+      'प्रगतीपथावर': 'In Progress',
+      'सोडवलेले': 'Resolved',
+      'निराकरण झालेले': 'Resolved',
+      'समाधान हुआ': 'Resolved',
+      'बंद': 'Closed',
+      'सोपवलेले': 'Assigned',
+      'सौंपा गया': 'Assigned',
+      'मंजूर': 'Approved',
+      'स्वीकृत': 'Approved',
+      'नाकारलेले': 'Rejected',
+      'अस्वीकृत': 'Rejected',
+      'तातडीचे': 'Urgent',
+      'अति आवश्यक': 'Urgent',
+      'उच्च': 'High',
+      'मध्यम': 'Medium',
+      'कमी': 'Low',
+      'कम': 'Low',
+      'सामान्य': 'Normal',
+      'सर्व': 'All',
+      'सभी': 'All',
+      'सर्व भाग': 'All Areas',
+      'सभी क्षेत्र': 'All Areas',
+      'निनावी': 'Anonymous',
+      'अनाम': 'Anonymous',
+      'अनियुक्त': 'Unassigned',
+      'होय': 'Yes',
+      'हाँ': 'Yes',
+      'नाही': 'No',
+      'नहीं': 'No',
+      'सकारात्मक': 'Positive',
+      'नकारात्मक': 'Negative',
+      'तटस्थ': 'Neutral',
+      'पुरुष': 'Male',
+      'महिला': 'Female',
+      'इतर': 'Other',
+      'अन्य': 'Other',
     },
   };
 
@@ -506,6 +592,13 @@ class AppTranslations {
 
     // If English requested: check if text was originally Marathi or Hindi
     if (language == 'en') {
+      final enOverride = customOverrides['en'];
+      if (enOverride != null) {
+        if (enOverride.containsKey(trimmed)) return enOverride[trimmed];
+        for (final entry in enOverride.entries) {
+          if (entry.key.toLowerCase() == lower) return entry.value;
+        }
+      }
       if (kAppCrossMrToEn.containsKey(lower)) {
         final enVal = kAppCrossMrToEn[lower]!;
         return enVal.isNotEmpty ? '${enVal[0].toUpperCase()}${enVal.substring(1)}' : enVal;
@@ -514,7 +607,10 @@ class AppTranslations {
         final enVal = kAppCrossHiToEn[lower]!;
         return enVal.isNotEmpty ? '${enVal[0].toUpperCase()}${enVal.substring(1)}' : enVal;
       }
-      return text;
+      if (!RegExp(r'[\u0900-\u097F]').hasMatch(trimmed)) {
+        return text;
+      }
+      return null;
     }
 
     // 1. Check dot-key if contains dot
@@ -636,19 +732,200 @@ class AppTranslations {
     return tr(trimmed, lang: lang) ?? status;
   }
 
-  /// Converts ASCII digits (0-9) to Devanagari digits (०-९) for Marathi and Hindi
+  /// Clean 3-language selector helper (`en`, `mr`, `hi`)
+  static String pick(
+    String lang, {
+    required String en,
+    required String mr,
+    required String hi,
+  }) {
+    if (lang == 'mr') return mr;
+    if (lang == 'hi') return hi;
+    return en;
+  }
+
+  /// Normalizes Devanagari digits (०-९) back to ASCII digits (0-9) for search/parsing.
+  static String normalizeAsciiDigits(dynamic value) {
+    if (value == null) return '';
+    var result = value.toString();
+    const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const devanagari = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+    for (int i = 0; i < 10; i++) {
+      result = result.replaceAll(devanagari[i], western[i]);
+    }
+    return result;
+  }
+
+  static final RegExp _protectedUriOrEmailRegex = RegExp(
+    r'(?:https?:\/\/|mailto:|tel:|wa\.me\/|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})\S*',
+  );
+
+  /// Bidirectional digit conversion:
+  /// - `'mr'` / `'hi'`: ASCII digits (0-9) -> Devanagari digits (०-९)
+  /// - `'en'`: Devanagari digits (०-९) -> ASCII digits (0-9)
+  /// Safely preserves URLs and email addresses untouched.
   static String formatDigits(dynamic value, String lang) {
     if (value == null) return '';
     final str = value.toString();
-    if (lang != 'mr' && lang != 'hi') return str;
+    if (str.isEmpty) return str;
+
+    if (lang != 'mr' && lang != 'hi') {
+      return normalizeAsciiDigits(str);
+    }
 
     const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
     const devanagari = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
-    var result = str;
-    for (int i = 0; i < 10; i++) {
-      result = result.replaceAll(western[i], devanagari[i]);
+
+    String convertSlice(String s) {
+      var res = s;
+      for (int i = 0; i < 10; i++) {
+        res = res.replaceAll(western[i], devanagari[i]);
+      }
+      return res;
     }
-    return result;
+
+    final matches = _protectedUriOrEmailRegex.allMatches(str).toList();
+    if (matches.isEmpty) {
+      return convertSlice(str);
+    }
+
+    final sb = StringBuffer();
+    int cursor = 0;
+    for (final m in matches) {
+      if (m.start > cursor) {
+        sb.write(convertSlice(str.substring(cursor, m.start)));
+      }
+      sb.write(m.group(0)); // keep URL / email digits unmodified
+      cursor = m.end;
+    }
+    if (cursor < str.length) {
+      sb.write(convertSlice(str.substring(cursor)));
+    }
+    return sb.toString();
+  }
+
+  static const List<String> _monthsEnShort = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  static const List<String> _monthsMrShort = [
+    'जाने', 'फेब्रु', 'मार्च', 'एप्रिल', 'मे', 'जून',
+    'जुलै', 'ऑग', 'सप्टें', 'ऑक्टो', 'नोव्हें', 'डिसें',
+  ];
+  static const List<String> _monthsHiShort = [
+    'जन', 'फर', 'मार्च', 'अप्रै', 'मई', 'जून',
+    'जुल', 'अग', 'सितं', 'अक्टू', 'नवं', 'दिसं',
+  ];
+  static const List<String> _monthsEnFull = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  static const List<String> _monthsMrFull = [
+    'जानेवारी', 'फेब्रुवारी', 'मार्च', 'एप्रिल', 'मे', 'जून',
+    'जुलै', 'ऑगस्ट', 'सप्टेंबर', 'ऑक्टोबर', 'नोव्हेंबर', 'डिसेंबर',
+  ];
+  static const List<String> _monthsHiFull = [
+    'जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून',
+    'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर',
+  ];
+  static const List<String> _weekdaysEn = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+  ];
+  static const List<String> _weekdaysMr = [
+    'सोमवार', 'मंगळवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार',
+  ];
+  static const List<String> _weekdaysHi = [
+    'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार',
+  ];
+
+  /// Formats any [DateTime] into English, Marathi, or Hindi with localized month/weekday & digits.
+  static String formatDate(
+    DateTime date,
+    String lang, {
+    String pattern = 'dd MMM yyyy',
+  }) {
+    final day = date.day.toString().padLeft(2, '0');
+    final dNoPad = date.day.toString();
+    final monthNum = date.month.toString().padLeft(2, '0');
+    final mIdx = (date.month - 1).clamp(0, 11);
+    final wIdx = (date.weekday - 1).clamp(0, 6);
+    final year = date.year.toString();
+
+    final mShort = lang == 'mr'
+        ? _monthsMrShort[mIdx]
+        : (lang == 'hi' ? _monthsHiShort[mIdx] : _monthsEnShort[mIdx]);
+    final mFull = lang == 'mr'
+        ? _monthsMrFull[mIdx]
+        : (lang == 'hi' ? _monthsHiFull[mIdx] : _monthsEnFull[mIdx]);
+    final weekday = lang == 'mr'
+        ? _weekdaysMr[wIdx]
+        : (lang == 'hi' ? _weekdaysHi[wIdx] : _weekdaysEn[wIdx]);
+
+    String raw;
+    switch (pattern) {
+      case 'dd/MM/yyyy':
+        raw = '$day/$monthNum/$year';
+        break;
+      case 'yyyy-MM-dd':
+        raw = '$year-$monthNum-$day';
+        break;
+      case 'MMM d, yyyy':
+        raw = '$mShort $dNoPad, $year';
+        break;
+      case 'dd MMM yyyy':
+        raw = '$day $mShort $year';
+        break;
+      case 'd MMM yyyy':
+        raw = '$dNoPad $mShort $year';
+        break;
+      case 'EEEE, d MMMM yyyy':
+        raw = '$weekday, $dNoPad $mFull $year';
+        break;
+      case 'dd MMM':
+        raw = '$day $mShort';
+        break;
+      default:
+        raw = pattern
+            .replaceAll('EEEE', weekday)
+            .replaceAll('MMMM', mFull)
+            .replaceAll('MMM', mShort)
+            .replaceAll('MM', monthNum)
+            .replaceAll('yyyy', year)
+            .replaceAll('dd', day)
+            .replaceAll('d', dNoPad);
+    }
+    return formatDigits(raw, lang);
+  }
+
+  static String formatTime(DateTime date, String lang) {
+    final hour12 = (date.hour % 12 == 0) ? 12 : (date.hour % 12);
+    final hStr = hour12.toString().padLeft(2, '0');
+    final minStr = date.minute.toString().padLeft(2, '0');
+    final isAm = date.hour < 12;
+    final period = lang == 'mr'
+        ? (isAm ? 'सकाळी' : (date.hour < 17 ? 'दुपारी' : 'सायं.'))
+        : (lang == 'hi'
+            ? (isAm ? 'सुबह' : (date.hour < 17 ? 'दोपहर' : 'शाम'))
+            : (isAm ? 'AM' : 'PM'));
+    return formatDigits('$hStr:$minStr $period', lang);
+  }
+
+  static String formatDateTime(DateTime date, String lang, {String datePattern = 'dd MMM yyyy'}) {
+    return '${formatDate(date, lang, pattern: datePattern)}, ${formatTime(date, lang)}';
+  }
+
+  static String getRoleName(String role, String lang) {
+    final r = role.trim().toLowerCase();
+    if (r == 'nagarsevak') return pick(lang, en: 'Nagarsevak', mr: 'नगरसेवक', hi: 'नगरसेवक');
+    if (r == 'amdar') return pick(lang, en: 'Amdar', mr: 'आमदार', hi: 'विधायक (आमदार)');
+    if (r == 'khasdar') return pick(lang, en: 'Khasdar', mr: 'खासदार', hi: 'सांसद (खासदार)');
+    if (r == 'minister') return pick(lang, en: 'Minister', mr: 'मंत्री', hi: 'मंत्री');
+    if (r == 'staff') return pick(lang, en: 'Staff', mr: 'कार्यालय कर्मचारी', hi: 'कार्यालय कर्मचारी');
+    if (r == 'karyakarta') return pick(lang, en: 'Karyakarta', mr: 'कार्यकर्ता', hi: 'कार्यकर्ता');
+    if (r == 'admin' || r == 'administrator' || r == 'office admin') {
+      return pick(lang, en: 'Administrator', mr: 'प्रशासक', hi: 'प्रशासक');
+    }
+    return tr(role, lang: lang) ?? role;
   }
 
   /// Standardized "Found: X" badge text in Devanagari or English
@@ -827,8 +1104,33 @@ class AppTranslations {
       return formatDigits(areaMapHi[lower]!, lang);
     }
 
+    // Reverse / Cross-lingual lookup when input was stored in Marathi or Hindi
+    if (lang == 'en') {
+      for (final e in sectorWardsMr.entries) {
+        if (normalizeAsciiDigits(e.value.toLowerCase()) == normalizeAsciiDigits(lower)) {
+          return _titleCaseSectorWard(e.key);
+        }
+      }
+      for (final e in sectorWardsHi.entries) {
+        if (normalizeAsciiDigits(e.value.toLowerCase()) == normalizeAsciiDigits(lower)) {
+          return _titleCaseSectorWard(e.key);
+        }
+      }
+      for (final e in areaMapMr.entries) {
+        if (e.value.toLowerCase() == lower) {
+          return _titleCaseWords(e.key);
+        }
+      }
+      for (final e in areaMapHi.entries) {
+        if (e.value.toLowerCase() == lower) {
+          return _titleCaseWords(e.key);
+        }
+      }
+    }
+
     // Pattern: Ward X -> प्रभाग X / वार्ड X
-    final wardMatch = RegExp(r'^(?:Ward|Prabhag|प्रभाग|वार्ड)\s*(\d+)$', caseSensitive: false).firstMatch(trimmed);
+    final normalizedAscii = normalizeAsciiDigits(trimmed);
+    final wardMatch = RegExp(r'^(?:Ward|Prabhag|प्रभाग|वार्ड)\s*(\d+)$', caseSensitive: false).firstMatch(normalizedAscii);
     if (wardMatch != null) {
       final numStr = wardMatch.group(1)!;
       final devNum = formatDigits(numStr, lang);
@@ -838,7 +1140,7 @@ class AppTranslations {
     }
 
     // Pattern: Lane X -> गल्ली क्र. X / गली नं. X
-    final laneMatch = RegExp(r'^Lane\s*(\d+)$', caseSensitive: false).firstMatch(trimmed);
+    final laneMatch = RegExp(r'^(?:Lane|गल्ली क्र\.|गली नं\.)\s*(\d+)$', caseSensitive: false).firstMatch(normalizedAscii);
     if (laneMatch != null) {
       final numStr = laneMatch.group(1)!;
       final devNum = formatDigits(numStr, lang);
@@ -848,7 +1150,7 @@ class AppTranslations {
     }
 
     // Pattern: Sector X -> सेक्टर X
-    final sectorMatch = RegExp(r'^(?:Sector|सेक्टर)\s*(\d+)$', caseSensitive: false).firstMatch(trimmed);
+    final sectorMatch = RegExp(r'^(?:Sector|सेक्टर)\s*(\d+)$', caseSensitive: false).firstMatch(normalizedAscii);
     if (sectorMatch != null) {
       final numStr = sectorMatch.group(1)!;
       final devNum = formatDigits(numStr, lang);
@@ -859,6 +1161,14 @@ class AppTranslations {
     // Fallback: translateDirect and format digits
     final direct = tr(trimmed, lang: lang);
     return direct != null ? formatDigits(direct, lang) : formatDigits(trimmed, lang);
+  }
+
+  static String _titleCaseWords(String s) {
+    return s.split(' ').map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}').join(' ');
+  }
+
+  static String _titleCaseSectorWard(String s) {
+    return _titleCaseWords(s).replaceAll(' To ', ' to ').replaceAll(' - ', ' - ');
   }
 
   /// Standardized complaint type translation matching Nagarsevak-Managment
@@ -988,9 +1298,9 @@ class AppTranslations {
     return translateDirect(gender, lang: lang);
   }
 
-  /// Standardized currency formatting with Devanagari numerals
+  /// Standardized currency formatting with localized numerals
   static String formatCurrency(dynamic amount, String lang) {
-    if (amount == null) return '₹ ०';
+    if (amount == null) return (lang == 'mr' || lang == 'hi') ? '₹ ०' : '₹ 0';
     final str = amount.toString();
     final devDigits = formatDigits(str, lang);
     return '₹ $devDigits';

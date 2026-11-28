@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
@@ -112,13 +111,13 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
 
       // 3. Search Query
       if (_searchQuery.isNotEmpty) {
-        final q = _searchQuery.toLowerCase();
+        final q = AppTranslations.normalizeAsciiDigits(_searchQuery).toLowerCase();
         final matchesQuery = c.id.toLowerCase().contains(q) ||
             c.title.toLowerCase().contains(q) ||
             c.description.toLowerCase().contains(q) ||
             c.category.toLowerCase().contains(q) ||
             (c.citizenName != null && c.citizenName!.toLowerCase().contains(q)) ||
-            (c.citizenMobile != null && c.citizenMobile!.contains(q)) ||
+            (c.citizenMobile != null && AppTranslations.normalizeAsciiDigits(c.citizenMobile!).contains(q)) ||
             (c.area != null && c.area!.toLowerCase().contains(q));
         if (!matchesQuery) return false;
       }
@@ -186,7 +185,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: lang == 'mr' ? 'मेनू उघडा' : (lang == 'hi' ? 'मेनू खोलें' : 'Open Menu Drawer'),
+              tooltip: AppTranslations.pick(lang, en: 'Open Menu Drawer', mr: 'मेनू उघडा', hi: 'मेनू खोलें'),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -239,9 +238,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                   children: [
                     Expanded(
                       child: _TabButton(
-                        label: lang == 'mr'
-                            ? 'परिसरातील तक्रारी'
-                            : (lang == 'hi' ? 'क्षेत्रीय शिकायतें' : 'Area Complaints'),
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Area Complaints',
+                          mr: 'परिसरातील तक्रारी',
+                          hi: 'क्षेत्रीय शिकायतें',
+                        ),
                         icon: Icons.domain_rounded,
                         badgeCount: _areaComplaints.length,
                         lang: lang,
@@ -258,9 +260,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                     const SizedBox(width: 6),
                     Expanded(
                       child: _TabButton(
-                        label: lang == 'mr'
-                            ? 'वैयक्तिक मदत'
-                            : (lang == 'hi' ? 'व्यक्तिगत सहायता' : 'Personal Help'),
+                        label: AppTranslations.pick(
+                          lang,
+                          en: 'Personal Help',
+                          mr: 'वैयक्तिक मदत',
+                          hi: 'व्यक्तिगत सहायता',
+                        ),
                         icon: Icons.volunteer_activism_rounded,
                         badgeCount: _personalRequests.length,
                         lang: lang,
@@ -371,9 +376,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                         }),
                         style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
                         decoration: InputDecoration(
-                          hintText: lang == 'mr'
-                              ? 'तक्रार, नागरिक किंवा फोन शोधा...'
-                              : (lang == 'hi' ? 'शिकायत, नागरिक या फोन खोजें...' : 'Search title, citizen, phone...'),
+                          hintText: AppTranslations.pick(
+                            lang,
+                            en: 'Search title, citizen, phone...',
+                            mr: 'तक्रार, नागरिक किंवा फोन शोधा...',
+                            hi: 'शिकायत, नागरिक या फोन खोजें...',
+                          ),
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                           prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 19),
                           suffixIcon: _searchQuery.isNotEmpty
@@ -398,7 +406,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
 
                   // Area Filter Dropdown (Themed Component)
                   AppDropdown<String>(
-                    title: lang == 'mr' ? 'भाग निवडा' : (lang == 'hi' ? 'क्षेत्र चुनें' : 'Filter by Area'),
+                    title: AppTranslations.pick(lang, en: 'Filter by Area', mr: 'भाग निवडा', hi: 'क्षेत्र चुनें'),
                     value: _selectedArea,
                     height: 42,
                     isExpanded: false,
@@ -413,7 +421,7 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                       return DropdownMenuItem<String>(
                         value: area,
                         child: Text(area == 'All'
-                            ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                            ? AppTranslations.pick(lang, en: 'All Areas', mr: 'सर्व भाग', hi: 'सभी क्षेत्र')
                             : AppTranslations.getAreaName(area, lang)),
                       );
                     }).toList(),
@@ -430,19 +438,25 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
 
                   // Download Complaints PDF Report Button
                   AppPdfButton.icon(
-                    tooltip: lang == 'mr' ? 'अहवाल डाउनलोड करा' : (lang == 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'),
+                    tooltip: AppTranslations.getDownloadReport(lang),
                     onPressed: () {
                       ComplaintReportGenerator.generateAndPrintReport(
                         complaints: filtered,
                         statusFilter: _selectedStatus != 'All' ? _selectedStatus : null,
                         areaFilter: _selectedArea != 'All' ? _selectedArea : null,
                         title: _activeTab == 'Complaints'
-                            ? (lang == 'mr'
-                                ? 'नागरी तक्रारी व अडचणी रजिस्टर'
-                                : (lang == 'hi' ? 'नागरिक शिकायत रजिस्टर' : 'Citizen Grievance & Complaints Register'))
-                            : (lang == 'mr'
-                                ? 'वैयक्तिक मदत व विनंत्या रजिस्टर'
-                                : (lang == 'hi' ? 'व्यक्तिगत सहायता अनुरोध रजिस्टर' : 'Personal Assistance Requests Register')),
+                            ? AppTranslations.pick(
+                                lang,
+                                en: 'Citizen Grievance & Complaints Register',
+                                mr: 'नागरी तक्रारी व अडचणी रजिस्टर',
+                                hi: 'नागरिक शिकायत रजिस्टर',
+                              )
+                            : AppTranslations.pick(
+                                lang,
+                                en: 'Personal Assistance Requests Register',
+                                mr: 'वैयक्तिक मदत व विनंत्या रजिस्टर',
+                                hi: 'व्यक्तिगत सहायता अनुरोध रजिस्टर',
+                              ),
                         lang: lang,
                       );
                     },
@@ -538,9 +552,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                lang == 'mr'
-                                    ? 'कोणतीही तक्रार आढळली नाही'
-                                    : (lang == 'hi' ? 'कोई शिकायत नहीं मिली' : 'No matching requests found'),
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'No matching requests found',
+                                  mr: 'कोणतीही तक्रार आढळली नाही',
+                                  hi: 'कोई शिकायत नहीं मिली',
+                                ),
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -549,9 +566,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                lang == 'mr'
-                                    ? 'नवीन तक्रार अथवा विनंती नोंदवा'
-                                    : (lang == 'hi' ? 'नई शिकायत या अनुरोध दर्ज करें' : 'Try clearing filters or register a new request'),
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Try clearing filters or register a new request',
+                                  mr: 'नवीन तक्रार अथवा विनंती नोंदवा',
+                                  hi: 'नई शिकायत या अनुरोध दर्ज करें',
+                                ),
                                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
                               ),
                               const SizedBox(height: 14),
@@ -568,12 +588,18 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                                 icon: const Icon(Icons.add_rounded, size: 18),
                                 label: Text(
                                   _activeTab == 'Complaints'
-                                      ? (lang == 'mr'
-                                          ? 'नवीन तक्रार नोंदवा'
-                                          : (lang == 'hi' ? 'नई शिकायत दर्ज करें' : 'Add New Complaint'))
-                                      : (lang == 'mr'
-                                          ? 'नवीन वैयक्तिक विनंती'
-                                          : (lang == 'hi' ? 'नया व्यक्तिगत अनुरोध' : 'Add Personal Request')),
+                                      ? AppTranslations.pick(
+                                          lang,
+                                          en: 'Add New Complaint',
+                                          mr: 'नवीन तक्रार नोंदवा',
+                                          hi: 'नई शिकायत दर्ज करें',
+                                        )
+                                      : AppTranslations.pick(
+                                          lang,
+                                          en: 'Add Personal Request',
+                                          mr: 'नवीन वैयक्तिक विनंती',
+                                          hi: 'नया व्यक्तिगत अनुरोध',
+                                        ),
                                   style: const TextStyle(fontWeight: FontWeight.w700),
                                 ),
                                 style: ElevatedButton.styleFrom(
@@ -601,14 +627,12 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
                                   onLoadMore: () {
                                     setState(() => _displayedLimit += 20);
                                   },
-                                  label: lang == 'mr' ? 'तक्रारी' : (lang == 'hi' ? 'शिकायतें' : 'complaints'),
-                                  isMarathi: lang == 'mr',
+                                  label: AppTranslations.pick(lang, en: 'complaints', mr: 'तक्रारी', hi: 'शिकायतें'),
                                 );
                               }
                               final item = _visibleComplaints[index];
                               return _ComplaintCard(
                                 complaint: item,
-                                isMr: lang == 'mr',
                                 lang: lang,
                                 onTap: () => _openDetailSheet(item),
                                 onQuickStatusTap: () => _openDetailSheet(item),
@@ -637,8 +661,8 @@ class _ComplaintsScreenState extends ConsumerState<ComplaintsScreen>
           icon: const Icon(Icons.add_rounded, size: 22),
           label: Text(
             _activeTab == 'Complaints'
-                ? (lang == 'mr' ? 'नवीन तक्रार' : (lang == 'hi' ? 'नई शिकायत' : 'New Complaint'))
-                : (lang == 'mr' ? 'नवीन विनंती' : (lang == 'hi' ? 'नया अनुरोध' : 'New Personal Request')),
+                ? AppTranslations.pick(lang, en: 'New Complaint', mr: 'नवीन तक्रार', hi: 'नई शिकायत')
+                : AppTranslations.pick(lang, en: 'New Personal Request', mr: 'नवीन विनंती', hi: 'नया अनुरोध'),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
         ),
@@ -853,14 +877,12 @@ class _FilterPill extends StatelessWidget {
 /// Rich Complaint Card matching Nagarsevak-Managment
 class _ComplaintCard extends StatelessWidget {
   final ComplaintModel complaint;
-  final bool isMr;
   final String lang;
   final VoidCallback onTap;
   final VoidCallback onQuickStatusTap;
 
   const _ComplaintCard({
     required this.complaint,
-    this.isMr = false,
     this.lang = 'en',
     required this.onTap,
     required this.onQuickStatusTap,
@@ -980,6 +1002,7 @@ class _ComplaintCard extends StatelessWidget {
               // Title with dynamic on-the-fly translation
               AppTranslatedText(
                 complaint.title,
+                targetLanguage: lang,
                 style: const TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
@@ -992,6 +1015,7 @@ class _ComplaintCard extends StatelessWidget {
                 const SizedBox(height: 5),
                 AppTranslatedText(
                   complaint.description,
+                  targetLanguage: lang,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -1024,6 +1048,7 @@ class _ComplaintCard extends StatelessWidget {
                               child: AppTranslatedText(
                                 complaint.citizenName!,
                                 isName: true,
+                                targetLanguage: lang,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -1049,7 +1074,8 @@ class _ComplaintCard extends StatelessWidget {
                       if (complaint.citizenMobile != null && complaint.citizenMobile!.isNotEmpty) ...[
                         InkWell(
                           onTap: () async {
-                            final uri = Uri.parse('tel:${complaint.citizenMobile}');
+                            final dial = AppTranslations.normalizeAsciiDigits(complaint.citizenMobile!);
+                            final uri = Uri.parse('tel:$dial');
                             if (await canLaunchUrl(uri)) await launchUrl(uri);
                           },
                           child: const Padding(
@@ -1059,13 +1085,15 @@ class _ComplaintCard extends StatelessWidget {
                         ),
                         InkWell(
                           onTap: () async {
-                            final clean = complaint.citizenMobile!.replaceAll(RegExp(r'\D'), '');
+                            final clean = AppTranslations.normalizeAsciiDigits(complaint.citizenMobile!).replaceAll(RegExp(r'\D'), '');
                             final ticketNo = AppTranslations.formatDigits(complaint.id, lang);
-                            final msg = lang == 'mr'
-                                ? 'नमस्कार, आपल्या "${complaint.title}" (नोंदणी क्र. #$ticketNo) तक्रारीबाबत नगरसेवक कार्यालयातून पुढील कार्यवाही सुरू करण्यात आली आहे.'
-                                : (lang == 'hi'
-                                    ? 'नमस्कार, आपके "${complaint.title}" (पंजीकरण सं. #$ticketNo) अनुरोध के संबंध में नगरसेवक कार्यालय से अद्यतन दर्ज किया गया है।'
-                                    : 'Namaskar, regarding your request "${complaint.title}" (#${complaint.id}), our office has registered the update.');
+                            final translatedTitle = await DynamicTranslationService.translateOrRaw(complaint.title, lang);
+                            final msg = AppTranslations.pick(
+                              lang,
+                              en: 'Namaskar, regarding your request "$translatedTitle" (#$ticketNo), our office has registered the update.',
+                              mr: 'नमस्कार, आपल्या "$translatedTitle" (नोंदणी क्र. #$ticketNo) तक्रारीबाबत नगरसेवक कार्यालयातून पुढील कार्यवाही सुरू करण्यात आली आहे.',
+                              hi: 'नमस्कार, आपके "$translatedTitle" (पंजीकरण सं. #$ticketNo) अनुरोध के संबंध में नगरसेवक कार्यालय से अद्यतन दर्ज किया गया है।',
+                            );
                             final text = Uri.encodeComponent(msg);
                             final uri = Uri.parse('https://wa.me/91$clean?text=$text');
                             if (await canLaunchUrl(uri)) {
@@ -1099,7 +1127,7 @@ class _ComplaintCard extends StatelessWidget {
                       const Icon(Icons.person_pin_rounded, size: 13, color: Color(0xFF475569)),
                       const SizedBox(width: 5),
                       Text(
-                        '${lang == "mr" ? "नोंदणीकर्ता:" : (lang == "hi" ? "दर्जकर्ता:" : "Added By:")} ',
+                        '${AppTranslations.pick(lang, en: 'Added By:', mr: 'नोंदणीकर्ता:', hi: 'दर्जकर्ता:')} ',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1110,6 +1138,7 @@ class _ComplaintCard extends StatelessWidget {
                         child: AppTranslatedText(
                           complaint.addedByStaffName!,
                           isName: true,
+                          targetLanguage: lang,
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -1138,7 +1167,7 @@ class _ComplaintCard extends StatelessWidget {
                       const Icon(Icons.badge_outlined, size: 13, color: Color(0xFF0284C7)),
                       const SizedBox(width: 5),
                       Text(
-                        '${lang == "mr" ? "नियुक्त:" : (lang == "hi" ? "नियुक्त:" : "Assigned:")} ',
+                        '${AppTranslations.pick(lang, en: 'Assigned:', mr: 'नियुक्त:', hi: 'नियुक्त:')} ',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1149,6 +1178,7 @@ class _ComplaintCard extends StatelessWidget {
                         child: AppTranslatedText(
                           complaint.assignedStaffName!,
                           isName: true,
+                          targetLanguage: lang,
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -1175,19 +1205,35 @@ class _ComplaintCard extends StatelessWidget {
                         const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
                         const SizedBox(width: 4),
                         Text(
-                          AppTranslations.formatDigits(DateFormat('MMM d, h:mm a').format(complaint.createdAt), lang),
+                          AppTranslations.formatDateTime(complaint.createdAt, lang, datePattern: 'MMM d'),
                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
-                        if (complaint.area != null && complaint.area!.isNotEmpty) ...[
+                        if (complaint.area != null && complaint.area!.trim().isNotEmpty) ...[
                           const SizedBox(width: 8),
                           const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF94A3B8)),
                           const SizedBox(width: 2),
                           Flexible(
-                            child: Text(
-                              AppTranslations.getAreaName(complaint.area!, lang),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            child: Builder(
+                              builder: (_) {
+                                final rawArea = complaint.area!.trim();
+                                final mappedArea = AppTranslations.getAreaName(rawArea, lang);
+                                final formattedRaw = AppTranslations.formatDigits(rawArea, lang);
+                                if (mappedArea != formattedRaw) {
+                                  return Text(
+                                    mappedArea,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  );
+                                }
+                                return AppTranslatedText(
+                                  rawArea,
+                                  targetLanguage: lang,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -1208,7 +1254,7 @@ class _ComplaintCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          lang == 'mr' ? 'तपशील' : (lang == 'hi' ? 'विवरण' : 'Details'),
+                          AppTranslations.pick(lang, en: 'Details', mr: 'तपशील', hi: 'विवरण'),
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,

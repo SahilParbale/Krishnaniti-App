@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/user_model.dart';
 import '../../core/localization/app_translations.dart';
+import '../../core/services/translation_service.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/custom_navigation_provider.dart';
 import '../providers/auth_provider.dart';
@@ -160,60 +161,108 @@ class _NagarsevakAppDrawerState extends ConsumerState<NagarsevakAppDrawer> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              isStaff ? (user?.name ?? 'Team Member') : 'Hon. Nagarsevak',
-                              style: const TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: -0.2,
+                      Builder(
+                        builder: (context) {
+                          final lang = ref.watch(appLanguageProvider);
+                          final displayUserName = isStaff
+                              ? (user?.name ??
+                                  AppTranslations.pick(lang, en: 'Team Member', mr: 'टीम सदस्य', hi: 'टीम सदस्य'))
+                              : AppTranslations.pick(lang, en: 'Hon. Nagarsevak', mr: 'मा. नगरसेवक', hi: 'मान. नगरसेवक');
+                          final badgeLabel = isStaff
+                              ? AppTranslations.pick(lang, en: 'Staff', mr: 'कर्मचारी', hi: 'स्टाफ')
+                              : AppTranslations.formatDigits(
+                                  AppTranslations.pick(lang, en: 'Ward 12', mr: 'प्रभाग 12', hi: 'वार्ड 12'),
+                                  lang,
+                                );
+                          final subTitleLabel = isStaff
+                              ? (user?.email ??
+                                  AppTranslations.formatDigits(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Prabhag 12 Staff Account',
+                                      mr: 'प्रभाग 12 कर्मचारी खाते',
+                                      hi: 'प्रभाग 12 स्टाफ खाता',
+                                    ),
+                                    lang,
+                                  ))
+                              : AppTranslations.formatDigits(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Prabhag 12 • Pune Municipal Corp.',
+                                    mr: 'प्रभाग 12 • पुणे महानगरपालिका',
+                                    hi: 'प्रभाग 12 • पुणे महानगरपालिका',
+                                  ),
+                                  lang,
+                                );
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: AppTranslatedText(
+                                      displayUserName,
+                                      isName: isStaff && user?.name != null,
+                                      targetLanguage: lang,
+                                      style: const TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                        letterSpacing: -0.2,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.white.withOpacity(0.35), width: 0.8),
+                                    ),
+                                    child: Text(
+                                      badgeLabel,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  IconButton(
+                                    icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 20),
+                                    tooltip: AppTranslations.pick(
+                                      lang,
+                                      en: 'Close Drawer',
+                                      mr: 'मेनू बंद करा',
+                                      hi: 'मेनू बंद करें',
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {
+                                      HapticFeedback.selectionClick();
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white.withOpacity(0.35), width: 0.8),
-                            ),
-                            child: Text(
-                              isStaff ? 'Staff' : 'Ward 12',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                              const SizedBox(height: 2),
+                              Text(
+                                subTitleLabel,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFFE0F2FE),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 20),
-                            tooltip: 'Close Drawer',
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        isStaff ? (user?.email ?? 'Prabhag 12 Staff Account') : 'Prabhag 12 • Pune Municipal Corp.',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFFE0F2FE),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),

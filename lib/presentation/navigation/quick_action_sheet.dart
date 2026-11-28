@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../screens/complaints/new_complaint_bottom_sheet.dart';
@@ -218,7 +217,7 @@ class QuickActionSheet extends ConsumerWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8), size: 22),
-                tooltip: 'Close',
+                tooltip: t('Close', 'बंद करा', 'बंद करें'),
                 onPressed: () => Navigator.pop(context),
               ),
             ],

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/work_tracker_model.dart';
 import '../../../data/repositories/file_tracker_repository.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
 import 'gov_office_report_generator.dart';
@@ -53,7 +55,7 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
       final repo = ref.read(fileTrackerRepoProvider);
       final list = await repo.getFileTrackers(
         status: _selectedStatus == 'All' ? null : _selectedStatus,
-        search: _searchCtrl.text.trim(),
+        search: AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim()),
       );
       if (mounted) {
         setState(() {
@@ -103,12 +105,20 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
   }
 
   void _showAddEditModal({WorkTrackerModel? existing}) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController(text: existing?.title ?? '');
     final subjectCtrl = TextEditingController(text: existing?.subject ?? '');
     final deptCtrl = TextEditingController(text: existing?.department ?? '');
-    final inwardCtrl = TextEditingController(text: existing?.inwardNumber ?? '');
-    final outwardCtrl = TextEditingController(text: existing?.outwardNumber ?? '');
+    final inwardCtrl = TextEditingController(
+      text: existing != null
+          ? AppTranslations.formatDigits(existing.inwardNumber, lang)
+          : '',
+    );
+    final outwardCtrl = TextEditingController(
+      text: existing != null
+          ? AppTranslations.formatDigits(existing.outwardNumber, lang)
+          : '',
+    );
     final descCtrl = TextEditingController(text: existing?.description ?? '');
     String status = existing?.currentStatus ?? 'Pending';
     final initialStageCtrl = TextEditingController();
@@ -123,8 +133,8 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
           builder: (bottomCtx, setModalState) {
             return Container(
               constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
+                maxHeight: MediaQuery.of(context).size.height * 0.9,
+              ),
               padding: EdgeInsets.only(
                 left: 20,
                 right: 20,
@@ -151,24 +161,39 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE0F2FE),
-                              borderRadius: BorderRadius.circular(10),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F2FE),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.folder_shared_rounded, color: Color(0xFF0284C7), size: 20),
                             ),
-                            child: const Icon(Icons.folder_shared_rounded, color: Color(0xFF0284C7), size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            existing != null
-                                ? (isMr ? 'फाईल माहिती संपादित करा' : 'Edit File Tracker')
-                                : (isMr ? 'नवीन फाईल नोंदवा' : 'Register New File Tracker'),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                existing != null
+                                    ? AppTranslations.pick(
+                                        lang,
+                                        en: 'Edit File Tracker',
+                                        mr: 'फाईल माहिती संपादित करा',
+                                        hi: 'फ़ाइल जानकारी संपादित करें',
+                                      )
+                                    : AppTranslations.pick(
+                                        lang,
+                                        en: 'Register New File Tracker',
+                                        mr: 'नवीन फाईल नोंदवा',
+                                        hi: 'नई फ़ाइल दर्ज करें',
+                                      ),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
@@ -180,22 +205,64 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                   Expanded(
                     child: ListView(
                       children: [
-                        _buildInputLabel(isMr ? 'फाईल शीर्षक (Title) *' : 'File Title *'),
+                        _buildInputLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'File Title *',
+                            mr: 'फाईल शीर्षक *',
+                            hi: 'फ़ाइल शीर्षक *',
+                          ),
+                        ),
                         TextField(
                           controller: titleCtrl,
-                          decoration: _inputDecoration('e.g. Ward Road Concreting Proposal'),
+                          decoration: _inputDecoration(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'e.g. Ward Road Concreting Proposal',
+                              mr: 'उदा. प्रभाग रस्ते काँक्रिटीकरण प्रस्ताव',
+                              hi: 'उदा. वार्ड सड़क कंक्रीटीकरण प्रस्ताव',
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
-                        _buildInputLabel(isMr ? 'विषय (Subject) *' : 'Subject *'),
+                        _buildInputLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Subject *',
+                            mr: 'विषय *',
+                            hi: 'विषय *',
+                          ),
+                        ),
                         TextField(
                           controller: subjectCtrl,
-                          decoration: _inputDecoration('e.g. Road concretization sanction file'),
+                          decoration: _inputDecoration(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'e.g. Road concretization sanction file',
+                              mr: 'उदा. रस्ते काँक्रिटीकरण मंजुरी फाईल',
+                              hi: 'उदा. सड़क कंक्रीटीकरण स्वीकृति फ़ाइल',
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
-                        _buildInputLabel(isMr ? 'संबंधित विभाग (Department) *' : 'Department *'),
+                        _buildInputLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Department *',
+                            mr: 'संबंधित विभाग *',
+                            hi: 'संबंधित विभाग *',
+                          ),
+                        ),
                         TextField(
                           controller: deptCtrl,
-                          decoration: _inputDecoration('e.g. PWD / Water Supply / Town Planning'),
+                          decoration: _inputDecoration(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'e.g. PWD / Water Supply / Town Planning',
+                              mr: 'उदा. बांधकाम / पाणी पुरवठा / नगर रचना',
+                              hi: 'उदा. लोक निर्माण / जल आपूर्ति / नगर नियोजन',
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -204,10 +271,19 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildInputLabel(isMr ? 'आवक क्रमांक (Inward No)' : 'Inward Number'),
+                                  _buildInputLabel(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Inward Number',
+                                      mr: 'आवक क्रमांक',
+                                      hi: 'आवक क्रमांक',
+                                    ),
+                                  ),
                                   TextField(
                                     controller: inwardCtrl,
-                                    decoration: _inputDecoration('IN-2026-401'),
+                                    decoration: _inputDecoration(
+                                      AppTranslations.formatDigits('IN-2026-401', lang),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -217,10 +293,19 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildInputLabel(isMr ? 'जावक क्रमांक (Outward No)' : 'Outward Number'),
+                                  _buildInputLabel(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Outward Number',
+                                      mr: 'जावक क्रमांक',
+                                      hi: 'जावक क्रमांक',
+                                    ),
+                                  ),
                                   TextField(
                                     controller: outwardCtrl,
-                                    decoration: _inputDecoration('OUT-2026-88'),
+                                    decoration: _inputDecoration(
+                                      AppTranslations.formatDigits('OUT-2026-88', lang),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -228,37 +313,98 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        _buildInputLabel(isMr ? 'सद्यस्थिती (Current Status)' : 'Current Status'),
+                        _buildInputLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Current Status',
+                            mr: 'सद्यस्थिती',
+                            hi: 'वर्तमान स्थिति',
+                          ),
+                        ),
                         DropdownButtonFormField<String>(
                           value: status,
                           items: _statuses
                               .where((s) => s != 'All')
-                              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                              .map(
+                                (s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Text(AppTranslations.getStatus(s, lang)),
+                                ),
+                              )
                               .toList(),
                           onChanged: (val) {
                             if (val != null) setModalState(() => status = val);
                           },
-                          decoration: _inputDecoration('Status'),
+                          decoration: _inputDecoration(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Status',
+                              mr: 'स्थिती',
+                              hi: 'स्थिति',
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
-                        _buildInputLabel(isMr ? 'तपशील / शेरा (Description)' : 'Description / Remarks'),
+                        _buildInputLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Description / Remarks',
+                            mr: 'तपशील / शेरा',
+                            hi: 'विवरण / टिप्पणी',
+                          ),
+                        ),
                         TextField(
                           controller: descCtrl,
                           maxLines: 3,
-                          decoration: _inputDecoration('Notes regarding file submission, approvals...'),
+                          decoration: _inputDecoration(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Notes regarding file submission, approvals...',
+                              mr: 'फाईल सादर करणे, मंजुरीबाबत नोंदी...',
+                              hi: 'फ़ाइल प्रस्तुति, स्वीकृतियों से संबंधित नोट्स...',
+                            ),
+                          ),
                         ),
                         if (existing == null) ...[
                           const SizedBox(height: 12),
-                          _buildInputLabel(isMr ? 'सुरुवातीचा टप्पा (Initial Movement Stage)' : 'Initial Movement Stage (Optional)'),
+                          _buildInputLabel(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Initial Movement Stage (Optional)',
+                              mr: 'सुरुवातीचा टप्पा (ऐच्छिक)',
+                              hi: 'प्रारंभिक चरण (वैकल्पिक)',
+                            ),
+                          ),
                           TextField(
                             controller: initialStageCtrl,
-                            decoration: _inputDecoration('e.g. Submitted to Chief Engineer Office'),
+                            decoration: _inputDecoration(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'e.g. Submitted to Chief Engineer Office',
+                                mr: 'उदा. मुख्य अभियंता कार्यालयात सादर',
+                                hi: 'उदा. मुख्य अभियंता कार्यालय में प्रस्तुत',
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 12),
-                          _buildInputLabel(isMr ? 'सध्याचे ठिकाण / टेबल (Current Location/Table)' : 'Current Location / Table'),
+                          _buildInputLabel(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Current Location / Table',
+                              mr: 'सध्याचे ठिकाण / टेबल',
+                              hi: 'वर्तमान स्थान / टेबल',
+                            ),
+                          ),
                           TextField(
                             controller: initialLocationCtrl,
-                            decoration: _inputDecoration('e.g. Desk 4, PMC Main Building'),
+                            decoration: _inputDecoration(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'e.g. Desk 4, PMC Main Building',
+                                mr: 'उदा. टेबल क्र. ४, मनपा मुख्य इमारत',
+                                hi: 'उदा. डेस्क ४, मनपा मुख्य भवन',
+                              ),
+                            ),
                           ),
                         ],
                       ],
@@ -276,13 +422,24 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
 
                         if (title.isEmpty || dept.isEmpty) {
                           ScaffoldMessenger.of(bottomCtx).showSnackBar(
-                            SnackBar(content: Text(isMr ? 'शीर्षक व विभाग आवश्यक आहेत' : 'Title and Department are required')),
+                            SnackBar(
+                              content: Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Title and Department are required',
+                                  mr: 'शीर्षक व विभाग आवश्यक आहेत',
+                                  hi: 'शीर्षक और विभाग आवश्यक हैं',
+                                ),
+                              ),
+                            ),
                           );
                           return;
                         }
 
                         final repo = ref.read(fileTrackerRepoProvider);
                         final user = ref.read(currentUserProvider);
+                        final cleanInward = AppTranslations.normalizeAsciiDigits(inwardCtrl.text.trim());
+                        final cleanOutward = AppTranslations.normalizeAsciiDigits(outwardCtrl.text.trim());
 
                         if (existing != null) {
                           await repo.updateFileTracker(
@@ -290,8 +447,8 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                             title: title,
                             subject: subject,
                             department: dept,
-                            inwardNumber: inwardCtrl.text.trim(),
-                            outwardNumber: outwardCtrl.text.trim(),
+                            inwardNumber: cleanInward,
+                            outwardNumber: cleanOutward,
                             currentStatus: status,
                             description: descCtrl.text.trim(),
                           );
@@ -300,8 +457,8 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                             title: title,
                             subject: subject,
                             department: dept,
-                            inwardNumber: inwardCtrl.text.trim(),
-                            outwardNumber: outwardCtrl.text.trim(),
+                            inwardNumber: cleanInward,
+                            outwardNumber: cleanOutward,
                             currentStatus: status,
                             description: descCtrl.text.trim(),
                             initialStageName: initialStageCtrl.text.trim().isNotEmpty ? initialStageCtrl.text.trim() : null,
@@ -320,7 +477,15 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: Text(isMr ? 'फाईल नोंद जतन करा' : 'Save File Record', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Save File Record',
+                          mr: 'फाईल नोंद जतन करा',
+                          hi: 'फ़ाइल रिकॉर्ड सहेजें',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -333,7 +498,7 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
   }
 
   void _showDetailModal(WorkTrackerModel file) async {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final repo = ref.read(fileTrackerRepoProvider);
 
     final fullItem = await repo.getFileTrackerById(file.id) ?? file;
@@ -347,8 +512,8 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
         builder: (sheetCtx, setSheetState) {
           return Container(
             constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -375,14 +540,16 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppTranslatedText(
                               fullItem.title,
+                              targetLanguage: lang,
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            Text(
+                            AppTranslatedText(
                               fullItem.department,
+                              targetLanguage: lang,
                               style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -396,7 +563,7 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                           border: Border.all(color: _getStatusColor(fullItem.currentStatus).withValues(alpha: 0.3)),
                         ),
                         child: Text(
-                          fullItem.currentStatus,
+                          AppTranslations.getStatus(fullItem.currentStatus, lang),
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _getStatusColor(fullItem.currentStatus)),
                         ),
                       ),
@@ -426,8 +593,21 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(isMr ? 'आवक क्र.' : 'Inward No.', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                                  Text(fullItem.inwardNumber.isNotEmpty ? fullItem.inwardNumber : '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Inward No.',
+                                      mr: 'आवक क्र.',
+                                      hi: 'आवक क्र.',
+                                    ),
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                  ),
+                                  Text(
+                                    fullItem.inwardNumber.isNotEmpty
+                                        ? AppTranslations.formatDigits(fullItem.inwardNumber, lang)
+                                        : '-',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
                                 ],
                               ),
                             ),
@@ -437,8 +617,21 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(isMr ? 'जावक क्र.' : 'Outward No.', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                                  Text(fullItem.outwardNumber.isNotEmpty ? fullItem.outwardNumber : '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Outward No.',
+                                      mr: 'जावक क्र.',
+                                      hi: 'जावक क्र.',
+                                    ),
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                  ),
+                                  Text(
+                                    fullItem.outwardNumber.isNotEmpty
+                                        ? AppTranslations.formatDigits(fullItem.outwardNumber, lang)
+                                        : '-',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
                                 ],
                               ),
                             ),
@@ -447,9 +640,21 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                       ),
                       const SizedBox(height: 12),
                       if (fullItem.description.isNotEmpty) ...[
-                        Text(isMr ? 'तपशील' : 'Description', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Description',
+                            mr: 'तपशील',
+                            hi: 'विवरण',
+                          ),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
                         const SizedBox(height: 4),
-                        Text(fullItem.description, style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569))),
+                        AppTranslatedText(
+                          fullItem.description,
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
+                        ),
                         const SizedBox(height: 16),
                       ],
 
@@ -457,15 +662,25 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.history_rounded, size: 18, color: Color(0xFF0284C7)),
-                              const SizedBox(width: 6),
-                              Text(
-                                isMr ? 'हालचाल इतिहास (Movement History)' : 'Movement Stages History',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
-                              ),
-                            ],
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.history_rounded, size: 18, color: Color(0xFF0284C7)),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Movement Stages History',
+                                      mr: 'हालचाल इतिहास',
+                                      hi: 'फ़ाइल गतिविधि इतिहास',
+                                    ),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           TextButton.icon(
                             onPressed: () {
@@ -478,7 +693,15 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                               });
                             },
                             icon: const Icon(Icons.add_rounded, size: 16),
-                            label: Text(isMr ? 'टप्पा जोडा' : 'Add Stage', style: const TextStyle(fontSize: 12)),
+                            label: Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Add Stage',
+                                mr: 'टप्पा जोडा',
+                                hi: 'चरण जोड़ें',
+                              ),
+                              style: const TextStyle(fontSize: 12),
+                            ),
                           ),
                         ],
                       ),
@@ -494,7 +717,12 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
                           child: Text(
-                            isMr ? 'कोणतेही टप्पे नोंदवलेले नाहीत' : 'No movement stages recorded yet',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'No movement stages recorded yet',
+                              mr: 'कोणतेही टप्पे नोंदवलेले नाहीत',
+                              hi: 'अभी तक कोई चरण दर्ज नहीं किया गया है',
+                            ),
                             style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                           ),
                         )
@@ -506,7 +734,7 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                           separatorBuilder: (_, _) => const SizedBox(height: 10),
                           itemBuilder: (context, idx) {
                             final stage = fullItem.stages[idx];
-                            final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(stage.createdAt);
+                            final dateStr = AppTranslations.formatDateTime(stage.createdAt, lang);
 
                             return Container(
                               padding: const EdgeInsets.all(12),
@@ -531,13 +759,25 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(stage.stageName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                        AppTranslatedText(
+                                          stage.stageName,
+                                          targetLanguage: lang,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        ),
                                         if (stage.location.isNotEmpty)
-                                          Text(stage.location, style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w600)),
+                                          AppTranslatedText(
+                                            stage.location,
+                                            targetLanguage: lang,
+                                            style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w600),
+                                          ),
                                         if (stage.statusDescription.isNotEmpty)
                                           Padding(
                                             padding: const EdgeInsets.only(top: 2),
-                                            child: Text(stage.statusDescription, style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569))),
+                                            child: AppTranslatedText(
+                                              stage.statusDescription,
+                                              targetLanguage: lang,
+                                              style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
+                                            ),
                                           ),
                                         const SizedBox(height: 4),
                                         Text(dateStr, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
@@ -563,21 +803,54 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                             _showAddEditModal(existing: fullItem);
                           },
                           icon: const Icon(Icons.edit_outlined, size: 16),
-                          label: Text(isMr ? 'संपादित करा' : 'Edit'),
+                          label: Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Edit',
+                              mr: 'संपादित करा',
+                              hi: 'संपादित करें',
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
                       IconButton(
                         icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                        tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
                             context: context,
                             builder: (c) => AlertDialog(
-                              title: Text(isMr ? 'हटवायचे का?' : 'Delete File Tracker?'),
-                              content: Text(isMr ? 'ही फाईल व इतिहास कायमचा हटवला जाईल.' : 'This file record and its stages will be permanently deleted.'),
+                              title: Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Delete File Tracker?',
+                                  mr: 'हटवायचे का?',
+                                  hi: 'फ़ाइल ट्रैकर हटाएं?',
+                                ),
+                              ),
+                              content: Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'This file record and its stages will be permanently deleted.',
+                                  mr: 'ही फाईल व इतिहास कायमचा हटवला जाईल.',
+                                  hi: 'यह फ़ाइल रिकॉर्ड और इसके चरण स्थायी रूप से हटा दिए जाएंगे।',
+                                ),
+                              ),
                               actions: [
-                                TextButton(onPressed: () => Navigator.pop(c, false), child: Text(isMr ? 'रद्द' : 'Cancel')),
-                                TextButton(onPressed: () => Navigator.pop(c, true), style: TextButton.styleFrom(foregroundColor: Colors.red), child: Text(isMr ? 'हटवा' : 'Delete')),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(c, false),
+                                  child: Text(
+                                    AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(c, true),
+                                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                  child: Text(
+                                    AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                                  ),
+                                ),
                               ],
                             ),
                           );
@@ -602,7 +875,7 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
   }
 
   void _showAddStageDialog(String trackerId, VoidCallback onAdded) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final stageCtrl = TextEditingController();
     final locCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -612,38 +885,117 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(isMr ? 'नवीन हालचाल टप्पा जोडा' : 'Add Movement Stage', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Add Movement Stage',
+            mr: 'नवीन हालचाल टप्पा जोडा',
+            hi: 'नया गतिविधि चरण जोड़ें',
+          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInputLabel(isMr ? 'टप्प्याचे नाव (Stage Name) *' : 'Stage Name *'),
-              TextField(controller: stageCtrl, decoration: _inputDecoration('e.g. Sent for Audit Verification')),
+              _buildInputLabel(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Stage Name *',
+                  mr: 'टप्प्याचे नाव *',
+                  hi: 'चरण का नाम *',
+                ),
+              ),
+              TextField(
+                controller: stageCtrl,
+                decoration: _inputDecoration(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'e.g. Sent for Audit Verification',
+                    mr: 'उदा. लेखापरीक्षण पडताळणीसाठी पाठवले',
+                    hi: 'उदा. ऑडिट सत्यापन हेतु भेजा गया',
+                  ),
+                ),
+              ),
               const SizedBox(height: 10),
-              _buildInputLabel(isMr ? 'स्थान / कार्यालय (Location)' : 'Location / Office'),
-              TextField(controller: locCtrl, decoration: _inputDecoration('e.g. Accounts Department, 2nd Floor')),
+              _buildInputLabel(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Location / Office',
+                  mr: 'स्थान / कार्यालय',
+                  hi: 'स्थान / कार्यालय',
+                ),
+              ),
+              TextField(
+                controller: locCtrl,
+                decoration: _inputDecoration(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'e.g. Accounts Department, 2nd Floor',
+                    mr: 'उदा. लेखा विभाग, २ रा मजला',
+                    hi: 'उदा. लेखा विभाग, दूसरी मंजिल',
+                  ),
+                ),
+              ),
               const SizedBox(height: 10),
-              _buildInputLabel(isMr ? 'शेरा / सद्यस्थिती शेरा' : 'Status Description / Remarks'),
-              TextField(controller: descCtrl, maxLines: 2, decoration: _inputDecoration('e.g. Verified and signed by superintendent')),
+              _buildInputLabel(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Status Description / Remarks',
+                  mr: 'शेरा / सद्यस्थिती तपशील',
+                  hi: 'स्थिति विवरण / टिप्पणी',
+                ),
+              ),
+              TextField(
+                controller: descCtrl,
+                maxLines: 2,
+                decoration: _inputDecoration(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'e.g. Verified and signed by superintendent',
+                    mr: 'उदा. अधीक्षकांनी तपासून स्वाक्षरी केली',
+                    hi: 'उदा. अधीक्षक द्वारा सत्यापित और हस्ताक्षरित',
+                  ),
+                ),
+              ),
               const SizedBox(height: 10),
-              _buildInputLabel(isMr ? 'नवीन स्थिती (Update Status)' : 'Update Status'),
+              _buildInputLabel(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Update Status',
+                  mr: 'नवीन स्थिती',
+                  hi: 'स्थिति अपडेट करें',
+                ),
+              ),
               DropdownButtonFormField<String>(
                 value: newStatus,
                 items: _statuses
                     .where((s) => s != 'All')
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(AppTranslations.getStatus(s, lang)),
+                      ),
+                    )
                     .toList(),
                 onChanged: (val) {
                   if (val != null) newStatus = val;
                 },
-                decoration: _inputDecoration('Status'),
+                decoration: _inputDecoration(
+                  AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'),
+                ),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isMr ? 'रद्द' : 'Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+            ),
+          ),
           ElevatedButton(
             onPressed: () async {
               final stageName = stageCtrl.text.trim();
@@ -667,7 +1019,9 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7), foregroundColor: Colors.white),
-            child: Text(isMr ? 'जोडा' : 'Add Stage'),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Add Stage', mr: 'जोडा', hi: 'जोड़ें'),
+            ),
           ),
         ],
       ),
@@ -694,7 +1048,7 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
 
     return Column(
       children: [
@@ -713,7 +1067,12 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                         _fetchTrackers();
                       },
                       decoration: InputDecoration(
-                        hintText: isMr ? 'शीर्षक, आवक/जावक क्र. शोधा...' : 'Search title, inward/outward no...',
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'Search title, inward/outward no...',
+                          mr: 'शीर्षक, आवक/जावक क्र. शोधा...',
+                          hi: 'शीर्षक, आवक/जावक क्र. खोजें...',
+                        ),
                         hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                         prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -726,20 +1085,29 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                    tooltip: AppTranslations.getDownloadReport(lang),
                     icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0284C7)),
                     onPressed: _trackers.isEmpty
                         ? null
                         : () => GovOfficeReportGenerator.generateAndPrintFileTrackerReport(
                               trackers: _trackers,
                               statusFilter: _selectedStatus,
+                              lang: lang,
                             ),
                   ),
                   const SizedBox(width: 4),
                   ElevatedButton.icon(
                     onPressed: () => _showAddEditModal(),
                     icon: const Icon(Icons.add_rounded, size: 18),
-                    label: Text(isMr ? 'नोंदवा' : 'Add File', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    label: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Add File',
+                        mr: 'नोंदवा',
+                        hi: 'फ़ाइल जोड़ें',
+                      ),
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0284C7),
                       foregroundColor: Colors.white,
@@ -761,8 +1129,14 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                   itemBuilder: (ctx, i) {
                     final s = _statuses[i];
                     final isSel = _selectedStatus == s;
+                    final labelText = s == 'All'
+                        ? AppTranslations.getAll(lang)
+                        : AppTranslations.getStatus(s, lang);
                     return ChoiceChip(
-                      label: Text(s, style: TextStyle(fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.w500, color: isSel ? Colors.white : const Color(0xFF64748B))),
+                      label: Text(
+                        labelText,
+                        style: TextStyle(fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.w500, color: isSel ? Colors.white : const Color(0xFF64748B)),
+                      ),
                       selected: isSel,
                       selectedColor: const Color(0xFF0284C7),
                       backgroundColor: Colors.white,
@@ -797,12 +1171,22 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                           const Icon(Icons.folder_open_rounded, size: 48, color: Color(0xFF94A3B8)),
                           const SizedBox(height: 8),
                           Text(
-                            isMr ? 'कोणतीही फाईल सापडली नाही' : 'No file trackers found',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'No file trackers found',
+                              mr: 'कोणतीही फाईल सापडली नाही',
+                              hi: 'कोई फ़ाइल ट्रैकर नहीं मिला',
+                            ),
                             style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            isMr ? 'Supabase work_trackers टेबल रिक्त आहे' : 'work_trackers database table is empty',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'No work tracker records available',
+                              mr: 'सध्या कोणतीही फाईल नोंद उपलब्ध नाही',
+                              hi: 'फ़िलहाल कोई फ़ाइल रिकॉर्ड उपलब्ध नहीं है',
+                            ),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                           ),
                         ],
@@ -821,12 +1205,29 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                               totalCount: _trackers.length,
                               pageSize: 20,
                               onLoadMore: () => setState(() => _displayedLimit += 20),
-                              label: isMr ? 'फाईली' : 'files',
-                              isMarathi: isMr,
+                              label: AppTranslations.pick(
+                                lang,
+                                en: 'files',
+                                mr: 'फाईली',
+                                hi: 'फ़ाइलें',
+                              ),
+                              isMarathi: lang == 'mr',
                             );
                           }
                           final item = _visibleTrackers[index];
-                          final dateStr = DateFormat('dd MMM yyyy').format(item.updatedAt);
+                          final dateStr = AppTranslations.formatDate(item.updatedAt, lang);
+                          final inLabel = AppTranslations.pick(
+                            lang,
+                            en: 'In',
+                            mr: 'आवक',
+                            hi: 'आवक',
+                          );
+                          final outLabel = AppTranslations.pick(
+                            lang,
+                            en: 'Out',
+                            mr: 'जावक',
+                            hi: 'जावक',
+                          );
 
                           return InkWell(
                             onTap: () => _showDetailModal(item),
@@ -851,17 +1252,23 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          item.department,
-                                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: AppTranslatedText(
+                                            item.department,
+                                            targetLanguage: lang,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                          ),
                                         ),
                                       ),
+                                      const SizedBox(width: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                         decoration: BoxDecoration(
@@ -869,22 +1276,24 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          item.currentStatus,
+                                          AppTranslations.getStatus(item.currentStatus, lang),
                                           style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: _getStatusColor(item.currentStatus)),
                                         ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 6),
-                                  Text(
+                                  AppTranslatedText(
                                     item.title,
+                                    targetLanguage: lang,
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                                   ),
                                   if (item.subject.isNotEmpty)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 2),
-                                      child: Text(
+                                      child: AppTranslatedText(
                                         item.subject,
+                                        targetLanguage: lang,
                                         style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -899,13 +1308,19 @@ class _FileTrackerTabViewState extends ConsumerState<FileTrackerTabView> {
                                           if (item.inwardNumber.isNotEmpty) ...[
                                             const Icon(Icons.arrow_downward_rounded, size: 12, color: Color(0xFF0284C7)),
                                             const SizedBox(width: 2),
-                                            Text('In: ${item.inwardNumber}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                            Text(
+                                              '$inLabel: ${AppTranslations.formatDigits(item.inwardNumber, lang)}',
+                                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                            ),
                                             const SizedBox(width: 8),
                                           ],
                                           if (item.outwardNumber.isNotEmpty) ...[
                                             const Icon(Icons.arrow_upward_rounded, size: 12, color: Color(0xFF16A34A)),
                                             const SizedBox(width: 2),
-                                            Text('Out: ${item.outwardNumber}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                            Text(
+                                              '$outLabel: ${AppTranslations.formatDigits(item.outwardNumber, lang)}',
+                                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                            ),
                                           ],
                                         ],
                                       ),

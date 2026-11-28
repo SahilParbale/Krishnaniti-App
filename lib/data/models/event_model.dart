@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/localization/app_translations.dart';
 
 /// Supported Event Types
 enum EventType {
@@ -50,6 +51,28 @@ extension EventTypeX on EventType {
         return 'इतर';
     }
   }
+
+  String get titleHi {
+    switch (this) {
+      case EventType.publicMeeting:
+        return 'सार्वजनिक सभा';
+      case EventType.inauguration:
+        return 'उद्घाटन';
+      case EventType.rally:
+        return 'रैली / मार्च';
+      case EventType.healthCamp:
+        return 'स्वास्थ्य शिविर';
+      case EventType.doorToDoor:
+        return 'घर-घर संपर्क';
+      case EventType.cultural:
+        return 'सांस्कृतिक उत्सव';
+      case EventType.other:
+        return 'अन्य';
+    }
+  }
+
+  String title(String lang) =>
+      lang == 'mr' ? titleMr : (lang == 'hi' ? titleHi : id);
 
   IconData get icon {
     switch (this) {
@@ -119,6 +142,20 @@ extension RsvpStatusX on RsvpStatus {
         return 'कदाचित';
     }
   }
+
+  String get titleHi {
+    switch (this) {
+      case RsvpStatus.going:
+        return 'उपस्थित रहेंगे';
+      case RsvpStatus.notGoing:
+        return 'उपस्थित नहीं';
+      case RsvpStatus.maybe:
+        return 'शायद';
+    }
+  }
+
+  String title(String lang) =>
+      lang == 'mr' ? titleMr : (lang == 'hi' ? titleHi : id);
 
   Color get color {
     switch (this) {
@@ -357,6 +394,26 @@ class EventModel {
   String get monthShortEn => DateFormat('MMM').format(eventDate).toUpperCase();
 
   String get dayNum => DateFormat('d').format(eventDate);
+
+  String formattedDateFor(String lang) =>
+      AppTranslations.formatDate(eventDate, lang, pattern: 'd MMMM yyyy');
+
+  String formattedDateShortFor(String lang) =>
+      AppTranslations.formatDate(eventDate, lang, pattern: 'dd/MM/yyyy');
+
+  String monthShortFor(String lang) {
+    if (lang == 'mr') return monthShortMr;
+    if (lang == 'hi') {
+      const monthsHi = [
+        'जन', 'फर', 'मार्च', 'अप्रै', 'मई', 'जून',
+        'जुल', 'अग', 'सितं', 'अक्टू', 'नवं', 'दिसं'
+      ];
+      return monthsHi[eventDate.month - 1];
+    }
+    return monthShortEn;
+  }
+
+  String dayNumFor(String lang) => AppTranslations.formatDigits(eventDate.day, lang);
 
   EventModel copyWith({
     String? id,

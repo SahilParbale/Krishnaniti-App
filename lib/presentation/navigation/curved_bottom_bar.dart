@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/localization/app_translations.dart';
+import '../providers/language_provider.dart';
 
 class BottomBarItemData {
   final IconData icon;
@@ -40,20 +42,34 @@ class CurvedBottomBar extends StatefulWidget {
 class _CurvedBottomBarState extends State<CurvedBottomBar> {
   bool _isFabPressed = false;
 
-  BottomBarItemData _getItem(int index) {
+  BottomBarItemData _getItem(int index, String lang) {
     if (widget.customItems != null && index < widget.customItems!.length) {
-      return widget.customItems![index];
+      final item = widget.customItems![index];
+      final translated = AppTranslations.translateDirect(item.label, lang: lang);
+      return BottomBarItemData(icon: item.icon, label: translated);
     }
     switch (index) {
       case 0:
-        return const BottomBarItemData(icon: Icons.dashboard_rounded, label: 'Dashboard');
+        return BottomBarItemData(
+          icon: Icons.dashboard_rounded,
+          label: AppTranslations.getNavTitle('dashboard', lang),
+        );
       case 1:
-        return const BottomBarItemData(icon: Icons.grid_view_rounded, label: 'Requests');
+        return BottomBarItemData(
+          icon: Icons.grid_view_rounded,
+          label: AppTranslations.pick(lang, en: 'Requests', mr: 'विनंत्या', hi: 'अनुरोध'),
+        );
       case 2:
-        return const BottomBarItemData(icon: Icons.notifications_rounded, label: 'Letters');
+        return BottomBarItemData(
+          icon: Icons.notifications_rounded,
+          label: AppTranslations.getNavTitle('letters', lang),
+        );
       case 3:
       default:
-        return const BottomBarItemData(icon: Icons.person_rounded, label: 'Profile');
+        return BottomBarItemData(
+          icon: Icons.person_rounded,
+          label: AppTranslations.pick(lang, en: 'Profile', mr: 'प्रोफाईल', hi: 'प्रोफाइल'),
+        );
     }
   }
 
@@ -68,81 +84,89 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
     final double bottomMargin = bottomPadding > 0 ? bottomPadding : 12.0;
     final totalHeight = kTopOverhang + kBarHeight + bottomMargin;
 
-    return SizedBox(
-      height: totalHeight,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.bottomCenter,
-        children: [
-          // 1) Floating Curved White Background Bar with Soft Shadow & Border on All Edges
-          Positioned(
-            left: kHorizontalMargin,
-            right: kHorizontalMargin,
-            bottom: bottomMargin,
-            height: kBarHeight,
-            child: CustomPaint(
-              size: const Size(double.infinity, kBarHeight),
-              painter: _CurvedNotchPainter(
-                barColor: Colors.white,
-                borderColor: const Color(0xFFE2E8F0),
-                notchRadius: 38.0,
-                notchDepth: 22.0,
-                cornerRadius: 24.0,
+    return ValueListenableBuilder<String>(
+      valueListenable: appLanguageValueNotifier,
+      builder: (context, lang, _) {
+        final item0 = _getItem(0, lang);
+        final item1 = _getItem(1, lang);
+        final item2 = _getItem(2, lang);
+        final item3 = _getItem(3, lang);
+
+        return SizedBox(
+          height: totalHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: [
+              // 1) Floating Curved White Background Bar with Soft Shadow & Border on All Edges
+              Positioned(
+                left: kHorizontalMargin,
+                right: kHorizontalMargin,
+                bottom: bottomMargin,
+                height: kBarHeight,
+                child: CustomPaint(
+                  size: const Size(double.infinity, kBarHeight),
+                  painter: _CurvedNotchPainter(
+                    barColor: Colors.white,
+                    borderColor: const Color(0xFFE2E8F0),
+                    notchRadius: 38.0,
+                    notchDepth: 22.0,
+                    cornerRadius: 24.0,
+                  ),
+                ),
               ),
-            ),
-          ),
 
-          // 2) Navigation Tab Items inside Floating Bar
-          Positioned(
-            left: kHorizontalMargin,
-            right: kHorizontalMargin,
-            bottom: bottomMargin,
-            height: kBarHeight,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Tab 0
-                Expanded(
-                  child: _buildNavItem(
-                    index: 0,
-                    icon: _getItem(0).icon,
-                    label: _getItem(0).label,
-                  ),
+              // 2) Navigation Tab Items inside Floating Bar
+              Positioned(
+                left: kHorizontalMargin,
+                right: kHorizontalMargin,
+                bottom: bottomMargin,
+                height: kBarHeight,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Tab 0
+                    Expanded(
+                      child: _buildNavItem(
+                        index: 0,
+                        icon: item0.icon,
+                        label: item0.label,
+                      ),
+                    ),
+
+                    // Tab 1
+                    Expanded(
+                      child: _buildNavItem(
+                        index: 1,
+                        icon: item1.icon,
+                        label: item1.label,
+                      ),
+                    ),
+
+                    // Center gap for the FAB
+                    const SizedBox(width: 72),
+
+                    // Tab 2
+                    Expanded(
+                      child: _buildNavItem(
+                        index: 2,
+                        icon: item2.icon,
+                        label: item2.label,
+                      ),
+                    ),
+
+                    // Tab 3: Fixed Profile / Settings
+                    Expanded(
+                      child: _buildNavItem(
+                        index: 3,
+                        icon: item3.icon,
+                        label: item3.label,
+                      ),
+                    ),
+                  ],
                 ),
-
-                // Tab 1
-                Expanded(
-                  child: _buildNavItem(
-                    index: 1,
-                    icon: _getItem(1).icon,
-                    label: _getItem(1).label,
-                  ),
-                ),
-
-                // Center gap for the FAB
-                const SizedBox(width: 72),
-
-                // Tab 2
-                Expanded(
-                  child: _buildNavItem(
-                    index: 2,
-                    icon: _getItem(2).icon,
-                    label: _getItem(2).label,
-                  ),
-                ),
-
-                // Tab 3: Fixed Profile / Settings
-                Expanded(
-                  child: _buildNavItem(
-                    index: 3,
-                    icon: _getItem(3).icon,
-                    label: _getItem(3).label,
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
 
           // 3) Elevated Center Action Button (+)
           Positioned(
@@ -226,6 +250,8 @@ class _CurvedBottomBarState extends State<CurvedBottomBar> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 

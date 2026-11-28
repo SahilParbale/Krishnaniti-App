@@ -2,13 +2,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/sms_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_date_picker.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -187,6 +188,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   }
 
   void _copyLink(String link, {String? meetingId}) {
+    final lang = ref.read(appLanguageProvider);
     Clipboard.setData(ClipboardData(text: link));
     if (meetingId != null) {
       setState(() => _copiedMeetingId = meetingId);
@@ -197,22 +199,39 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
       });
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Meeting link copied to clipboard!'),
-        duration: Duration(seconds: 2),
-        backgroundColor: Color(0xFF0284C7),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Meeting link copied to clipboard!',
+            mr: 'मीटिंग लिंक क्लिपबोर्डवर कॉपी झाली!',
+            hi: 'मीटिंग लिंक क्लिपबोर्ड पर कॉपी हो गई!',
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF0284C7),
       ),
     );
   }
 
   Future<void> _joinMeeting(String link) async {
+    final lang = ref.read(appLanguageProvider);
     final uri = Uri.parse(link);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open video meeting link')),
+          SnackBar(
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Could not open video meeting link',
+                mr: 'व्हिडिओ मीटिंग लिंक उघडता आली नाही',
+                hi: 'वीडियो मीटिंग लिंक खोला नहीं जा सका',
+              ),
+            ),
+          ),
         );
       }
     }
@@ -242,7 +261,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   // 1. Create Meeting Modal (2-Step Flow matching ConferenceRoom.tsx)
   // ─────────────────────────────────────────────────────────────
   void _showCreateMeetingDialog() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleController = TextEditingController();
     final notesController = TextEditingController();
     DateTime selectedDate = DateTime.now().add(const Duration(hours: 2));
@@ -260,6 +279,13 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
       builder: (sheetContext) => StatefulBuilder(
         builder: (modalCtx, setDlgState) {
           final bottomInset = MediaQuery.of(modalCtx).viewInsets.bottom;
+          final previewDateTime = DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+            selectedTime.hour,
+            selectedTime.minute,
+          );
 
           return Container(
             constraints: BoxConstraints(maxHeight: MediaQuery.of(modalCtx).size.height * 0.85),
@@ -280,8 +306,18 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
               children: [
                 AppModalHeader(
                   icon: Icons.video_call_rounded,
-                  title: isMr ? 'व्हिडिओ बैठक तयार करा' : 'Create Video Meeting',
-                  subtitle: isMr ? 'बैठकीचा विषय व वेळ निश्चित करा' : 'Set meeting topic, date & time',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Create Video Meeting',
+                    mr: 'व्हिडिओ बैठक तयार करा',
+                    hi: 'वीडियो मीटिंग बनाएं',
+                  ),
+                  subtitle: AppTranslations.pick(
+                    lang,
+                    en: 'Set meeting topic, date & time',
+                    mr: 'बैठकीचा विषय व वेळ निश्चित करा',
+                    hi: 'मीटिंग का विषय, तारीख और समय तय करें',
+                  ),
                   onClose: () => Navigator.pop(sheetContext),
                 ),
 
@@ -294,15 +330,23 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       if (currentStep == 'form') ...[
                         // Step 1: Form details
                         AppFieldLabel(
-                          label: isMr ? 'बैठकीचा विषय / शीर्षक' : 'Meeting Title / Topic',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Meeting Title / Topic',
+                            mr: 'बैठकीचा विषय / शीर्षक',
+                            hi: 'मीटिंग का विषय / शीर्षक',
+                          ),
                           isRequired: true,
                         ),
                         TextField(
                           controller: titleController,
                           decoration: _inputDec(
-                            hint: isMr
-                                ? 'उदा. प्रभाग पाणी समस्या चर्चा'
-                                : 'e.g. Ward Development Discussion',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'e.g. Ward Development Discussion',
+                              mr: 'उदा. प्रभाग पाणी समस्या चर्चा',
+                              hi: 'उदा. वार्ड विकास चर्चा',
+                            ),
                             prefixIcon: const Icon(Icons.title_rounded, size: 18, color: Color(0xFF64748B)),
                           ),
                           onChanged: (_) => setDlgState(() {}),
@@ -319,7 +363,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'तारीख' : 'Schedule Date',
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Schedule Date',
+                                      mr: 'तारीख',
+                                      hi: 'तारीख',
+                                    ),
                                     isRequired: true,
                                   ),
                                   InkWell(
@@ -347,7 +396,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              DateFormat('dd MMM yyyy').format(selectedDate),
+                                              AppTranslations.formatDate(selectedDate, lang),
                                               style: const TextStyle(
                                                 fontSize: 13,
                                                 color: Color(0xFF0F172A),
@@ -371,7 +420,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'वेळ' : 'Schedule Time',
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'Schedule Time',
+                                      mr: 'वेळ',
+                                      hi: 'समय',
+                                    ),
                                     isRequired: true,
                                   ),
                                   InkWell(
@@ -397,7 +451,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              selectedTime.format(modalCtx),
+                                              AppTranslations.formatTime(previewDateTime, lang),
                                               style: const TextStyle(
                                                 fontSize: 13,
                                                 color: Color(0xFF0F172A),
@@ -419,15 +473,23 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
 
                         // Meeting Agenda / Notes
                         AppFieldLabel(
-                          label: isMr ? 'अजेंडा / टिपणी (ऐच्छिक)' : 'Notes / Agenda (Optional)',
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'Notes / Agenda (Optional)',
+                            mr: 'अजेंडा / टिपणी (ऐच्छिक)',
+                            hi: 'एजेंडा / टिप्पणी (वैकल्पिक)',
+                          ),
                         ),
                         TextField(
                           controller: notesController,
                           maxLines: 3,
                           decoration: _inputDec(
-                            hint: isMr
-                                ? 'बैठकीतील महत्त्वाचे मुद्दे किंवा टिपणी...'
-                                : 'Optional agenda details or notes...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Optional agenda details or notes...',
+                              mr: 'बैठकीतील महत्त्वाचे मुद्दे किंवा टिपणी...',
+                              hi: 'मीटिंग के मुख्य बिंदु या टिप्पणी...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 22),
@@ -444,7 +506,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),
                                 child: Text(
-                                  isMr ? 'रद्द करा' : 'Cancel',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Cancel',
+                                    mr: 'रद्द करा',
+                                    hi: 'रद्द करें',
+                                  ),
                                   style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -471,7 +538,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                 ),
                                 icon: const Icon(Icons.link_rounded, size: 18),
                                 label: Text(
-                                  isMr ? 'लिंक तयार करा' : 'Generate Link',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Generate Link',
+                                    mr: 'लिंक तयार करा',
+                                    hi: 'लिंक बनाएं',
+                                  ),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
                               ),
@@ -495,7 +567,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                   const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 16),
                                   const SizedBox(width: 6),
                                   Text(
-                                    isMr ? 'बैठक लिंक तयार झाली' : 'LINK GENERATED',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'LINK GENERATED',
+                                      mr: 'बैठक लिंक तयार झाली',
+                                      hi: 'मीटिंग लिंक बन गई',
+                                    ),
                                     style: const TextStyle(
                                       color: Color(0xFF15803D),
                                       fontWeight: FontWeight.bold,
@@ -531,7 +608,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                         size: 18,
                                         color: isCopied ? const Color(0xFF16A34A) : const Color(0xFF64748B),
                                       ),
-                                      tooltip: 'Copy Link',
+                                      tooltip: AppTranslations.pick(
+                                        lang,
+                                        en: 'Copy Link',
+                                        mr: 'लिंक कॉपी करा',
+                                        hi: 'लिंक कॉपी करें',
+                                      ),
                                       onPressed: () {
                                         Clipboard.setData(ClipboardData(text: generatedLink));
                                         setDlgState(() => isCopied = true);
@@ -561,8 +643,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppTranslatedText(
                                 titleController.text.trim(),
+                                targetLanguage: lang,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14.5,
@@ -575,22 +658,23 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                   const Icon(Icons.calendar_today_rounded, size: 13, color: Color(0xFF0284C7)),
                                   const SizedBox(width: 5),
                                   Text(
-                                    DateFormat('dd MMM yyyy').format(selectedDate),
+                                    AppTranslations.formatDate(selectedDate, lang),
                                     style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(width: 12),
                                   const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF0284C7)),
                                   const SizedBox(width: 5),
                                   Text(
-                                    selectedTime.format(modalCtx),
+                                    AppTranslations.formatTime(previewDateTime, lang),
                                     style: const TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
                               if (notesController.text.trim().isNotEmpty) ...[
                                 const SizedBox(height: 8),
-                                Text(
+                                AppTranslatedText(
                                   notesController.text.trim(),
+                                  targetLanguage: lang,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontStyle: FontStyle.italic,
@@ -617,7 +701,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               ),
                               icon: const Icon(Icons.arrow_back_rounded, size: 16, color: Color(0xFF64748B)),
                               label: Text(
-                                isMr ? 'मागे' : 'Back',
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Back',
+                                  mr: 'मागे',
+                                  hi: 'पीछे',
+                                ),
                                 style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -672,7 +761,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                           messenger.showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                isMr ? 'कॉन्फरन्स बैठक यशस्वीरित्या सेव्ह केली!' : 'Conference meeting created successfully!',
+                                                AppTranslations.pick(
+                                                  lang,
+                                                  en: 'Conference meeting created successfully!',
+                                                  mr: 'कॉन्फरन्स बैठक यशस्वीरित्या सेव्ह केली!',
+                                                  hi: 'कॉन्फ्रेंस मीटिंग सफलतापूर्वक सहेजी गई!',
+                                                ),
                                               ),
                                               backgroundColor: const Color(0xFF0284C7),
                                             ),
@@ -696,7 +790,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                       )
                                     : const Icon(Icons.check_rounded, size: 18),
                                 label: Text(
-                                  isMr ? 'बैठक सेव्ह करा' : 'Save Meeting',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Save Meeting',
+                                    mr: 'बैठक सेव्ह करा',
+                                    hi: 'मीटिंग सहेजें',
+                                  ),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
                               ),
@@ -720,7 +819,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   // 2. Voter Invite Modal (Matching ConferenceRoom.tsx)
   // ─────────────────────────────────────────────────────────────
   void _showInviteVoterModal(ConferenceMeetingModel meeting) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final nameSearchController = TextEditingController();
     final addressSearchController = TextEditingController();
     final ageMinController = TextEditingController();
@@ -735,6 +834,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     bool isSending = false;
     bool showAddrSuggestions = false;
 
+    final resolvedModalTitle =
+        DynamicTranslationService.getCachedTranslation(meeting.title, lang) ?? meeting.title;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -744,15 +846,15 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
           final bottomInset = MediaQuery.of(modalCtx).viewInsets.bottom;
 
           void applyFilters() {
-            final nameQ = nameSearchController.text.trim().toLowerCase();
-            final addrQ = addressSearchController.text.trim().toLowerCase();
-            final minAge = int.tryParse(ageMinController.text.trim());
-            final maxAge = int.tryParse(ageMaxController.text.trim());
+            final nameQ = AppTranslations.normalizeAsciiDigits(nameSearchController.text.trim()).toLowerCase();
+            final addrQ = AppTranslations.normalizeAsciiDigits(addressSearchController.text.trim()).toLowerCase();
+            final minAge = int.tryParse(AppTranslations.normalizeAsciiDigits(ageMinController.text.trim()));
+            final maxAge = int.tryParse(AppTranslations.normalizeAsciiDigits(ageMaxController.text.trim()));
 
             final result = allVoters.where((v) {
               final nameM = v.nameMarathi.toLowerCase();
               final nameE = v.nameEnglish.toLowerCase();
-              final addr = v.address.toLowerCase();
+              final addr = AppTranslations.normalizeAsciiDigits(v.address).toLowerCase();
 
               if (nameQ.isNotEmpty && !nameM.contains(nameQ) && !nameE.contains(nameQ)) return false;
               if (addrQ.isNotEmpty && !addr.contains(addrQ)) return false;
@@ -791,6 +893,10 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
 
           final allSelected = filteredVoters.isNotEmpty &&
               filteredVoters.every((v) => selectedIds.contains(v.id));
+          final filteredCountStr = AppTranslations.formatDigits(filteredVoters.length, lang);
+          final selectedCountStr = AppTranslations.formatDigits(selectedIds.length, lang);
+          final normAddrSearch =
+              AppTranslations.normalizeAsciiDigits(addressSearchController.text).toLowerCase();
 
           return Container(
             constraints: BoxConstraints(maxHeight: MediaQuery.of(modalCtx).size.height * 0.85),
@@ -811,8 +917,13 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
               children: [
                 AppModalHeader(
                   icon: Icons.send_rounded,
-                  title: isMr ? 'मतदारांना आमंत्रणे पाठवा' : 'Send Meeting Invites',
-                  subtitle: '${meeting.title} — ${meeting.meetLink}',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Send Meeting Invites',
+                    mr: 'मतदारांना आमंत्रणे पाठवा',
+                    hi: 'मतदाताओं को निमंत्रण भेजें',
+                  ),
+                  subtitle: '$resolvedModalTitle — ${meeting.meetLink}',
                   onClose: () => Navigator.pop(sheetContext),
                 ),
 
@@ -827,7 +938,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                         controller: nameSearchController,
                         onChanged: (_) => applyFilters(),
                         decoration: _inputDec(
-                          hint: isMr ? 'मतदाराचे नाव शोधा...' : 'Search voter by name...',
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'Search voter by name...',
+                            mr: 'मतदाराचे नाव शोधा...',
+                            hi: 'मतदाता का नाम खोजें...',
+                          ),
                           prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
                         ),
                       ),
@@ -849,7 +965,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                 applyFilters();
                               },
                               decoration: _inputDec(
-                                hint: isMr ? 'पत्ता / परिसर शोधा...' : 'Search address/area...',
+                                hint: AppTranslations.pick(
+                                  lang,
+                                  en: 'Search address/area...',
+                                  mr: 'पत्ता / परिसर शोधा...',
+                                  hi: 'पता / क्षेत्र खोजें...',
+                                ),
                                 prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF64748B)),
                               ),
                             ),
@@ -863,7 +984,14 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               onChanged: (_) => applyFilters(),
-                              decoration: _inputDec(hint: isMr ? 'वय Min' : 'Age Min'),
+                              decoration: _inputDec(
+                                hint: AppTranslations.pick(
+                                  lang,
+                                  en: 'Age Min',
+                                  mr: 'किमान वय',
+                                  hi: 'न्यूनतम आयु',
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -880,7 +1008,14 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               onChanged: (_) => applyFilters(),
-                              decoration: _inputDec(hint: isMr ? 'वय Max' : 'Age Max'),
+                              decoration: _inputDec(
+                                hint: AppTranslations.pick(
+                                  lang,
+                                  en: 'Age Max',
+                                  mr: 'कमाल वय',
+                                  hi: 'अधिकतम आयु',
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -893,7 +1028,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: addressSuggestions
-                                .where((a) => a.toLowerCase().contains(addressSearchController.text.toLowerCase()))
+                                .where((a) => AppTranslations.normalizeAsciiDigits(a)
+                                    .toLowerCase()
+                                    .contains(normAddrSearch))
                                 .take(6)
                                 .map(
                                   (addr) => Padding(
@@ -901,8 +1038,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                     child: ActionChip(
                                       visualDensity: VisualDensity.compact,
                                       backgroundColor: const Color(0xFFEFF6FF),
-                                      label: Text(
+                                      label: AppTranslatedText(
                                         addr,
+                                        targetLanguage: lang,
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF1D4ED8)),
                                       ),
                                       onPressed: () {
@@ -960,9 +1098,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                             },
                           ),
                           Text(
-                            isMr
-                                ? 'सर्व निवडा (${filteredVoters.length})'
-                                : 'Select All (${filteredVoters.length})',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Select All ($filteredCountStr)',
+                              mr: 'सर्व निवडा ($filteredCountStr)',
+                              hi: 'सभी चुनें ($filteredCountStr)',
+                            ),
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -986,7 +1127,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                   Icon(Icons.people_outline_rounded, size: 48, color: Colors.grey[400]),
                                   const SizedBox(height: 8),
                                   Text(
-                                    isMr ? 'कोणतेही मतदार आढळले नाहीत' : 'No citizens found',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'No citizens found',
+                                      mr: 'कोणतेही मतदार आढळले नाहीत',
+                                      hi: 'कोई नागरिक नहीं मिला',
+                                    ),
                                     style: TextStyle(color: Colors.grey[600], fontSize: 13),
                                   ),
                                 ],
@@ -999,6 +1145,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               itemBuilder: (context, idx) {
                                 final v = filteredVoters[idx];
                                 final isSel = selectedIds.contains(v.id);
+                                final ageStr = AppTranslations.formatDigits(v.age, lang);
                                 return CheckboxListTile(
                                   value: isSel,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -1012,16 +1159,37 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                       }
                                     });
                                   },
-                                  title: Text(
-                                    v.displayName,
+                                  title: AppTranslatedText(
+                                    v.displayNameFor(lang),
+                                    isName: true,
+                                    targetLanguage: lang,
                                     style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
                                   ),
-                                  subtitle: Text(
-                                    '${v.address} · वय: ${v.age}',
-                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  subtitle: Row(
+                                    children: [
+                                      if (v.address.isNotEmpty)
+                                        Flexible(
+                                          child: AppTranslatedText(
+                                            v.address,
+                                            targetLanguage: lang,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                          ),
+                                        ),
+                                      Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: '${v.address.isNotEmpty ? ' · ' : ''}Age: $ageStr',
+                                          mr: '${v.address.isNotEmpty ? ' · ' : ''}वय: $ageStr',
+                                          hi: '${v.address.isNotEmpty ? ' · ' : ''}आयु: $ageStr',
+                                        ),
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                      ),
+                                    ],
                                   ),
                                   secondary: Text(
-                                    '+91 ${v.mobile ?? ''}',
+                                    AppTranslations.formatDigits('+91 ${v.mobile ?? ''}', lang),
                                     style: const TextStyle(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w600,
@@ -1050,7 +1218,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          isMr ? '${selectedIds.length} निवडले' : '${selectedIds.length} Selected',
+                          AppTranslations.pick(
+                            lang,
+                            en: '$selectedCountStr Selected',
+                            mr: '$selectedCountStr निवडले',
+                            hi: '$selectedCountStr चयनित',
+                          ),
                           style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.bold,
@@ -1066,7 +1239,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: Text(
-                          isMr ? 'रद्द करा' : 'Cancel',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Cancel',
+                            mr: 'रद्द करा',
+                            hi: 'रद्द करें',
+                          ),
                           style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1078,17 +1256,24 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                 final messenger = ScaffoldMessenger.of(context);
                                 setSheetState(() => isSending = true);
                                 final count = selectedIds.length;
+                                final countStr = AppTranslations.formatDigits(count, lang);
                                 final targets = filteredVoters.where((v) => selectedIds.contains(v.id)).toList();
 
-                                final dateStr = DateFormat('dd MMM yyyy').format(meeting.scheduledAt);
-                                final timeStr = DateFormat('hh:mm a').format(meeting.scheduledAt);
-                                final waMsg = isMr
-                                    ? '🎥 आपणास व्हिडिओ मीटिंगसाठी आमंत्रित केले आहे: *${meeting.title}*\n📅 तारीख: $dateStr\n⏰ वेळ: $timeStr\n🔗 इथे सामील व्हा: ${meeting.meetLink}\n\nकृपया वेळेवर सामील व्हा.'
-                                    : '🎥 You are invited to a video meeting: *${meeting.title}*\n📅 Date: $dateStr\n⏰ Time: $timeStr\n🔗 Join here: ${meeting.meetLink}\n\nPlease join on time.';
+                                final translatedTitle =
+                                    await DynamicTranslationService.translateOrRaw(meeting.title, lang);
+                                final dateStr = AppTranslations.formatDate(meeting.scheduledAt, lang);
+                                final timeStr = AppTranslations.formatTime(meeting.scheduledAt, lang);
+                                final waMsg = AppTranslations.pick(
+                                  lang,
+                                  en: '🎥 You are invited to a video meeting: *$translatedTitle*\n📅 Date: $dateStr\n⏰ Time: $timeStr\n🔗 Join here: ${meeting.meetLink}\n\nPlease join on time.',
+                                  mr: '🎥 आपणास व्हिडिओ मीटिंगसाठी आमंत्रित केले आहे: *$translatedTitle*\n📅 तारीख: $dateStr\n⏰ वेळ: $timeStr\n🔗 इथे सामील व्हा: ${meeting.meetLink}\n\nकृपया वेळेवर सामील व्हा.',
+                                  hi: '🎥 आपको वीडियो मीटिंग के लिए आमंत्रित किया गया है: *$translatedTitle*\n📅 तारीख: $dateStr\n⏰ समय: $timeStr\n🔗 यहाँ जुड़ें: ${meeting.meetLink}\n\nकृपया समय पर जुड़ें।',
+                                );
 
                                 final encoded = Uri.encodeComponent(waMsg);
                                 if (targets.isNotEmpty) {
-                                  final firstMobile = targets.first.mobile?.replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+                                  final firstMobile = AppTranslations.normalizeAsciiDigits(targets.first.mobile ?? '')
+                                      .replaceAll(RegExp(r'[^0-9]'), '');
                                   final clean = firstMobile.startsWith('91') ? firstMobile : '91$firstMobile';
                                   final uri = Uri.parse('https://wa.me/$clean?text=$encoded');
                                   if (await canLaunchUrl(uri)) {
@@ -1125,9 +1310,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                   messenger.showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        isMr
-                                            ? '✅ $count मतदारांना बैठकीचे आमंत्रण पाठवले!'
-                                            : '✅ Sent conference invites to $count citizens!',
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: '✅ Sent conference invites to $countStr citizens!',
+                                          mr: '✅ $countStr मतदारांना बैठकीचे आमंत्रण पाठवले!',
+                                          hi: '✅ $countStr नागरिकों को मीटिंग का निमंत्रण भेजा गया!',
+                                        ),
                                       ),
                                       backgroundColor: const Color(0xFF16A34A),
                                     ),
@@ -1142,7 +1330,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               )
                             : const Icon(Icons.send_rounded, size: 16),
                         label: Text(
-                          isMr ? 'WhatsApp वर पाठवा' : 'Send via WhatsApp',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Send via WhatsApp',
+                            mr: 'WhatsApp वर पाठवा',
+                            hi: 'WhatsApp पर भेजें',
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -1190,25 +1383,29 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
     }
   }
 
-  String _getStatusText(String status, bool isMr) {
+  String _getStatusText(String status, String lang) {
     switch (status.toLowerCase()) {
       case 'active':
-        return isMr ? 'सक्रिय' : 'ACTIVE';
+        return AppTranslations.pick(lang, en: 'ACTIVE', mr: 'सक्रिय', hi: 'सक्रिय');
       case 'ended':
-        return isMr ? 'पूर्ण' : 'ENDED';
+        return AppTranslations.pick(lang, en: 'ENDED', mr: 'पूर्ण', hi: 'समाप्त');
       case 'scheduled':
       default:
-        return isMr ? 'नियोजित' : 'SCHEDULED';
+        return AppTranslations.pick(lang, en: 'SCHEDULED', mr: 'नियोजित', hi: 'निर्धारित');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final now = DateTime.now();
     final upcomingMeetings = _meetings.where((m) => m.scheduledAt.isAfter(now) || m.status == 'active').toList();
     final pastMeetings = _meetings.where((m) => m.scheduledAt.isBefore(now) && m.status != 'active').toList();
     final displayMeetings = _tabController.index == 0 ? upcomingMeetings : pastMeetings;
+
+    final displayCountStr = AppTranslations.formatDigits(displayMeetings.length, lang);
+    final upcomingCountStr = AppTranslations.formatDigits(upcomingMeetings.length, lang);
+    final pastCountStr = AppTranslations.formatDigits(pastMeetings.length, lang);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -1221,7 +1418,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
         leading: Builder(
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-            tooltip: 'Open Menu Drawer',
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Open Menu Drawer',
+              mr: 'मेनू उघडा',
+              hi: 'मेनू खोलें',
+            ),
             onPressed: () {
               HapticFeedback.lightImpact();
               Scaffold.of(ctx).openDrawer();
@@ -1231,56 +1433,69 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
         titleSpacing: 0,
         title: Row(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      isMr ? 'व्हिडिओ कॉन्फरन्स रूम' : 'Conference Room',
-                      style: const TextStyle(
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${displayMeetings.length}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Conference Room',
+                            mr: 'व्हिडिओ कॉन्फरन्स रूम',
+                            hi: 'कॉन्फ्रेंस रूम',
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.2,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                Text(
-                  isMr
-                      ? 'नागरिक व कार्यकर्त्यांशी सुरक्षित डिजिटल बैठक व्यवस्था'
-                      : 'Multi-party teleconference bridges',
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFFE0F2FE),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          displayCountStr,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Multi-party teleconference bridges',
+                      mr: 'नागरिक व कार्यकर्त्यांशी सुरक्षित डिजिटल बैठक व्यवस्था',
+                      hi: 'नागरिकों व कार्यकर्ताओं के साथ सुरक्षित डिजिटल बैठक व्यवस्था',
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFFE0F2FE),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        actions: [
-
-        ],
+        actions: const [],
       ),
       body: Column(
         children: [
@@ -1320,15 +1535,21 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       tabs: [
                         Tab(
                           icon: const Icon(Icons.calendar_today_rounded, size: 14),
-                          text: isMr
-                              ? 'सक्रिय / आगामी (${upcomingMeetings.length})'
-                              : 'Upcoming (${upcomingMeetings.length})',
+                          text: AppTranslations.pick(
+                            lang,
+                            en: 'Upcoming ($upcomingCountStr)',
+                            mr: 'सक्रिय / आगामी ($upcomingCountStr)',
+                            hi: 'आगामी ($upcomingCountStr)',
+                          ),
                         ),
                         Tab(
                           icon: const Icon(Icons.history_rounded, size: 14),
-                          text: isMr
-                              ? 'मागील बैठका (${pastMeetings.length})'
-                              : 'Past (${pastMeetings.length})',
+                          text: AppTranslations.pick(
+                            lang,
+                            en: 'Past ($pastCountStr)',
+                            mr: 'मागील बैठका ($pastCountStr)',
+                            hi: 'पिछली मीटिंग ($pastCountStr)',
+                          ),
                         ),
                       ],
                     ),
@@ -1381,8 +1602,11 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                 ),
                 const SizedBox(width: 8),
                 AppPdfButton.icon(
-                  tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
-                  onPressed: () => ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(meetings: displayMeetings),
+                  tooltip: AppTranslations.getDownloadReport(lang),
+                  onPressed: () => ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(
+                    meetings: displayMeetings,
+                    lang: lang,
+                  ),
                 ),
               ],
             ),
@@ -1396,8 +1620,8 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                     onRefresh: _loadMeetings,
                     color: const Color(0xFF0284C7),
                     child: _viewMode == 'grid'
-                        ? _buildGridView(_getVisibleMeetings(displayMeetings), displayMeetings.length, isMr)
-                        : _buildReportView(_getVisibleMeetings(displayMeetings), displayMeetings.length, isMr),
+                        ? _buildGridView(_getVisibleMeetings(displayMeetings), displayMeetings.length, lang)
+                        : _buildReportView(_getVisibleMeetings(displayMeetings), displayMeetings.length, lang),
                   ),
           ),
         ],
@@ -1409,7 +1633,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
         elevation: 3,
         icon: const Icon(Icons.add_rounded),
         label: Text(
-          isMr ? 'नवीन रूम तयार करा' : 'New Room',
+          AppTranslations.pick(
+            lang,
+            en: 'New Room',
+            mr: 'नवीन रूम तयार करा',
+            hi: 'नया रूम बनाएं',
+          ),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -1419,7 +1648,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   // ─────────────────────────────────────────────────────────────
   // 4. Grid View Layout (matching ConferenceRoom.tsx)
   // ─────────────────────────────────────────────────────────────
-  Widget _buildGridView(List<ConferenceMeetingModel> list, int totalCount, bool isMr) {
+  Widget _buildGridView(List<ConferenceMeetingModel> list, int totalCount, String lang) {
     if (totalCount == 0) {
       return Center(
         child: SingleChildScrollView(
@@ -1429,15 +1658,20 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
             children: [
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.videocam_outlined, size: 54, color: Color(0xFF94A3B8)),
               ),
               const SizedBox(height: 16),
               Text(
-                isMr ? 'कोणतीही बैठक उपलब्ध नाही' : 'No conference rooms active',
+                AppTranslations.pick(
+                  lang,
+                  en: 'No conference rooms active',
+                  mr: 'कोणतीही बैठक उपलब्ध नाही',
+                  hi: 'कोई मीटिंग उपलब्ध नहीं है',
+                ),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -1446,9 +1680,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
               ),
               const SizedBox(height: 6),
               Text(
-                isMr
-                    ? 'नवीन व्हिडिओ रूम तयार करण्यासाठी खालील बटण दाबा'
-                    : 'Create a room to start video conferencing with citizens',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Create a room to start video conferencing with citizens',
+                  mr: 'नवीन व्हिडिओ रूम तयार करण्यासाठी खालील बटण दाबा',
+                  hi: 'नागरिकों के साथ वीडियो कॉन्फ्रेंसिंग शुरू करने के लिए नया रूम बनाएं',
+                ),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
               ),
@@ -1456,7 +1693,14 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
               ElevatedButton.icon(
                 onPressed: _showCreateMeetingDialog,
                 icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(isMr ? 'पहिली बैठक आयोजित करा' : 'Schedule First Meeting'),
+                label: Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Schedule First Meeting',
+                    mr: 'पहिली बैठक आयोजित करा',
+                    hi: 'पहली मीटिंग शेड्यूल करें',
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0284C7),
                   foregroundColor: Colors.white,
@@ -1479,8 +1723,8 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
             currentCount: list.length,
             totalCount: totalCount,
             pageSize: 10,
-            label: isMr ? 'बैठका' : 'meetings',
-            isMarathi: isMr,
+            label: AppTranslations.pick(lang, en: 'meetings', mr: 'बैठका', hi: 'मीटिंग'),
+            isMarathi: lang == 'mr',
             onLoadMore: () {
               setState(() {
                 _displayedLimit += 10;
@@ -1489,8 +1733,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
           );
         }
         final meeting = list[index];
-        final dateStr = DateFormat('dd MMM yyyy').format(meeting.scheduledAt);
-        final timeStr = DateFormat('hh:mm a').format(meeting.scheduledAt);
+        final dateStr = AppTranslations.formatDate(meeting.scheduledAt, lang);
+        final timeStr = AppTranslations.formatTime(meeting.scheduledAt, lang);
+        final invitedCountStr = AppTranslations.formatDigits(meeting.invitedCount, lang);
 
         return Container(
           decoration: BoxDecoration(
@@ -1525,7 +1770,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      _getStatusText(meeting.status, isMr),
+                      _getStatusText(meeting.status, lang),
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
@@ -1553,8 +1798,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
               const SizedBox(height: 10),
 
               // Title
-              Text(
+              AppTranslatedText(
                 meeting.title,
+                targetLanguage: lang,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -1565,8 +1811,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
               // Notes / Agenda
               if (meeting.notes != null && meeting.notes!.isNotEmpty) ...[
                 const SizedBox(height: 5),
-                Text(
+                AppTranslatedText(
                   meeting.notes!,
+                  targetLanguage: lang,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -1601,7 +1848,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       const Icon(Icons.people_outline_rounded, size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 4),
                       Text(
-                        '${meeting.invitedCount} ${isMr ? 'आमंत्रित' : 'Invited'}',
+                        AppTranslations.pick(
+                          lang,
+                          en: '$invitedCountStr Invited',
+                          mr: '$invitedCountStr आमंत्रित',
+                          hi: '$invitedCountStr आमंत्रित',
+                        ),
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1669,7 +1921,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       ),
                       icon: const Icon(Icons.videocam_rounded, size: 16),
                       label: Text(
-                        isMr ? 'सामील व्हा' : 'Join Room',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Join Room',
+                          mr: 'सामील व्हा',
+                          hi: 'मीटिंग में जुड़ें',
+                        ),
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -1687,7 +1944,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                       ),
                       icon: const Icon(Icons.send_rounded, size: 15),
                       label: Text(
-                        isMr ? 'आमंत्रण पाठवा' : 'Send Invites',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Send Invites',
+                          mr: 'आमंत्रण पाठवा',
+                          hi: 'निमंत्रण भेजें',
+                        ),
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -1704,7 +1966,8 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
   // ─────────────────────────────────────────────────────────────
   // 5. Report / Table View Layout (matching ConferenceRoom.tsx)
   // ─────────────────────────────────────────────────────────────
-  Widget _buildReportView(List<ConferenceMeetingModel> list, int totalCount, bool isMr) {
+  Widget _buildReportView(List<ConferenceMeetingModel> list, int totalCount, String lang) {
+    final listCountStr = AppTranslations.formatDigits(list.length, lang);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
       children: [
@@ -1731,35 +1994,60 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${isMr ? "बैठकांचा रिपोर्ट" : "Meetings Report"} (${list.length})',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                    Flexible(
+                      child: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Meetings Report ($listCountStr)',
+                          mr: 'बैठकांचा रिपोर्ट ($listCountStr)',
+                          hi: 'मीटिंग रिपोर्ट ($listCountStr)',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         AppPdfButton.outlined(
-                          label: 'Reports',
-                          tooltip: 'Reports',
-                          onPressed: () => ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(meetings: list),
+                          label: AppTranslations.pick(lang, en: 'Reports', mr: 'अहवाल', hi: 'रिपोर्ट'),
+                          tooltip: AppTranslations.getDownloadReport(lang),
+                          onPressed: () => ConferenceMeetingReportGenerator.generateAndPrintMeetingReport(
+                            meetings: list,
+                            lang: lang,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         OutlinedButton.icon(
                           onPressed: () {
                             final messenger = ScaffoldMessenger.of(context);
+                            final invitedLabel = AppTranslations.pick(
+                              lang,
+                              en: 'Invited',
+                              mr: 'आमंत्रित',
+                              hi: 'आमंत्रित',
+                            );
                             Clipboard.setData(ClipboardData(
                               text: list
                                   .map((m) =>
-                                      '${DateFormat('dd/MM/yyyy HH:mm').format(m.scheduledAt)} | ${m.title} | ${m.status} | Invited: ${m.invitedCount} | ${m.meetLink}')
+                                      '${AppTranslations.formatDateTime(m.scheduledAt, lang)} | ${DynamicTranslationService.getCachedTranslation(m.title, lang) ?? m.title} | ${_getStatusText(m.status, lang)} | $invitedLabel: ${AppTranslations.formatDigits(m.invitedCount, lang)} | ${m.meetLink}')
                                   .join('\n'),
                             ));
                             messenger.showSnackBar(
                               SnackBar(
-                                content: Text(isMr ? 'रिपोर्ट कॉपी केला!' : 'Report data copied!'),
+                                content: Text(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Report data copied!',
+                                    mr: 'रिपोर्ट कॉपी केला!',
+                                    hi: 'रिपोर्ट डेटा कॉपी किया गया!',
+                                  ),
+                                ),
                                 backgroundColor: const Color(0xFF0284C7),
                               ),
                             );
@@ -1771,7 +2059,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                           ),
                           icon: const Icon(Icons.copy_all_rounded, size: 14, color: Color(0xFF0284C7)),
                           label: Text(
-                            isMr ? 'कॉपी करा' : 'Copy Report',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Copy Report',
+                              mr: 'कॉपी करा',
+                              hi: 'कॉपी करें',
+                            ),
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -1790,44 +2083,74 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                   columns: [
                     DataColumn(
                       label: Text(
-                        isMr ? 'तारीख व वेळ' : 'Date & Time',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Date & Time',
+                          mr: 'तारीख व वेळ',
+                          hi: 'तारीख और समय',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
                     DataColumn(
                       label: Text(
-                        isMr ? 'बैठकीचा विषय' : 'Meeting Title',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Meeting Title',
+                          mr: 'बैठकीचा विषय',
+                          hi: 'मीटिंग का विषय',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
                     DataColumn(
                       label: Text(
-                        isMr ? 'स्थिती' : 'Status',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Status',
+                          mr: 'स्थिती',
+                          hi: 'स्थिति',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
                     DataColumn(
                       label: Text(
-                        isMr ? 'आमंत्रित' : 'Invited',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Invited',
+                          mr: 'आमंत्रित',
+                          hi: 'आमंत्रित',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
                     DataColumn(
                       label: Text(
-                        isMr ? 'मीटिंग लिंक' : 'Meet Link',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Meet Link',
+                          mr: 'मीटिंग लिंक',
+                          hi: 'मीटिंग लिंक',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
                     DataColumn(
                       label: Text(
-                        isMr ? 'पर्याय' : 'Options',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Options',
+                          mr: 'पर्याय',
+                          hi: 'विकल्प',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
                   ],
                   rows: list.map((meeting) {
-                    final dateStr = DateFormat('dd MMM yyyy').format(meeting.scheduledAt);
-                    final timeStr = DateFormat('hh:mm a').format(meeting.scheduledAt);
+                    final dateStr = AppTranslations.formatDate(meeting.scheduledAt, lang);
+                    final timeStr = AppTranslations.formatTime(meeting.scheduledAt, lang);
 
                     return DataRow(
                       cells: [
@@ -1848,15 +2171,17 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                AppTranslatedText(
                                   meeting.title,
+                                  targetLanguage: lang,
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 if (meeting.notes != null)
-                                  Text(
+                                  AppTranslatedText(
                                     meeting.notes!,
+                                    targetLanguage: lang,
                                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1873,7 +2198,7 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              _getStatusText(meeting.status, isMr),
+                              _getStatusText(meeting.status, lang),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -1888,7 +2213,10 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                             children: [
                               const Icon(Icons.people_outline_rounded, size: 14, color: Color(0xFF64748B)),
                               const SizedBox(width: 4),
-                              Text('${meeting.invitedCount}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              Text(
+                                AppTranslations.formatDigits(meeting.invitedCount, lang),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
                             ],
                           ),
                         ),
@@ -1914,6 +2242,12 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                   size: 14,
                                   color: _copiedMeetingId == meeting.id ? const Color(0xFF16A34A) : const Color(0xFF64748B),
                                 ),
+                                tooltip: AppTranslations.pick(
+                                  lang,
+                                  en: 'Copy Link',
+                                  mr: 'लिंक कॉपी करा',
+                                  hi: 'लिंक कॉपी करें',
+                                ),
                                 onPressed: () => _copyLink(meeting.meetLink, meetingId: meeting.id),
                               ),
                             ],
@@ -1925,12 +2259,17 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.videocam_rounded, size: 18, color: Color(0xFF0284C7)),
-                                tooltip: 'Join',
+                                tooltip: AppTranslations.pick(lang, en: 'Join', mr: 'सामील व्हा', hi: 'जुड़ें'),
                                 onPressed: () => _joinMeeting(meeting.meetLink),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF25D366)),
-                                tooltip: 'Invite Voters',
+                                tooltip: AppTranslations.pick(
+                                  lang,
+                                  en: 'Invite Voters',
+                                  mr: 'मतदारांना आमंत्रित करा',
+                                  hi: 'मतदाताओं को आमंत्रित करें',
+                                ),
                                 onPressed: () => _showInviteVoterModal(meeting),
                               ),
                             ],
@@ -1949,8 +2288,8 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
             currentCount: list.length,
             totalCount: totalCount,
             pageSize: 10,
-            label: isMr ? 'बैठका' : 'meetings',
-            isMarathi: isMr,
+            label: AppTranslations.pick(lang, en: 'meetings', mr: 'बैठका', hi: 'मीटिंग'),
+            isMarathi: lang == 'mr',
             onLoadMore: () {
               setState(() {
                 _displayedLimit += 10;

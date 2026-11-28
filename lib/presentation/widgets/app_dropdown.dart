@@ -1,12 +1,17 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../core/localization/app_translations.dart';
+import '../../core/services/translation_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../providers/language_provider.dart';
 
 /// Helper to recursively extract plain text from any child widget
-/// (such as Text, Row, Column, Flexible, etc.) for search filtering and display.
+/// (such as Text, Row, Column, Flexible, AppTranslatedText, etc.) for search filtering and display.
 String _extractText(Widget widget) {
   if (widget is Text) {
     return widget.data ?? '';
+  } else if (widget is AppTranslatedText) {
+    return widget.text;
   } else if (widget is Row) {
     return widget.children.map(_extractText).where((s) => s.isNotEmpty).join(' ');
   } else if (widget is Column) {
@@ -25,28 +30,112 @@ String _extractText(Widget widget) {
   return '';
 }
 
-/// Helper to derive a clean, contextual, user-facing title for the dropdown modal
-/// instead of falling back to a generic 'Select Option'.
+/// Reactive dropdown text label that works seamlessly with OR without a ProviderScope.
+/// Translates English <-> Marathi <-> Hindi (including future dynamic DB items & numbers).
+class _TranslatedDropdownText extends StatefulWidget {
+  final String text;
+  final String lang;
+  final TextStyle style;
+  final int? maxLines;
+  final TextOverflow? overflow;
+
+  const _TranslatedDropdownText(
+    this.text, {
+    required this.lang,
+    required this.style,
+    this.maxLines,
+    this.overflow,
+  });
+
+  @override
+  State<_TranslatedDropdownText> createState() => _TranslatedDropdownTextState();
+}
+
+class _TranslatedDropdownTextState extends State<_TranslatedDropdownText> {
+  String _resolved = '';
+  int _token = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncOrTranslate();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TranslatedDropdownText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text || oldWidget.lang != widget.lang) {
+      _syncOrTranslate();
+    }
+  }
+
+  void _syncOrTranslate() {
+    final clean = widget.text.trim();
+    if (clean.isEmpty) {
+      _resolved = widget.text;
+      return;
+    }
+
+    final cached = DynamicTranslationService.getCachedTranslation(clean, widget.lang);
+    if (cached != null) {
+      _resolved = cached;
+      return;
+    }
+
+    _resolved = AppTranslations.formatDigits(widget.text, widget.lang);
+    final reqToken = ++_token;
+
+    // Heuristic: ALL-CAPS multi-letter society/entity names transliterate cleanly if title-cased via translateOrRaw
+    DynamicTranslationService.translateText(clean, widget.lang).then((val) {
+      if (mounted && reqToken == _token && val != _resolved) {
+        setState(() {
+          _resolved = val;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final instant = DynamicTranslationService.getCachedTranslation(widget.text.trim(), widget.lang);
+    final textToShow = instant ?? _resolved;
+    return Text(
+      AppTranslations.formatDigits(textToShow, widget.lang),
+      style: widget.style,
+      maxLines: widget.maxLines,
+      overflow: widget.overflow,
+    );
+  }
+}
+
+/// Helper to derive a localized, contextual, user-facing title for the dropdown modal
 String _resolveDropdownTitle<T>({
   String? explicitTitle,
   String? label,
   String? hintText,
   required List<DropdownMenuItem<T>> items,
+  required String lang,
 }) {
+  String trLabel(String s) {
+    final clean = s.trim();
+    final cached = DynamicTranslationService.getCachedTranslation(clean, lang);
+    return AppTranslations.formatDigits(cached ?? clean, lang);
+  }
+
   if (explicitTitle != null &&
       explicitTitle.trim().isNotEmpty &&
       !_isGenericOption(explicitTitle)) {
-    return explicitTitle.trim();
+    return trLabel(explicitTitle);
   }
   if (label != null &&
       label.trim().isNotEmpty &&
       !_isGenericOption(label)) {
-    return label.trim();
+    return trLabel(label);
   }
   if (hintText != null &&
       hintText.trim().isNotEmpty &&
       !_isGenericOption(hintText)) {
-    return hintText.trim();
+    return trLabel(hintText);
   }
 
   // Deduce from items
@@ -54,32 +143,42 @@ String _resolveDropdownTitle<T>({
     final text = _extractText(item.child).trim();
     if (text.isEmpty) continue;
 
-    // English patterns
     if (text.startsWith('All ') || text.startsWith('all ')) {
       final noun = text.substring(4).trim();
-      if (noun.isNotEmpty) return 'Select $noun';
+      if (noun.isNotEmpty) return trLabel('Select $noun');
     }
-    if (text.startsWith('Select ') && !_isGenericOption(text)) {
-      return text;
-    }
-    if (text.startsWith('Choose ') && !_isGenericOption(text)) {
-      return text;
+    if ((text.startsWith('Select ') || text.startsWith('Choose ')) && !_isGenericOption(text)) {
+      return trLabel(text);
     }
     if (text.startsWith('Filter by ')) {
-      return text;
+      return trLabel(text);
     }
-
-    // Marathi patterns
     if (text.startsWith('सर्व ')) {
       final noun = text.substring(5).trim();
-      if (noun.isNotEmpty) return '$noun निवडा';
+      if (noun.isNotEmpty) {
+        return lang == 'mr' ? '$noun निवडा' : trLabel('Select $noun');
+      }
+    }
+    if (text.startsWith('सभी ')) {
+      final noun = text.substring(4).trim();
+      if (noun.isNotEmpty) {
+        return lang == 'hi' ? '$noun चुनें' : trLabel('Select $noun');
+      }
     }
     if (text.endsWith(' निवडा') && text != 'पर्याय निवडा') {
-      return text;
+      return lang == 'mr' ? text : trLabel(text);
+    }
+    if (text.endsWith(' चुनें') && text != 'विकल्प चुनें') {
+      return lang == 'hi' ? text : trLabel(text);
     }
   }
 
-  return 'Select Option';
+  return AppTranslations.pick(
+    lang,
+    en: 'Select Option',
+    mr: 'पर्याय निवडा',
+    hi: 'विकल्प चुनें',
+  );
 }
 
 bool _isGenericOption(String text) {
@@ -88,7 +187,8 @@ bool _isGenericOption(String text) {
       lower == 'select options' ||
       lower == 'select...' ||
       lower == 'select' ||
-      lower == 'पर्याय निवडा';
+      lower == 'पर्याय निवडा' ||
+      lower == 'विकल्प चुनें';
 }
 
 /// Wrapper to differentiate between tapping a null option and tapping outside to dismiss
@@ -98,12 +198,12 @@ class _DropdownValueWrapper<T> {
 }
 
 /// Opens an anchored desktop dropdown menu positioned directly below the trigger field
-/// matching CustomSelect.tsx from Nagarsevak-Managment with no extra modals or search bars.
 Future<void> _openAnchoredDesktopDropdown<T>({
   required BuildContext context,
   required List<DropdownMenuItem<T>> items,
   required T? currentValue,
   required ValueChanged<T?> onSelected,
+  required String lang,
 }) async {
   final RenderBox? button = context.findRenderObject() as RenderBox?;
   if (button == null || !button.hasSize) return;
@@ -115,7 +215,6 @@ Future<void> _openAnchoredDesktopDropdown<T>({
   final double buttonHeight = button.size.height;
   final Offset buttonTopLeft = button.localToGlobal(Offset.zero, ancestor: overlay);
 
-  // Position directly below the dropdown field with 4px gap
   final RelativeRect position = RelativeRect.fromRect(
     Rect.fromLTWH(
       buttonTopLeft.dx,
@@ -144,25 +243,23 @@ Future<void> _openAnchoredDesktopDropdown<T>({
     ),
     items: items.map((item) {
       final isSelected = item.value == currentValue;
+      final itemStyle = TextStyle(
+        fontSize: 13,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155),
+      );
       Widget childText;
       if (item.child is Text) {
         final t = item.child as Text;
-        childText = Text(
+        childText = _TranslatedDropdownText(
           t.data ?? '',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155),
-          ),
+          lang: lang,
+          style: itemStyle,
           overflow: TextOverflow.ellipsis,
         );
       } else {
         childText = DefaultTextStyle(
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF334155),
-          ),
+          style: itemStyle,
           overflow: TextOverflow.ellipsis,
           child: item.child,
         );
@@ -197,7 +294,7 @@ Future<void> _openAnchoredDesktopDropdown<T>({
 }
 
 /// Unified, themed dropdown component matching the Krishnaniti civic application theme.
-/// Replaces clunky default Flutter dropdowns with an elegant bottom-sheet picker.
+/// Automatically translates labels, hints, options, search prompts, and numerals into EN / MR / HI.
 class AppDropdown<T> extends StatelessWidget {
   final T? value;
   final List<DropdownMenuItem<T>> items;
@@ -233,7 +330,7 @@ class AppDropdown<T> extends StatelessWidget {
     this.padding,
   }) : hintText = hintText ?? hint;
 
-  void _openPicker(BuildContext context) {
+  void _openPicker(BuildContext context, String lang) {
     if (onChanged == null) return;
     FocusScope.of(context).unfocus();
 
@@ -244,6 +341,7 @@ class AppDropdown<T> extends StatelessWidget {
         items: items,
         currentValue: value,
         onSelected: (val) => onChanged?.call(val),
+        lang: lang,
       );
       return;
     }
@@ -253,6 +351,13 @@ class AppDropdown<T> extends StatelessWidget {
       label: label,
       hintText: hintText,
       items: items,
+      lang: lang,
+    );
+    final optionsWord = AppTranslations.pick(
+      lang,
+      en: 'options available',
+      mr: 'पर्याय उपलब्ध',
+      hi: 'विकल्प उपलब्ध',
     );
 
     showModalBottomSheet<T>(
@@ -263,10 +368,11 @@ class AppDropdown<T> extends StatelessWidget {
       barrierColor: Colors.black54,
       builder: (ctx) => _AppDropdownModalSheet<T>(
         title: modalTitle,
-        subtitle: '${items.length} options available',
+        subtitle: '${AppTranslations.formatDigits(items.length, lang)} $optionsWord',
         icon: prefixIcon,
         items: items,
         selectedValue: value,
+        lang: lang,
         onSelect: (val) {
           Navigator.pop(ctx);
           onChanged?.call(val);
@@ -275,41 +381,43 @@ class AppDropdown<T> extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedDisplay() {
+  Widget _buildSelectedDisplay(String lang) {
     if (value != null) {
       final selectedItem = items.cast<DropdownMenuItem<T>?>().firstWhere(
         (it) => it?.value == value,
         orElse: () => null,
       );
       if (selectedItem != null) {
+        const selectedStyle = TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF334155),
+        );
         if (selectedItem.child is Text) {
           final t = selectedItem.child as Text;
-          return Text(
+          return _TranslatedDropdownText(
             t.data ?? '',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF334155),
-            ),
+            lang: lang,
+            style: selectedStyle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           );
         }
         return DefaultTextStyle(
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF334155),
-          ),
+          style: selectedStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           child: selectedItem.child,
         );
       }
     }
-    final displayHint = hintText ?? label ?? (title != null ? title! : 'Select');
-    return Text(
+    final displayHint = hintText ??
+        label ??
+        title ??
+        AppTranslations.pick(lang, en: 'Select', mr: 'निवडा', hi: 'चुनें');
+    return _TranslatedDropdownText(
       displayHint,
+      lang: lang,
       style: const TextStyle(
         fontSize: 13,
         color: Color(0xFF94A3B8),
@@ -322,56 +430,60 @@ class AppDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final content = Container(
-          width: width,
-          height: height,
-          padding: padding ?? const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: backgroundColor ?? Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: borderColor ?? const Color(0xFFE2E8F0),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (prefixIcon != null) ...[
-                prefixIcon!,
-                const SizedBox(width: 8),
-              ],
-              if (isExpanded)
-                Expanded(child: _buildSelectedDisplay())
-              else
-                Flexible(child: _buildSelectedDisplay()),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: Color(0xFF94A3B8),
-                size: 19,
+    return ValueListenableBuilder<String>(
+      valueListenable: appLanguageValueNotifier,
+      builder: (context, lang, _) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final content = Container(
+              width: width,
+              height: height,
+              padding: padding ?? const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: backgroundColor ?? Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: borderColor ?? const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
               ),
-            ],
-          ),
-        );
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (prefixIcon != null) ...[
+                    prefixIcon!,
+                    const SizedBox(width: 8),
+                  ],
+                  if (isExpanded)
+                    Expanded(child: _buildSelectedDisplay(lang))
+                  else
+                    Flexible(child: _buildSelectedDisplay(lang)),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFF94A3B8),
+                    size: 19,
+                  ),
+                ],
+              ),
+            );
 
-        return Builder(
-          builder: (itemCtx) => InkWell(
-            onTap: onChanged != null ? () => _openPicker(itemCtx) : null,
-            borderRadius: BorderRadius.circular(10),
-            child: content,
-          ),
+            return Builder(
+              builder: (itemCtx) => InkWell(
+                onTap: onChanged != null ? () => _openPicker(itemCtx, lang) : null,
+                borderRadius: BorderRadius.circular(10),
+                child: content,
+              ),
+            );
+          },
         );
       },
     );
   }
 }
 
-/// Form-field dropdown with built-in Krishnaniti styling and label + required asterisk.
-/// Uses the unified Krishnaniti modal sheet picker matching the Society selector.
+/// Form-field dropdown with built-in Krishnaniti styling, label + required asterisk, and 3-language support.
 class AppDropdownFormField<T> extends FormField<T> {
   final String? label;
   final String? title;
@@ -407,181 +519,203 @@ class AppDropdownFormField<T> extends FormField<T> {
           builder: (FormFieldState<T> state) {
             final effectiveValue = value ?? state.value;
 
-            void openPicker(BuildContext context) {
-              if (onChanged == null) return;
-              FocusScope.of(context).unfocus();
+            return ValueListenableBuilder<String>(
+              valueListenable: appLanguageValueNotifier,
+              builder: (context, lang, _) {
+                void openPicker(BuildContext btnCtx) {
+                  if (onChanged == null) return;
+                  FocusScope.of(btnCtx).unfocus();
 
-              final isDesktop = MediaQuery.of(context).size.width >= 768;
-              if (isDesktop) {
-                _openAnchoredDesktopDropdown<T>(
-                  context: context,
-                  items: items,
-                  currentValue: effectiveValue,
-                  onSelected: (val) {
-                    state.didChange(val);
-                    onChanged(val);
-                  },
-                );
-                return;
-              }
+                  final isDesktop = MediaQuery.of(btnCtx).size.width >= 768;
+                  if (isDesktop) {
+                    _openAnchoredDesktopDropdown<T>(
+                      context: btnCtx,
+                      items: items,
+                      currentValue: effectiveValue,
+                      onSelected: (val) {
+                        state.didChange(val);
+                        onChanged(val);
+                      },
+                      lang: lang,
+                    );
+                    return;
+                  }
 
-              final modalTitle = _resolveDropdownTitle(
-                explicitTitle: title,
-                label: label,
-                hintText: hintText,
-                items: items,
-              );
+                  final modalTitle = _resolveDropdownTitle(
+                    explicitTitle: title,
+                    label: label,
+                    hintText: hintText ?? hint,
+                    items: items,
+                    lang: lang,
+                  );
+                  final optionsWord = AppTranslations.pick(
+                    lang,
+                    en: 'options available',
+                    mr: 'पर्याय उपलब्ध',
+                    hi: 'विकल्प उपलब्ध',
+                  );
 
-              showModalBottomSheet<T>(
-                context: context,
-                isScrollControlled: true,
-                useSafeArea: true,
-                backgroundColor: Colors.transparent,
-                barrierColor: Colors.black54,
-                builder: (ctx) => _AppDropdownModalSheet<T>(
-                  title: modalTitle,
-                  subtitle: '${items.length} options available',
-                  icon: prefixIcon,
-                  items: items,
-                  selectedValue: effectiveValue,
-                  onSelect: (val) {
-                    Navigator.pop(ctx);
-                    state.didChange(val);
-                    onChanged(val);
-                  },
-                ),
-              );
-            }
+                  showModalBottomSheet<T>(
+                    context: btnCtx,
+                    isScrollControlled: true,
+                    useSafeArea: true,
+                    backgroundColor: Colors.transparent,
+                    barrierColor: Colors.black54,
+                    builder: (ctx) => _AppDropdownModalSheet<T>(
+                      title: modalTitle,
+                      subtitle: '${AppTranslations.formatDigits(items.length, lang)} $optionsWord',
+                      icon: prefixIcon,
+                      items: items,
+                      selectedValue: effectiveValue,
+                      lang: lang,
+                      onSelect: (val) {
+                        Navigator.pop(ctx);
+                        state.didChange(val);
+                        onChanged(val);
+                      },
+                    ),
+                  );
+                }
 
-            Widget buildSelectedDisplay() {
-              if (effectiveValue != null) {
-                final selectedItem = items.cast<DropdownMenuItem<T>?>().firstWhere(
-                  (it) => it?.value == effectiveValue,
-                  orElse: () => null,
-                );
-                if (selectedItem != null) {
-                  if (selectedItem.child is Text) {
-                    final t = selectedItem.child as Text;
-                    return Text(
-                      t.data ?? '',
-                      style: const TextStyle(
+                Widget buildSelectedDisplay() {
+                  if (effectiveValue != null) {
+                    final selectedItem = items.cast<DropdownMenuItem<T>?>().firstWhere(
+                      (it) => it?.value == effectiveValue,
+                      orElse: () => null,
+                    );
+                    if (selectedItem != null) {
+                      const selectedStyle = TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF334155),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    );
+                      );
+                      if (selectedItem.child is Text) {
+                        final t = selectedItem.child as Text;
+                        return _TranslatedDropdownText(
+                          t.data ?? '',
+                          lang: lang,
+                          style: selectedStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      }
+                      return DefaultTextStyle(
+                        style: selectedStyle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        child: selectedItem.child,
+                      );
+                    }
                   }
-                  return DefaultTextStyle(
+                  final fallbackSelect = AppTranslations.pick(lang, en: 'Select', mr: 'निवडा', hi: 'चुनें');
+                  final displayHint = hintText ??
+                      hint ??
+                      label ??
+                      title ??
+                      fallbackSelect;
+                  return _TranslatedDropdownText(
+                    displayHint,
+                    lang: lang,
                     style: const TextStyle(
+                      color: Color(0xFF94A3B8),
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF334155),
+                      fontWeight: FontWeight.w400,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    child: selectedItem.child,
                   );
                 }
-              }
-              final displayHint = hintText ?? (label != null ? 'Select $label' : (title ?? 'Select'));
-              return Text(
-                displayHint,
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              );
-            }
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (label != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          label,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF334155),
-                          ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (label != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: _TranslatedDropdownText(
+                                label,
+                                lang: lang,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF334155),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isRequired)
+                              const Text(
+                                ' *',
+                                style: TextStyle(
+                                  color: Color(0xFFEF4444),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                          ],
                         ),
-                        if (isRequired)
-                          const Text(
-                            ' *',
-                            style: TextStyle(
-                              color: Color(0xFFEF4444),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                      ),
+                    Builder(
+                      builder: (btnCtx) => InkWell(
+                        onTap: onChanged != null ? () => openPicker(btnCtx) : null,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                          decoration: BoxDecoration(
+                            color: fillColor ?? Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: state.hasError
+                                  ? const Color(0xFFEF4444)
+                                  : (borderColor ?? const Color(0xFFE2E8F0)),
+                              width: state.hasError ? 1.5 : 1,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                Builder(
-                  builder: (btnCtx) => InkWell(
-                    onTap: onChanged != null ? () => openPicker(btnCtx) : null,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                    padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                    decoration: BoxDecoration(
-                      color: fillColor ?? Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: state.hasError
-                            ? const Color(0xFFEF4444)
-                            : (borderColor ?? const Color(0xFFE2E8F0)),
-                        width: state.hasError ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        if (prefixIcon != null) ...[
-                          prefixIcon,
-                          const SizedBox(width: 8),
-                        ],
-                        Expanded(child: buildSelectedDisplay()),
-                        const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Color(0xFF94A3B8),
-                          size: 19,
+                          child: Row(
+                            children: [
+                              if (prefixIcon != null) ...[
+                                prefixIcon,
+                                const SizedBox(width: 8),
+                              ],
+                              Expanded(child: buildSelectedDisplay()),
+                              const Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Color(0xFF94A3B8),
+                                size: 19,
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-                if (state.hasError && state.errorText != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 4),
-                    child: Text(
-                      state.errorText!,
-                      style: const TextStyle(
-                        color: Color(0xFFEF4444),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-              ],
+                    if (state.hasError && state.errorText != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 4),
+                        child: _TranslatedDropdownText(
+                          state.errorText!,
+                          lang: lang,
+                          style: const TextStyle(
+                            color: Color(0xFFEF4444),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             );
           },
         );
 }
 
 /// Themed Krishnaniti bottom sheet modal selector for dropdowns.
-/// Displays a drag handle, header with icon & close button, live search if > 5 options,
-/// and items with highlight, subtle blue background, and active checkmark.
 class _AppDropdownModalSheet<T> extends StatefulWidget {
   final String title;
   final String? subtitle;
@@ -589,6 +723,7 @@ class _AppDropdownModalSheet<T> extends StatefulWidget {
   final List<DropdownMenuItem<T>> items;
   final T? selectedValue;
   final ValueChanged<T?> onSelect;
+  final String lang;
 
   const _AppDropdownModalSheet({
     required this.title,
@@ -597,6 +732,7 @@ class _AppDropdownModalSheet<T> extends StatefulWidget {
     required this.items,
     required this.selectedValue,
     required this.onSelect,
+    required this.lang,
   });
 
   @override
@@ -620,14 +756,17 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
   }
 
   void _filter(String query) {
-    final q = query.trim().toLowerCase();
+    final q = AppTranslations.normalizeAsciiDigits(query.trim()).toLowerCase();
     setState(() {
       if (q.isEmpty) {
         _filteredItems = widget.items;
       } else {
         _filteredItems = widget.items.where((item) {
-          final text = _extractText(item.child).toLowerCase();
-          return text.contains(q);
+          final raw = _extractText(item.child);
+          final cached = DynamicTranslationService.getCachedTranslation(raw, widget.lang) ?? '';
+          final rawNorm = AppTranslations.normalizeAsciiDigits(raw).toLowerCase();
+          final trNorm = AppTranslations.normalizeAsciiDigits(cached).toLowerCase();
+          return rawNorm.contains(q) || trNorm.contains(q);
         }).toList();
       }
     });
@@ -639,6 +778,7 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
     final isDesktop = mediaQuery.size.width >= 768;
     final isSearchable = widget.items.length > 5;
     final maxSheetHeight = isDesktop ? 560.0 : mediaQuery.size.height * 0.75;
+    final lang = widget.lang;
 
     return Container(
       constraints: BoxConstraints(
@@ -662,7 +802,6 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Centered Drag Handle (Mobile only)
           if (!isDesktop)
             Center(
               child: Container(
@@ -733,7 +872,7 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
                 IconButton(
                   icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
                   onPressed: () => Navigator.pop(context),
-                  tooltip: 'Close',
+                  tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                 ),
               ],
             ),
@@ -748,7 +887,12 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
                 onChanged: _filter,
                 style: const TextStyle(fontSize: 13.5),
                 decoration: InputDecoration(
-                  hintText: 'Search options...',
+                  hintText: AppTranslations.pick(
+                    lang,
+                    en: 'Search options...',
+                    mr: 'पर्याय शोधा...',
+                    hi: 'विकल्प खोजें...',
+                  ),
                   hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                   prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.textMuted),
                   suffixIcon: _searchCtrl.text.isNotEmpty
@@ -781,12 +925,17 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
           // Scrollable Items List
           Flexible(
             child: _filteredItems.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(32),
+                ? Padding(
+                    padding: const EdgeInsets.all(32),
                     child: Center(
                       child: Text(
-                        'No matching options found',
-                        style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                        AppTranslations.pick(
+                          lang,
+                          en: 'No matching options found',
+                          mr: 'कोणतेही जुळणारे पर्याय आढळले नाहीत',
+                          hi: 'कोई मेल खाने वाला विकल्प नहीं मिला',
+                        ),
+                        style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                       ),
                     ),
                   )
@@ -797,6 +946,11 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
                     itemBuilder: (context, index) {
                       final item = _filteredItems[index];
                       final isSelected = item.value == widget.selectedValue;
+                      final itemStyle = TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected ? AppColors.brandPrimary : AppColors.textPrimary,
+                      );
 
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 3),
@@ -817,14 +971,16 @@ class _AppDropdownModalSheetState<T> extends State<_AppDropdownModalSheet<T>> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: DefaultTextStyle(
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                      color: isSelected ? AppColors.brandPrimary : AppColors.textPrimary,
-                                    ),
-                                    child: item.child,
-                                  ),
+                                  child: item.child is Text
+                                      ? _TranslatedDropdownText(
+                                          (item.child as Text).data ?? '',
+                                          lang: lang,
+                                          style: itemStyle,
+                                        )
+                                      : DefaultTextStyle(
+                                          style: itemStyle,
+                                          child: item.child,
+                                        ),
                                 ),
                                 if (isSelected)
                                   const Icon(

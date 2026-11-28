@@ -1,13 +1,15 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/models/duplicate_voter_group_model.dart';
 import '../../../data/repositories/duplicate_voters_repository.dart';
 import '../voters/voter_profile_screen.dart';
 import 'duplicate_voters_report_generator.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_load_more_footer.dart';
 import '../../widgets/app_shimmer_card.dart';
@@ -90,6 +92,18 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
   }
 
   Future<void> _confirmDeleteVoter(VoterModel voter, String groupKey) async {
+    final lang = ref.read(appLanguageProvider);
+    final tName = await DynamicTranslationService.translateOrRaw(
+      voter.displayNameFor(lang),
+      lang,
+      isName: true,
+    );
+    if (!mounted) return;
+    final epicStr = AppTranslations.formatDigits(
+      voter.epicNo.isNotEmpty ? voter.epicNo : '-',
+      lang,
+    );
+
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -104,10 +118,15 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
               child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 22),
             ),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Delete Duplicate Record?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                AppTranslations.pick(
+                  lang,
+                  en: 'Delete Duplicate Record?',
+                  mr: 'दुबार नोंद हटवायची का?',
+                  hi: 'डुप्लिकेट रिकॉर्ड हटाएं?',
+                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -117,20 +136,30 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${voter.displayName} (EPIC: ${voter.epicNo.isNotEmpty ? voter.epicNo : '-'}) will be permanently removed.',
+              AppTranslations.pick(
+                lang,
+                en: '$tName (EPIC: $epicStr) will be permanently removed.',
+                mr: '$tName (EPIC: $epicStr) कायमचे काढले जाईल.',
+                hi: '$tName (EPIC: $epicStr) को स्थायी रूप से हटा दिया जाएगा।',
+              ),
               style: const TextStyle(fontSize: 14, color: Color(0xFF334155), fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'This action cannot be undone. Please ensure you are deleting the exact extra duplicate record.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'This action cannot be undone. Please ensure you are deleting the exact extra duplicate record.',
+                mr: 'ही कृती पूर्ववत करता येणार नाही. कृपया अचूक अतिरिक्त दुबार नोंदच हटवत असल्याची खात्री करा.',
+                hi: 'यह क्रिया पूर्ववत नहीं की जा सकती। कृपया सुनिश्चित करें कि आप सही अतिरिक्त डुप्लिकेट रिकॉर्ड हटा रहे हैं।',
+              ),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -138,7 +167,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Yes, Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Yes, Delete', mr: 'होय, हटवा', hi: 'हाँ, हटाएं')),
           ),
         ],
       ),
@@ -152,7 +181,14 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
 
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Duplicate record for ${voter.displayName} deleted successfully.'),
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Duplicate record for $tName deleted successfully.',
+              mr: '$tName यांची दुबार नोंद यशस्वीरित्या हटवली.',
+              hi: '$tName का डुप्लिकेट रिकॉर्ड सफलतापूर्वक हटा दिया गया।',
+            ),
+          ),
           backgroundColor: const Color(0xFF16A34A),
           duration: const Duration(seconds: 2),
         ),
@@ -162,6 +198,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final totalAffected = _stats['totalAffectedVoters'] ?? 0;
 
     return Scaffold(
@@ -173,25 +210,35 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Open Menu Drawer',
+              mr: 'मेनू ड्रॉवर उघडा',
+              hi: 'मेनू ड्रॉवर खोलें',
             ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'Duplicate Voters',
+              AppTranslations.pick(
+                lang,
+                en: 'Duplicate Voters',
+                mr: 'दुबार मतदार',
+                hi: 'डुप्लिकेट मतदाता',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -199,10 +246,15 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
               ),
             ),
             Text(
-              'Duplicate voter entries & cleanup',
+              AppTranslations.pick(
+                lang,
+                en: 'Duplicate voter entries & cleanup',
+                mr: 'दुबार मतदार नोंदी तपासणी व स्वच्छता',
+                hi: 'डुप्लिकेट मतदाता प्रविष्टियाँ और सुधार',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -221,50 +273,66 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 3 KPI Metric Cards
-              _buildStatsRow(),
+              _buildStatsRow(lang),
 
               const SizedBox(height: 16),
 
               // Search & Match Type Selector
-              _buildSearchAndFilters(),
+              _buildSearchAndFilters(lang),
 
               const SizedBox(height: 14),
 
               // Controls Bar (Expand / Collapse All & Counts)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
-                    'Total Groups: ${_duplicateGroups.length}',
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Total Groups: ${AppTranslations.formatDigits(_duplicateGroups.length, lang)}',
+                      mr: 'एकूण गट: ${AppTranslations.formatDigits(_duplicateGroups.length, lang)}',
+                      hi: 'कुल समूह: ${AppTranslations.formatDigits(_duplicateGroups.length, lang)}',
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569)),
                   ),
-                  Row(
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       TextButton.icon(
                         onPressed: _expandAll,
                         icon: const Icon(Icons.unfold_more, size: 16),
-                        label: const Text('Expand All', style: TextStyle(fontSize: 12)),
+                        label: Text(
+                          AppTranslations.pick(lang, en: 'Expand All', mr: 'सर्व उघडा', hi: 'सभी खोलें'),
+                          style: const TextStyle(fontSize: 12),
+                        ),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF0284C7),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         ),
                       ),
-                      const SizedBox(width: 4),
                       TextButton.icon(
                         onPressed: _collapseAll,
                         icon: const Icon(Icons.unfold_less, size: 16),
-                        label: const Text('Collapse All', style: TextStyle(fontSize: 12)),
+                        label: Text(
+                          AppTranslations.pick(lang, en: 'Collapse All', mr: 'सर्व बंद करा', hi: 'सभी बंद करें'),
+                          style: const TextStyle(fontSize: 12),
+                        ),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF64748B),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         ),
                       ),
-                      const SizedBox(width: 4),
                       AppPdfButton.outlined(
-                        label: 'Download Report',
+                        label: AppTranslations.getDownloadReport(lang),
                         onPressed: () => DuplicateVotersReportGenerator.generateAndPrintReport(
                           duplicateGroups: _duplicateGroups,
                           totalAffectedVoters: totalAffected,
+                          lang: lang,
                         ),
                       ),
                     ],
@@ -278,14 +346,14 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
               if (_isLoading)
                 const AppShimmerList(count: 6)
               else if (_duplicateGroups.isEmpty)
-                _buildEmptyState()
+                _buildEmptyState(lang)
               else
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _visibleGroups.length,
                   separatorBuilder: (context, index) => const SizedBox(height: 14),
-                  itemBuilder: (context, index) => _buildGroupCard(_visibleGroups[index]),
+                  itemBuilder: (context, index) => _buildGroupCard(_visibleGroups[index], lang),
                 ),
 
               if (!_isLoading && _duplicateGroups.isNotEmpty)
@@ -296,8 +364,8 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                   onLoadMore: () {
                     setState(() => _displayedLimit += 20);
                   },
-                  label: ref.watch(isMarathiProvider) ? 'गट' : 'groups',
-                  isMarathi: ref.watch(isMarathiProvider),
+                  label: AppTranslations.pick(lang, en: 'groups', mr: 'गट', hi: 'समूह'),
+                  isMarathi: lang == 'mr',
                 ),
 
               const SizedBox(height: 40),
@@ -308,7 +376,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(String lang) {
     final groupsCount = _duplicateGroups.length;
     final totalAffected = _stats['totalAffectedVoters'] ?? 0;
     final estExtra = _stats['estimatedExtraRecords'] ?? 0;
@@ -317,7 +385,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 600;
         return GridView.count(
-          crossAxisCount: isWide ? 3 : 3,
+          crossAxisCount: 3,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10,
@@ -325,25 +393,25 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           childAspectRatio: isWide ? 2.4 : 1.15,
           children: [
             _buildStatCard(
-              title: 'Duplicate Groups',
-              subtitle: 'Duplicate Groups',
-              count: groupsCount.toString(),
+              title: AppTranslations.pick(lang, en: 'Duplicate Groups', mr: 'दुबार गट', hi: 'डुप्लिकेट समूह'),
+              subtitle: AppTranslations.pick(lang, en: 'Duplicate Groups', mr: 'समान नोंदी गट', hi: 'समान समूह'),
+              count: AppTranslations.formatDigits(groupsCount, lang),
               color: const Color(0xFF0284C7),
               bgColor: const Color(0xFFF0F9FF),
               borderColor: const Color(0xFFBAE6FD),
             ),
             _buildStatCard(
-              title: 'Affected Voters',
-              subtitle: 'Affected Voters',
-              count: totalAffected.toString(),
+              title: AppTranslations.pick(lang, en: 'Affected Voters', mr: 'प्रभावित मतदार', hi: 'प्रभावित मतदाता'),
+              subtitle: AppTranslations.pick(lang, en: 'Affected Voters', mr: 'एकूण नोंदी', hi: 'कुल प्रविष्टियाँ'),
+              count: AppTranslations.formatDigits(totalAffected, lang),
               color: const Color(0xFFDC2626),
               bgColor: const Color(0xFFFEF2F2),
               borderColor: const Color(0xFFFECACA),
             ),
             _buildStatCard(
-              title: 'Extra Records',
-              subtitle: 'Form 7 Extras',
-              count: estExtra.toString(),
+              title: AppTranslations.pick(lang, en: 'Extra Records', mr: 'अतिरिक्त नोंदी', hi: 'अतिरिक्त रिकॉर्ड'),
+              subtitle: AppTranslations.pick(lang, en: 'Form 7 Extras', mr: 'फॉर्म ७ अतिरिक्त', hi: 'फॉर्म ७ अतिरिक्त'),
+              count: AppTranslations.formatDigits(estExtra, lang),
               color: const Color(0xFF475569),
               bgColor: const Color(0xFFF8FAFC),
               borderColor: const Color(0xFFE2E8F0),
@@ -399,7 +467,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
     );
   }
 
-  Widget _buildSearchAndFilters() {
+  Widget _buildSearchAndFilters(String lang) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -414,7 +482,12 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
             controller: _searchController,
             onChanged: (val) => _loadDuplicates(),
             decoration: InputDecoration(
-              hintText: 'Search duplicate names or voters...',
+              hintText: AppTranslations.pick(
+                lang,
+                en: 'Search duplicate names or voters...',
+                mr: 'दुबार नावे किंवा मतदार शोधा...',
+                hi: 'डुप्लिकेट नाम या मतदाता खोजें...',
+              ),
               hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
               suffixIcon: _searchController.text.isNotEmpty
@@ -447,13 +520,27 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
             runSpacing: 6,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const Text(
-                'Match Criteria: ',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Match Criteria: ',
+                  mr: 'जुळणी निकष: ',
+                  hi: 'मिलान मानदंड: ',
+                ),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
               ),
-              _buildMatchTypeChip(label: 'Same Full Name', type: 'name'),
-              _buildMatchTypeChip(label: 'Same EPIC No.', type: 'epic'),
-              _buildMatchTypeChip(label: 'Same Mobile No.', type: 'mobile'),
+              _buildMatchTypeChip(
+                label: AppTranslations.pick(lang, en: 'Same Full Name', mr: 'समान पूर्ण नाव', hi: 'समान पूरा नाम'),
+                type: 'name',
+              ),
+              _buildMatchTypeChip(
+                label: AppTranslations.pick(lang, en: 'Same EPIC No.', mr: 'समान ओळखपत्र क्र.', hi: 'समान EPIC नं.'),
+                type: 'epic',
+              ),
+              _buildMatchTypeChip(
+                label: AppTranslations.pick(lang, en: 'Same Mobile No.', mr: 'समान मोबाईल क्र.', hi: 'समान मोबाइल नं.'),
+                type: 'mobile',
+              ),
             ],
           ),
         ],
@@ -483,9 +570,10 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
     );
   }
 
-  Widget _buildGroupCard(DuplicateVoterGroupModel group) {
+  Widget _buildGroupCard(DuplicateVoterGroupModel group, String lang) {
     final isExpanded = _expandedGroups.contains(group.normalizedKey);
     final count = group.recordsCount;
+    final countStr = AppTranslations.formatDigits(count, lang);
 
     return Container(
       decoration: BoxDecoration(
@@ -523,13 +611,20 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppTranslatedText(
                           group.displayName,
+                          targetLanguage: lang,
+                          isName: _selectedMatchType == 'name',
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '$count voter records found with this name',
+                          AppTranslations.pick(
+                            lang,
+                            en: '$countStr voter records found with this match',
+                            mr: 'या नोंदीशी जुळणारे $countStr मतदार आढळले',
+                            hi: 'इस मिलान के $countStr मतदाता रिकॉर्ड मिले',
+                          ),
                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -543,7 +638,12 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                       border: Border.all(color: const Color(0xFFFECACA)),
                     ),
                     child: Text(
-                      '$count Duplicates',
+                      AppTranslations.pick(
+                        lang,
+                        en: '$countStr Duplicates',
+                        mr: '$countStr दुबार',
+                        hi: '$countStr डुप्लिकेट',
+                      ),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
                     ),
                   ),
@@ -573,14 +673,19 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFFBFDBFE)),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.compare_arrows_rounded, size: 16, color: Color(0xFF0284C7)),
-                        SizedBox(width: 6),
+                        const Icon(Icons.compare_arrows_rounded, size: 16, color: Color(0xFF0284C7)),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'Comparison: Keep the accurate record and submit Form 7 for deletion',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Comparison: Keep the accurate record and submit Form 7 for deletion',
+                              mr: 'तुलना: अचूक नोंद ठेवा आणि अतिरिक्त नोंदीसाठी फॉर्म ७ दाखल करा',
+                              hi: 'तुलना: सटीक रिकॉर्ड रखें और हटाने के लिए फॉर्म ७ जमा करें',
+                            ),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
                           ),
                         ),
                       ],
@@ -603,7 +708,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                             childAspectRatio: 0.88,
                           ),
                           itemCount: count,
-                          itemBuilder: (context, idx) => _buildVoterComparisonCard(group.voters[idx], idx, group.normalizedKey),
+                          itemBuilder: (context, idx) => _buildVoterComparisonCard(group.voters[idx], idx, group.normalizedKey, lang),
                         );
                       }
 
@@ -612,7 +717,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: count,
                         separatorBuilder: (context, index) => const SizedBox(height: 12),
-                        itemBuilder: (context, idx) => _buildVoterComparisonCard(group.voters[idx], idx, group.normalizedKey),
+                        itemBuilder: (context, idx) => _buildVoterComparisonCard(group.voters[idx], idx, group.normalizedKey, lang),
                       );
                     },
                   ),
@@ -625,8 +730,10 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
     );
   }
 
-  Widget _buildVoterComparisonCard(VoterModel voter, int index, String groupKey) {
+  Widget _buildVoterComparisonCard(VoterModel voter, int index, String groupKey, String lang) {
     final isFirst = index == 0;
+    final entryNum = AppTranslations.formatDigits(index + 1, lang);
+    final ageStr = AppTranslations.formatDigits(voter.age, lang);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -658,7 +765,14 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                   ),
                 ),
                 child: Text(
-                  isFirst ? 'Primary Record' : 'Duplicate Entry #${index + 1}',
+                  isFirst
+                      ? AppTranslations.pick(lang, en: 'Primary Record', mr: 'मूळ नोंद', hi: 'मुख्य रिकॉर्ड')
+                      : AppTranslations.pick(
+                          lang,
+                          en: 'Duplicate Entry #$entryNum',
+                          mr: 'दुबार नोंद #$entryNum',
+                          hi: 'डुप्लिकेट प्रविष्टि #$entryNum',
+                        ),
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -668,7 +782,7 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
               ),
               if (voter.favour != null)
                 Text(
-                  voter.favourLabelMarathi,
+                  voter.favourLabel(lang),
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -681,19 +795,14 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           const SizedBox(height: 10),
 
           // Voter Name
-          Text(
-            voter.displayName,
+          AppTranslatedText(
+            voter.displayNameFor(lang),
+            targetLanguage: lang,
+            isName: true,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          if (voter.nameEnglish.isNotEmpty && voter.nameEnglish != voter.displayName)
-            Text(
-              voter.nameEnglish,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
 
           const SizedBox(height: 10),
           const Divider(height: 1),
@@ -703,22 +812,16 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildAttributeItem('EPIC No.', voter.epicNo.isNotEmpty ? voter.epicNo : '-'),
+                child: _buildAttributeItem(
+                  AppTranslations.pick(lang, en: 'EPIC No.', mr: 'ओळखपत्र क्र.', hi: 'EPIC नं.'),
+                  voter.epicNo.isNotEmpty ? AppTranslations.formatDigits(voter.epicNo, lang) : '-',
+                ),
               ),
               Expanded(
-                child: _buildAttributeItem('Part / Serial No.', voter.serialNo != null ? voter.serialNo.toString() : '-'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildAttributeItem('Age & Gender', '${voter.age} Yrs / ${voter.gender}'),
-              ),
-              Expanded(
-                child: _buildAttributeItem('House No.', voter.houseNo ?? '-'),
+                child: _buildAttributeItem(
+                  AppTranslations.pick(lang, en: 'Part / Serial No.', mr: 'भाग / अनुक्र.', hi: 'भाग / क्र.'),
+                  voter.serialNo != null ? AppTranslations.formatDigits(voter.serialNo, lang) : '-',
+                ),
               ),
             ],
           ),
@@ -727,10 +830,41 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildAttributeItem('Polling Station', voter.booth),
+                child: _buildAttributeItem(
+                  AppTranslations.pick(lang, en: 'Age & Gender', mr: 'वय व लिंग', hi: 'उम्र और लिंग'),
+                  AppTranslations.pick(
+                    lang,
+                    en: '$ageStr Yrs / ${voter.genderLabel(lang)}',
+                    mr: '$ageStr वर्षे / ${voter.genderLabel(lang)}',
+                    hi: '$ageStr वर्ष / ${voter.genderLabel(lang)}',
+                  ),
+                ),
               ),
               Expanded(
-                child: _buildAttributeItem('Mobile', voter.mobile ?? '-'),
+                child: _buildAttributeItem(
+                  AppTranslations.pick(lang, en: 'House No.', mr: 'घर क्र.', hi: 'मकान नं.'),
+                  voter.houseNo != null ? AppTranslations.formatDigits(voter.houseNo, lang) : '-',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildAttributeItem(
+                  AppTranslations.pick(lang, en: 'Polling Station', mr: 'मतदान केंद्र', hi: 'मतदान केंद्र'),
+                  voter.booth,
+                  lang: lang,
+                  translateValue: true,
+                ),
+              ),
+              Expanded(
+                child: _buildAttributeItem(
+                  AppTranslations.pick(lang, en: 'Mobile', mr: 'मोबाईल', hi: 'मोबाइल'),
+                  voter.mobile != null ? AppTranslations.formatDigits(voter.mobile, lang) : '-',
+                ),
               ),
             ],
           ),
@@ -738,11 +872,20 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           // Address
           if (voter.address.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(
-              '📍 ${voter.address}',
-              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('📍 ', style: TextStyle(fontSize: 10)),
+                Expanded(
+                  child: AppTranslatedText(
+                    voter.address,
+                    targetLanguage: lang,
+                    style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ],
 
@@ -763,7 +906,10 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                     );
                   },
                   icon: const Icon(Icons.visibility_outlined, size: 14),
-                  label: const Text('Details', style: TextStyle(fontSize: 11)),
+                  label: Text(
+                    AppTranslations.getDetails(lang),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF0284C7),
                     side: const BorderSide(color: Color(0xFFBAE6FD)),
@@ -777,7 +923,10 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _confirmDeleteVoter(voter, groupKey),
                     icon: const Icon(Icons.delete_outline, size: 14),
-                    label: const Text('Delete', style: TextStyle(fontSize: 11)),
+                    label: Text(
+                      AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                      style: const TextStyle(fontSize: 11),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFDC2626),
                       side: const BorderSide(color: Color(0xFFFECACA)),
@@ -793,7 +942,13 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
     );
   }
 
-  Widget _buildAttributeItem(String label, String value) {
+  Widget _buildAttributeItem(
+    String label,
+    String value, {
+    String? lang,
+    bool translateValue = false,
+  }) {
+    const valStyle = TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -804,17 +959,26 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 1),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        if (translateValue && lang != null)
+          AppTranslatedText(
+            value,
+            targetLanguage: lang,
+            style: valStyle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          )
+        else
+          Text(
+            value,
+            style: valStyle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(36),
@@ -834,15 +998,25 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
             child: const Icon(Icons.verified_user_rounded, size: 48, color: Color(0xFF10B981)),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'No duplicate voters found!',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          Text(
+            AppTranslations.pick(
+              lang,
+              en: 'No duplicate voters found!',
+              mr: 'दुबार मतदार आढळले नाहीत!',
+              hi: 'कोई डुप्लिकेट मतदाता नहीं मिला!',
+            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'All voter records are unique. Clean database maintained!',
+          Text(
+            AppTranslations.pick(
+              lang,
+              en: 'All voter records are unique. Clean database maintained!',
+              mr: 'सर्व मतदार नोंदी अद्वितीय आहेत. स्वच्छ डेटाबेस राखला आहे!',
+              hi: 'सभी मतदाता रिकॉर्ड अद्वितीय हैं। स्वच्छ डेटाबेस बना हुआ है!',
+            ),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),
         ],
       ),

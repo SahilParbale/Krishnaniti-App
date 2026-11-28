@@ -89,6 +89,16 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
     }).toList();
   }
 
+  String _localizedCategory(String category, String lang) {
+    final lower = category.trim().toLowerCase();
+    for (final c in _categories) {
+      if (c['id']!.toLowerCase() == lower) {
+        return c[lang] ?? c['en']!;
+      }
+    }
+    return AppTranslations.translateDirect(category, lang: lang);
+  }
+
   void _openAddSchemeDialog() {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -100,91 +110,159 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => DesktopModalDialog(
-          title: 'Add Government Scheme',
-          subtitle: 'Create a welfare scheme with eligibility criteria and benefits',
-          icon: Icons.account_balance_rounded,
-          width: 580,
-          onClose: () => Navigator.pop(ctx),
-          actions: [
-            DesktopModalDialog.cancelButton(ctx),
-            const SizedBox(width: 12),
-            DesktopModalDialog.primaryButton(
-              text: 'Save Scheme',
-              onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty) return;
-                final newScheme = SchemeModel(
-                  id: 0,
-                  name: nameCtrl.text.trim(),
-                  description: descCtrl.text.trim(),
-                  eligibility: eligCtrl.text.trim(),
-                  benefits: benCtrl.text.trim(),
-                  documents: docCtrl.text.trim(),
-                  category: category,
-                );
-                await ref.read(schemesRepoProvider).createScheme(newScheme);
-                if (ctx.mounted) Navigator.pop(ctx);
-                _loadSchemes();
-              },
+      builder: (ctx) => ValueListenableBuilder<String>(
+        valueListenable: appLanguageValueNotifier,
+        builder: (ctx, dlgLang, _) => StatefulBuilder(
+          builder: (ctx, setDlgState) => DesktopModalDialog(
+            title: AppTranslations.pick(
+              dlgLang,
+              en: 'Add Government Scheme',
+              mr: 'शासकीय योजना जोडा',
+              hi: 'सरकारी योजना जोड़ें',
             ),
-          ],
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Scheme Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: nameCtrl,
-                decoration: desktopInputDecoration(hintText: 'e.g. Pradhan Mantri Awas Yojana...'),
-              ),
-              const SizedBox(height: 14),
-              const Text('Category *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              AppDropdown<String>(
-                value: category,
-                height: 44,
-                backgroundColor: const Color(0xFFF8FAFC),
-                borderColor: const Color(0xFFE2E8F0),
-                items: _categories.map((c) => DropdownMenuItem(value: c['id']!, child: Text(c['en']!))).toList(),
-                onChanged: (val) {
-                  if (val != null) setDlgState(() => category = val);
+            subtitle: AppTranslations.pick(
+              dlgLang,
+              en: 'Create a welfare scheme with eligibility criteria and benefits',
+              mr: 'पात्रता निकष आणि लाभांसह कल्याणकारी योजना तयार करा',
+              hi: 'पात्रता मानदंड और लाभों के साथ कल्याणकारी योजना बनाएं',
+            ),
+            icon: Icons.account_balance_rounded,
+            width: 580,
+            onClose: () => Navigator.pop(ctx),
+            actions: [
+              DesktopModalDialog.cancelButton(ctx),
+              const SizedBox(width: 12),
+              DesktopModalDialog.primaryButton(
+                text: AppTranslations.pick(dlgLang, en: 'Save Scheme', mr: 'योजना जतन करा', hi: 'योजना सहेजें'),
+                onPressed: () async {
+                  if (nameCtrl.text.trim().isEmpty) return;
+                  final newScheme = SchemeModel(
+                    id: 0,
+                    name: nameCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    eligibility: eligCtrl.text.trim(),
+                    benefits: benCtrl.text.trim(),
+                    documents: docCtrl.text.trim(),
+                    category: category,
+                  );
+                  await ref.read(schemesRepoProvider).createScheme(newScheme);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _loadSchemes();
                 },
               ),
-              const SizedBox(height: 14),
-              const Text('Description', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: descCtrl,
-                maxLines: 2,
-                decoration: desktopInputDecoration(hintText: 'Summary of the scheme...'),
-              ),
-              const SizedBox(height: 14),
-              const Text('Eligibility Criteria', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: eligCtrl,
-                maxLines: 2,
-                decoration: desktopInputDecoration(hintText: 'Who qualifies for this benefit...'),
-              ),
-              const SizedBox(height: 14),
-              const Text('Benefits', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: benCtrl,
-                maxLines: 2,
-                decoration: desktopInputDecoration(hintText: 'Financial subsidy, training, or kit...'),
-              ),
-              const SizedBox(height: 14),
-              const Text('Required Documents', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-              const SizedBox(height: 6),
-              TextField(
-                controller: docCtrl,
-                maxLines: 2,
-                decoration: desktopInputDecoration(hintText: 'Aadhaar, income certificate, ration card...'),
-              ),
             ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppTranslations.pick(dlgLang, en: 'Scheme Name *', mr: 'योजनेचे नाव *', hi: 'योजना का नाम *'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      dlgLang,
+                      en: 'e.g. Pradhan Mantri Awas Yojana...',
+                      mr: 'उदा. प्रधानमंत्री आवास योजना...',
+                      hi: 'जैसे प्रधानमंत्री आवास योजना...',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  AppTranslations.pick(dlgLang, en: 'Category *', mr: 'वर्गवारी *', hi: 'श्रेणी *'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                AppDropdown<String>(
+                  value: category,
+                  height: 44,
+                  backgroundColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFE2E8F0),
+                  items: _categories
+                      .map((c) => DropdownMenuItem(value: c['id']!, child: Text(c[dlgLang] ?? c['en']!)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setDlgState(() => category = val);
+                  },
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  AppTranslations.pick(dlgLang, en: 'Description', mr: 'वर्णन', hi: 'विवरण'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 2,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      dlgLang,
+                      en: 'Summary of the scheme...',
+                      mr: 'योजनेचा सारांश...',
+                      hi: 'योजना का सारांश...',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  AppTranslations.pick(dlgLang, en: 'Eligibility Criteria', mr: 'पात्रता निकष', hi: 'पात्रता मानदंड'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: eligCtrl,
+                  maxLines: 2,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      dlgLang,
+                      en: 'Who qualifies for this benefit...',
+                      mr: 'या लाभासाठी कोण पात्र आहे...',
+                      hi: 'इस लाभ के लिए कौन पात्र है...',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  AppTranslations.pick(dlgLang, en: 'Benefits', mr: 'लाभ', hi: 'लाभ'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: benCtrl,
+                  maxLines: 2,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      dlgLang,
+                      en: 'Financial subsidy, training, or kit...',
+                      mr: 'आर्थिक अनुदान, प्रशिक्षण किंवा संच...',
+                      hi: 'वित्तीय सहायता, प्रशिक्षण या किट...',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  AppTranslations.pick(dlgLang, en: 'Required Documents', mr: 'आवश्यक कागदपत्रे', hi: 'आवश्यक दस्तावेज़'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: docCtrl,
+                  maxLines: 2,
+                  decoration: desktopInputDecoration(
+                    hintText: AppTranslations.pick(
+                      dlgLang,
+                      en: 'Aadhaar, income certificate, ration card...',
+                      mr: 'आधार कार्ड, उत्पन्न दाखला, शिधापत्रिका...',
+                      hi: 'आधार, आय प्रमाण पत्र, राशन कार्ड...',
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -542,7 +620,6 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
 
   // --- Schemes Grid (Expandable Accordion Cards) ---
   Widget _buildSchemesGrid(List<SchemeModel> items, String lang) {
-    final isMr = lang == 'mr';
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -551,11 +628,11 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
       itemBuilder: (context, index) {
         final scheme = items[index];
         final isExpanded = _expandedSchemeId == scheme.id;
-        final name = scheme.localizedName(isMr);
-        final desc = scheme.localizedDescription(isMr);
-        final elig = scheme.localizedEligibility(isMr);
-        final ben = scheme.localizedBenefits(isMr);
-        final docs = scheme.localizedDocuments(isMr);
+        final name = scheme.localizedNameFor(lang);
+        final desc = scheme.localizedDescriptionFor(lang);
+        final elig = scheme.localizedEligibilityFor(lang);
+        final ben = scheme.localizedBenefitsFor(lang);
+        final docs = scheme.localizedDocumentsFor(lang);
 
         return Container(
           decoration: BoxDecoration(
@@ -604,17 +681,22 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                                 Expanded(
                                   child: AppTranslatedText(
                                     name,
+                                    targetLanguage: lang,
                                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                                   ),
                                 ),
                                 if (scheme.category.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF1F5F9),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Text(scheme.category, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                                    child: Text(
+                                      _localizedCategory(scheme.category, lang),
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                                    ),
                                   ),
                                 ],
                               ],
@@ -622,6 +704,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                             const SizedBox(height: 4),
                             AppTranslatedText(
                               desc,
+                              targetLanguage: lang,
                               maxLines: isExpanded ? 10 : 2,
                               overflow: isExpanded ? null : TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
@@ -648,15 +731,33 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (elig.isNotEmpty) ...[
-                        _buildDetailSection(lang == 'mr' ? 'पात्रता:' : (lang == 'hi' ? 'पात्रता:' : 'Eligibility:'), elig, Icons.check_circle_outline_rounded, const Color(0xFF16A34A)),
+                        _buildDetailSection(
+                          AppTranslations.pick(lang, en: 'Eligibility:', mr: 'पात्रता:', hi: 'पात्रता:'),
+                          elig,
+                          Icons.check_circle_outline_rounded,
+                          const Color(0xFF16A34A),
+                          lang,
+                        ),
                         const SizedBox(height: 14),
                       ],
                       if (ben.isNotEmpty) ...[
-                        _buildDetailSection(lang == 'mr' ? 'लाभ:' : (lang == 'hi' ? 'लाभ:' : 'Benefits:'), ben, Icons.card_giftcard_rounded, const Color(0xFF0284C7)),
+                        _buildDetailSection(
+                          AppTranslations.pick(lang, en: 'Benefits:', mr: 'लाभ:', hi: 'लाभ:'),
+                          ben,
+                          Icons.card_giftcard_rounded,
+                          const Color(0xFF0284C7),
+                          lang,
+                        ),
                         const SizedBox(height: 14),
                       ],
                       if (docs.isNotEmpty) ...[
-                        _buildDetailSection(lang == 'mr' ? 'कागदपत्रे:' : (lang == 'hi' ? 'दस्तावेज़:' : 'Documents:'), docs, Icons.attachment_rounded, const Color(0xFFD97706)),
+                        _buildDetailSection(
+                          AppTranslations.pick(lang, en: 'Documents:', mr: 'कागदपत्रे:', hi: 'दस्तावेज़:'),
+                          docs,
+                          Icons.attachment_rounded,
+                          const Color(0xFFD97706),
+                          lang,
+                        ),
                         const SizedBox(height: 14),
                       ],
 
@@ -667,7 +768,14 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                           OutlinedButton.icon(
                             onPressed: () {},
                             icon: const Icon(Icons.download_rounded, size: 16),
-                            label: Text(lang == 'mr' ? 'माहिती पुस्तिका डाउनलोड करा' : (lang == 'hi' ? 'विवरणिका डाउनलोड करें' : 'Download Brochure')),
+                            label: Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Download Brochure',
+                                mr: 'माहिती पुस्तिका डाउनलोड करा',
+                                hi: 'विवरणिका डाउनलोड करें',
+                              ),
+                            ),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -677,7 +785,14 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
                           ElevatedButton.icon(
                             onPressed: () {},
                             icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
-                            label: Text(lang == 'mr' ? 'नागरिकासाठी अर्ज करा' : (lang == 'hi' ? 'नागरिक के लिए आवेदन करें' : 'Apply for Citizen')),
+                            label: Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Apply for Citizen',
+                                mr: 'नागरिकासाठी अर्ज करा',
+                                hi: 'नागरिक के लिए आवेदन करें',
+                              ),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0284C7),
                               foregroundColor: Colors.white,
@@ -698,7 +813,7 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
     );
   }
 
-  Widget _buildDetailSection(String title, String content, IconData icon, Color iconColor) {
+  Widget _buildDetailSection(String title, String content, IconData icon, Color iconColor, String lang) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -710,7 +825,11 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
             children: [
               Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
               const SizedBox(height: 2),
-              AppTranslatedText(content, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4)),
+              AppTranslatedText(
+                content,
+                targetLanguage: lang,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+              ),
             ],
           ),
         ),
@@ -720,7 +839,6 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
 
   // --- Report Table View (matching SchemeList.tsx lines 318-368) ---
   Widget _buildReportTable(List<SchemeModel> items, String lang) {
-    final isMr = lang == 'mr';
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -742,11 +860,27 @@ class _DesktopSchemesViewState extends ConsumerState<DesktopSchemesView> {
             final s = entry.value;
             return DataRow(
               cells: [
-                DataCell(Text('$idx')),
-                DataCell(AppTranslatedText(s.localizedName(isMr), style: const TextStyle(fontWeight: FontWeight.w600))),
-                DataCell(Text(s.category)),
-                DataCell(AppTranslatedText(s.localizedEligibility(isMr))),
-                DataCell(AppTranslatedText(s.localizedBenefits(isMr))),
+                DataCell(Text(AppTranslations.formatDigits(idx, lang))),
+                DataCell(
+                  AppTranslatedText(
+                    s.localizedNameFor(lang),
+                    targetLanguage: lang,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                DataCell(Text(_localizedCategory(s.category, lang))),
+                DataCell(
+                  AppTranslatedText(
+                    s.localizedEligibilityFor(lang),
+                    targetLanguage: lang,
+                  ),
+                ),
+                DataCell(
+                  AppTranslatedText(
+                    s.localizedBenefitsFor(lang),
+                    targetLanguage: lang,
+                  ),
+                ),
               ],
             );
           }).toList(),

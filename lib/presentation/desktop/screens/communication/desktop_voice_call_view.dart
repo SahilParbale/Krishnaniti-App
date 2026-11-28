@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/whatsapp_broadcast_model.dart';
@@ -46,8 +47,9 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
     });
     try {
       final repo = ref.read(smsRepoProvider);
+      final normalizedSearch = AppTranslations.normalizeAsciiDigits(_searchController.text.trim());
       final voters = await repo.getVotersWithMobile(
-        name: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
+        name: normalizedSearch.isEmpty ? null : normalizedSearch,
       );
       if (mounted) {
         setState(() {
@@ -62,7 +64,7 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
 
   Future<void> _makeCall(String? mobile) async {
     if (mobile == null || mobile.trim().isEmpty) return;
-    final clean = mobile.replaceAll(RegExp(r'\D'), '');
+    final clean = AppTranslations.normalizeAsciiDigits(mobile).replaceAll(RegExp(r'\D'), '');
     final uri = Uri.parse('tel:$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -72,7 +74,6 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -85,32 +86,41 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.brandPrimary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandPrimary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.phone_rounded, color: AppColors.brandPrimary, size: 28),
                       ),
-                      child: const Icon(Icons.phone_rounded, color: AppColors.brandPrimary, size: 28),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Voice Call',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(lang, en: 'Voice Call', mr: 'व्हॉइस कॉल', hi: 'वॉइस कॉल'),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Initiate direct telephone communication with constituents and log conversations',
+                                mr: 'नागरिकांशी थेट दूरध्वनी संवाद साधा आणि संभाषणाची नोंद ठेवा',
+                                hi: 'नागरिकों से सीधा टेलीफोन संवाद करें और बातचीत का रिकॉर्ड रखें',
+                              ),
+                              style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Initiate direct telephone communication with constituents and log conversations',
-                          style: const TextStyle(fontSize: 13, color: AppColors.slate500),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
 
                 // Download Report matching VoiceCall.tsx
@@ -118,7 +128,7 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                   onPressed: () {
                     final logs = _voters.map((v) => WhatsAppBroadcastModel(
                       id: 'call-${v.id}',
-                      title: 'Voice Call: ${v.nameEnglish.isNotEmpty ? v.nameEnglish : v.nameMarathi}',
+                      title: 'Manual Voice Call - ${v.displayNameFor(lang)}',
                       message: 'Direct constituent voice call record for Ward 12 constituency.',
                       sentAt: DateTime.now(),
                       channel: 'voice',
@@ -133,13 +143,14 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                     CommunicationHistoryReportGenerator.generateAndPrintReport(
                       context: context,
                       logs: logs,
-                      title: 'Voice Call History & Log Report',
+                      title: 'Public Voice Call History & Broadcast Report',
                       subtitle: 'Constituent telephone outreach and communication records',
+                      lang: lang,
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                   label: Text(
-                    AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                    AppTranslations.getDownloadReport(lang),
                     style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -164,8 +175,16 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTabButton('call', 'Make Call', Icons.phone_forwarded_rounded),
-                  _buildTabButton('history', 'Call History', Icons.history_rounded),
+                  _buildTabButton(
+                    'call',
+                    AppTranslations.pick(lang, en: 'Make Call', mr: 'कॉल करा', hi: 'कॉल करें'),
+                    Icons.phone_forwarded_rounded,
+                  ),
+                  _buildTabButton(
+                    'history',
+                    AppTranslations.pick(lang, en: 'Call History', mr: 'कॉल इतिहास', hi: 'कॉल इतिहास'),
+                    Icons.history_rounded,
+                  ),
                 ],
               ),
             ),
@@ -183,7 +202,12 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search voter by name or mobile...',
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Search voter by name or mobile...',
+                      mr: 'नाव किंवा मोबाईलद्वारे मतदार शोधा...',
+                      hi: 'नाम या मोबाइल से मतदाता खोजें...',
+                    ),
                     prefixIcon: const Icon(Icons.search, size: 20),
                     isDense: true,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -200,7 +224,10 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(40),
-                    child: const Text('No voters found', style: TextStyle(color: AppColors.slate400)),
+                    child: Text(
+                      AppTranslations.pick(lang, en: 'No voters found', mr: 'कोणतेही मतदार आढळले नाहीत', hi: 'कोई मतदाता नहीं मिला'),
+                      style: const TextStyle(color: AppColors.slate400),
+                    ),
                   ),
                 )
               else ...[
@@ -239,17 +266,17 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      isMr && v.nameMarathi.isNotEmpty
-                                          ? v.nameMarathi
-                                          : v.nameEnglish,
+                                    AppTranslatedText(
+                                      v.displayNameFor(lang),
+                                      isName: true,
+                                      targetLanguage: lang,
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      v.mobile ?? '-',
+                                      AppTranslations.formatDigits(v.mobile ?? '-', lang),
                                       style: const TextStyle(fontSize: 12, color: AppColors.slate500),
                                     ),
                                   ],
@@ -257,8 +284,9 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                               ),
                             ],
                           ),
-                          Text(
+                          AppTranslatedText(
                             v.address,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 11, color: AppColors.slate400),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -277,7 +305,7 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                               onPressed: () => _makeCall(v.mobile),
                               icon: const Icon(Icons.phone_rounded, size: 16),
                               label: Text(
-                                'Call Now',
+                                AppTranslations.pick(lang, en: 'Call Now', mr: 'आता कॉल करा', hi: 'अभी कॉल करें'),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                               ),
                             ),
@@ -294,8 +322,8 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                   onLoadMore: () {
                     setState(() => _displayedLimit += 20);
                   },
-                  label: 'मतदार',
-                  isMarathi: isMr,
+                  label: 'voters',
+                  isMarathi: lang == 'mr',
                 ),
               ],
             ] else ...[
@@ -311,7 +339,7 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Call History Logs',
+                      AppTranslations.pick(lang, en: 'Call History Logs', mr: 'कॉल इतिहास नोंदी', hi: 'कॉल इतिहास लॉग'),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                     ),
                     const SizedBox(height: 24),
@@ -319,7 +347,12 @@ class _DesktopVoiceCallViewState extends ConsumerState<DesktopVoiceCallView> {
                       child: Padding(
                         padding: const EdgeInsets.all(30),
                         child: Text(
-                          'No call logs recorded yet',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'No call logs recorded yet',
+                            mr: 'अद्याप कोणत्याही कॉल नोंदी नाहीत',
+                            hi: 'अभी तक कोई कॉल लॉग दर्ज नहीं है',
+                          ),
                           style: const TextStyle(color: AppColors.slate400),
                         ),
                       ),

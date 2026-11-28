@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io_client;
+import '../../../../core/localization/app_translations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../providers/language_provider.dart';
 import '../../../providers/tenant_provider.dart';
-import '../../shell/desktop_sidebar.dart';
 
 const String _kBotSocketUrl = 'https://nagarsevak-managment-1.onrender.com';
 
@@ -111,6 +112,7 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
   void _handleLogout() {
     final tenantState = ref.read(tenantProvider);
     final tenantId = tenantState.tenant?.id ?? 'ward-12';
+    final lang = ref.read(desktopLanguageProvider);
     if (_socket != null) {
       _socket?.emit('logout_session', {'tenantId': tenantId});
       setState(() {
@@ -118,8 +120,15 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
         _qrCode = '';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('WhatsApp bot session reset requested.'),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'WhatsApp bot session reset requested.',
+              mr: 'WhatsApp बॉट सत्र रीसेट करण्याची विनंती केली आहे.',
+              hi: 'WhatsApp बॉट सत्र रीसेट का अनुरोध किया गया है।',
+            ),
+          ),
           backgroundColor: AppColors.brandPrimary,
         ),
       );
@@ -179,20 +188,50 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
     }
   }
 
-  String _getStatusText(bool isMr) {
+  String _getStatusText(String lang) {
     switch (_status) {
       case 'connected':
-        return isMr ? 'बॉट ऑनलाइन आणि सक्रिय आहे' : 'Bot is Online & Ready';
+        return AppTranslations.pick(
+          lang,
+          en: 'Bot is Online & Ready',
+          mr: 'बॉट ऑनलाइन आणि सक्रिय आहे',
+          hi: 'बॉट ऑनलाइन और सक्रिय है',
+        );
       case 'scanning':
-        return isMr ? 'QR कोड स्कॅन करा' : 'Scan QR Code';
+        return AppTranslations.pick(
+          lang,
+          en: 'Scan QR Code',
+          mr: 'QR कोड स्कॅन करा',
+          hi: 'QR कोड स्कैन करें',
+        );
       case 'authenticated':
-        return isMr ? 'प्रमाणीकृत, सुरू होत आहे...' : 'Authenticated, Starting...';
+        return AppTranslations.pick(
+          lang,
+          en: 'Authenticated, Starting...',
+          mr: 'प्रमाणीकृत, सुरू होत आहे...',
+          hi: 'प्रमाणित, शुरू हो रहा है...',
+        );
       case 'disconnected':
-        return isMr ? 'बॉट डिस्कनेक्ट / ऑफलाइन आहे' : 'Bot Disconnected / Offline';
+        return AppTranslations.pick(
+          lang,
+          en: 'Bot Disconnected / Offline',
+          mr: 'बॉट डिस्कनेक्ट / ऑफलाइन आहे',
+          hi: 'बॉट डिस्कनेक्ट / ऑफ़लाइन है',
+        );
       case 'connected_to_server':
-        return isMr ? 'बॉटची प्रतीक्षा करत आहे...' : 'Waiting for Bot...';
+        return AppTranslations.pick(
+          lang,
+          en: 'Waiting for Bot...',
+          mr: 'बॉटची प्रतीक्षा करत आहे...',
+          hi: 'बॉट की प्रतीक्षा हो रही है...',
+        );
       case 'failed':
-        return isMr ? 'कनेक्शन अयशस्वी - पुन्हा प्रयत्न करा' : 'Connection Failed - Retry Needed';
+        return AppTranslations.pick(
+          lang,
+          en: 'Connection Failed - Retry Needed',
+          mr: 'कनेक्शन अयशस्वी - पुन्हा प्रयत्न करा',
+          hi: 'कनेक्शन विफल - पुनः प्रयास आवश्यक',
+        );
       default:
         return _status;
     }
@@ -201,7 +240,6 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -237,25 +275,35 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isMr ? 'WhatsApp बॉट मॅनेजर (Baileys)' : 'WhatsApp Bot Manager (Baileys)',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.slate900,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'WhatsApp Bot Manager (Baileys)',
+                        mr: 'WhatsApp बॉट मॅनेजर (Baileys)',
+                        hi: 'WhatsApp बॉट मैनेजर (Baileys)',
+                      ),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.slate900,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isMr
-                        ? 'डेस्कटॉपवरून अधिकृत WhatsApp सत्र लिंक करा आणि स्वयंचलित प्रतिसाद व्यवस्थापित करा'
-                        : 'Connect official WhatsApp session from desktop to automate broadcasts and citizen replies',
-                    style: const TextStyle(fontSize: 12.5, color: AppColors.slate500),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Connect official WhatsApp session from desktop to automate broadcasts and citizen replies',
+                        mr: 'डेस्कटॉपवरून अधिकृत WhatsApp सत्र लिंक करा आणि स्वयंचलित प्रतिसाद व्यवस्थापित करा',
+                        hi: 'ब्रॉडकास्ट और नागरिकों के उत्तर स्वचालित करने के लिए डेस्कटॉप से आधिकारिक WhatsApp सत्र कनेक्ट करें',
+                      ),
+                      style: const TextStyle(fontSize: 12.5, color: AppColors.slate500),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -265,8 +313,8 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth >= 780;
-              final leftCard = _buildStatusCard(isMr);
-              final rightCard = _buildQrCard(isMr);
+              final leftCard = _buildStatusCard(lang);
+              final rightCard = _buildQrCard(lang);
 
               if (isWide) {
                 return Row(
@@ -293,7 +341,7 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
     );
   }
 
-  Widget _buildStatusCard(bool isMr) {
+  Widget _buildStatusCard(String lang) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -305,7 +353,12 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isMr ? 'कनेक्शन स्थिती' : 'Connection status',
+            AppTranslations.pick(
+              lang,
+              en: 'Connection status',
+              mr: 'कनेक्शन स्थिती',
+              hi: 'कनेक्शन स्थिति',
+            ),
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -336,7 +389,7 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    _getStatusText(isMr),
+                    _getStatusText(lang),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -357,8 +410,8 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
                   icon: const Icon(Icons.logout_rounded, size: 15),
                   label: Text(
                     _status == 'connected'
-                        ? (isMr ? 'लॉगआउट' : 'Logout')
-                        : (isMr ? 'रीसेट करा' : 'Reset Bot'),
+                        ? AppTranslations.pick(lang, en: 'Logout', mr: 'लॉगआउट', hi: 'लॉगआउट')
+                        : AppTranslations.pick(lang, en: 'Reset Bot', mr: 'रीसेट करा', hi: 'बॉट रीसेट करें'),
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -370,7 +423,12 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
 
           // Instructions Section
           Text(
-            isMr ? 'सूचना (कसे कनेक्ट करावे):' : 'Instructions:',
+            AppTranslations.pick(
+              lang,
+              en: 'Instructions:',
+              mr: 'सूचना (कसे कनेक्ट करावे):',
+              hi: 'निर्देश (कैसे कनेक्ट करें):',
+            ),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -379,28 +437,40 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
           ),
           const SizedBox(height: 10),
           _buildInstructionStep(
-            number: '1',
-            text: isMr
-                ? 'तुमच्या मोबाईल फोनवर WhatsApp उघडा.'
-                : 'Open WhatsApp on your mobile phone.',
+            number: AppTranslations.formatDigits('1', lang),
+            text: AppTranslations.pick(
+              lang,
+              en: 'Open WhatsApp on your mobile phone.',
+              mr: 'तुमच्या मोबाईल फोनवर WhatsApp उघडा.',
+              hi: 'अपने मोबाइल फ़ोन पर WhatsApp खोलें।',
+            ),
           ),
           _buildInstructionStep(
-            number: '2',
-            text: isMr
-                ? 'Settings > Linked Devices (लिंक केलेली उपकरणे) वर जा.'
-                : 'Go to Settings > Linked Devices.',
+            number: AppTranslations.formatDigits('2', lang),
+            text: AppTranslations.pick(
+              lang,
+              en: 'Go to Settings > Linked Devices.',
+              mr: 'Settings > Linked Devices (लिंक केलेली उपकरणे) वर जा.',
+              hi: 'Settings > Linked Devices (लिंक किए गए डिवाइस) पर जाएं।',
+            ),
           ),
           _buildInstructionStep(
-            number: '3',
-            text: isMr
-                ? 'Link a Device (डिव्हाइस लिंक करा) वर टॅप करा.'
-                : 'Tap on Link a Device.',
+            number: AppTranslations.formatDigits('3', lang),
+            text: AppTranslations.pick(
+              lang,
+              en: 'Tap on Link a Device.',
+              mr: 'Link a Device (डिव्हाइस लिंक करा) वर टॅप करा.',
+              hi: 'Link a Device (डिवाइस लिंक करें) पर टैप करें।',
+            ),
           ),
           _buildInstructionStep(
-            number: '4',
-            text: isMr
-                ? 'तुमचा कॅमेरा स्क्रीनवरील QR कोडवर दाखवून स्कॅन करा.'
-                : 'Point your camera at the QR code on this screen.',
+            number: AppTranslations.formatDigits('4', lang),
+            text: AppTranslations.pick(
+              lang,
+              en: 'Point your camera at the QR code on this screen.',
+              mr: 'तुमचा कॅमेरा स्क्रीनवरील QR कोडवर दाखवून स्कॅन करा.',
+              hi: 'अपना कैमरा इस स्क्रीन पर दिख रहे QR कोड की ओर करके स्कैन करें।',
+            ),
           ),
         ],
       ),
@@ -443,7 +513,7 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
     );
   }
 
-  Widget _buildQrCard(bool isMr) {
+  Widget _buildQrCard(String lang) {
     return Container(
       constraints: const BoxConstraints(minHeight: 280),
       padding: const EdgeInsets.all(24),
@@ -453,11 +523,11 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
         border: Border.all(color: AppColors.slate200),
       ),
       alignment: Alignment.center,
-      child: _buildQrContent(isMr),
+      child: _buildQrContent(lang),
     );
   }
 
-  Widget _buildQrContent(bool isMr) {
+  Widget _buildQrContent(String lang) {
     if (_status == 'connected') {
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -473,7 +543,12 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
           ),
           const SizedBox(height: 16),
           Text(
-            isMr ? 'कनेक्ट झाले' : 'Connected',
+            AppTranslations.pick(
+              lang,
+              en: 'Connected',
+              mr: 'कनेक्ट झाले',
+              hi: 'कनेक्ट हो गया',
+            ),
             style: const TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.bold,
@@ -482,9 +557,12 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
           ),
           const SizedBox(height: 6),
           Text(
-            isMr
-                ? 'बॉट सक्रिय आहे आणि नागरिकांच्या संदेशांना प्रतिसाद देत आहे.'
-                : 'The bot is active and responding to messages.',
+            AppTranslations.pick(
+              lang,
+              en: 'The bot is active and responding to messages.',
+              mr: 'बॉट सक्रिय आहे आणि नागरिकांच्या संदेशांना प्रतिसाद देत आहे.',
+              hi: 'बॉट सक्रिय है और नागरिकों के संदेशों का उत्तर दे रहा है।',
+            ),
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12.5, color: AppColors.slate500),
           ),
@@ -500,7 +578,12 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
             onPressed: _handleLogout,
             icon: const Icon(Icons.power_settings_new_rounded, size: 16),
             label: Text(
-              isMr ? 'बॉट डिस्कनेक्ट करा' : 'Disconnect Bot',
+              AppTranslations.pick(
+                lang,
+                en: 'Disconnect Bot',
+                mr: 'बॉट डिस्कनेक्ट करा',
+                hi: 'बॉट डिस्कनेक्ट करें',
+              ),
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
@@ -543,9 +626,12 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
           ),
           const SizedBox(height: 14),
           Text(
-            isMr
-                ? 'हा QR कोड तुमच्या WhatsApp ने स्कॅन करा'
-                : 'Scan this QR code with WhatsApp',
+            AppTranslations.pick(
+              lang,
+              en: 'Scan this QR code with WhatsApp',
+              mr: 'हा QR कोड तुमच्या WhatsApp ने स्कॅन करा',
+              hi: 'इस QR कोड को अपने WhatsApp से स्कैन करें',
+            ),
             style: const TextStyle(fontSize: 13, color: AppColors.slate600, fontWeight: FontWeight.w500),
           ),
         ],
@@ -566,7 +652,12 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
         ),
         const SizedBox(height: 14),
         Text(
-          isMr ? 'QR कोडची प्रतीक्षा करत आहे...' : 'Waiting for QR Code...',
+          AppTranslations.pick(
+            lang,
+            en: 'Waiting for QR Code...',
+            mr: 'QR कोडची प्रतीक्षा करत आहे...',
+            hi: 'QR कोड की प्रतीक्षा हो रही है...',
+          ),
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -575,9 +666,12 @@ class _DesktopBotDashboardViewState extends ConsumerState<DesktopBotDashboardVie
         ),
         const SizedBox(height: 4),
         Text(
-          isMr
-              ? '(बॉट सर्व्हर चालू असल्याची खात्री करा)'
-              : '(Make sure the bot backend is running)',
+          AppTranslations.pick(
+            lang,
+            en: '(Make sure the bot backend is running)',
+            mr: '(बॉट सर्व्हर चालू असल्याची खात्री करा)',
+            hi: '(सुनिश्चित करें कि बॉट सर्वर चल रहा है)',
+          ),
           style: const TextStyle(fontSize: 11.5, color: AppColors.slate400),
         ),
       ],

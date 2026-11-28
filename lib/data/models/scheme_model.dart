@@ -54,6 +54,12 @@ class SchemeModel {
   String localizedBenefits(bool isMarathi) => extractLocalized(benefits, isMarathi);
   String localizedDocuments(bool isMarathi) => extractLocalized(documents, isMarathi);
 
+  String localizedNameFor(String lang) => extractLocalized(name, lang != 'en');
+  String localizedDescriptionFor(String lang) => extractLocalized(description, lang != 'en');
+  String localizedEligibilityFor(String lang) => extractLocalized(eligibility, lang != 'en');
+  String localizedBenefitsFor(String lang) => extractLocalized(benefits, lang != 'en');
+  String localizedDocumentsFor(String lang) => extractLocalized(documents, lang != 'en');
+
   IconData get icon {
     switch (category.toLowerCase()) {
       case 'women':

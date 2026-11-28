@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
-import 'package:nagarsevak_mobile/presentation/desktop/shell/desktop_sidebar.dart';
+import 'package:nagarsevak_mobile/core/services/translation_service.dart';
+import '../../../providers/language_provider.dart';
 import '../../../../data/models/election_result_model.dart';
 import '../../../../data/repositories/election_results_repository.dart';
 import '../../../screens/results/result_analysis_report_generator.dart';
@@ -84,6 +85,7 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(desktopLanguageProvider);
     final totalVotes = _results.fold<int>(0, (sum, r) => sum + r.totalVotesCasted);
     final ourVotes = _results.fold<int>(0, (sum, r) => sum + r.votesFor(_selectedCandidate));
     final voteShare = totalVotes > 0 ? (ourVotes / totalVotes) * 100 : 0.0;
@@ -96,52 +98,82 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          _buildHeader(),
+          _buildHeader(lang),
           const SizedBox(height: 24),
 
           if (_loading)
             _buildLoadingState()
           else if (_results.isEmpty)
-            _buildEmptyState()
+            _buildEmptyState(lang)
           else ...[
             // Stats Row
-            _buildStatsRow(totalVotes, ourVotes, voteShare, winningBooths, losingBooths),
+            _buildStatsRow(totalVotes, ourVotes, voteShare, winningBooths, losingBooths, lang),
             const SizedBox(height: 24),
 
             // Detailed Booth Performance Table
-            _buildBoothPerformanceTable(),
+            _buildBoothPerformanceTable(lang),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String lang) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Result Analysis',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Text(
-                  'Election Performance Report: ',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Result Analysis',
+                  mr: 'निकाल विश्लेषण',
+                  hi: 'चुनाव परिणाम विश्लेषण',
                 ),
-                Text(
-                  _selectedCandidate.isEmpty ? 'All Candidates' : _selectedCandidate,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
-                ),
-              ],
-            ),
-          ],
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Election Performance Report: ',
+                      mr: 'निवडणूक कामगिरी अहवाल: ',
+                      hi: 'चुनाव प्रदर्शन रिपोर्ट: ',
+                    ),
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                  ),
+                  Flexible(
+                    child: _selectedCandidate.isEmpty
+                        ? Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'All Candidates',
+                              mr: 'सर्व उमेदवार',
+                              hi: 'सभी उम्मीदवार',
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                          )
+                        : AppTranslatedText(
+                            _selectedCandidate,
+                            isName: true,
+                            targetLanguage: lang,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                          ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 16),
 
         // Controls
         Row(
@@ -151,12 +183,19 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
               value: _availableWards.contains(_selectedWard) ? _selectedWard : null,
               height: 40,
               width: 160,
-              label: 'Ward',
+              label: AppTranslations.pick(lang, en: 'Ward', mr: 'प्रभाग', hi: 'वार्ड'),
               prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
               backgroundColor: Colors.white,
               borderColor: const Color(0xFFE2E8F0),
               items: _availableWards.map((w) {
-                return DropdownMenuItem(value: w, child: Text(w));
+                return DropdownMenuItem(
+                  value: w,
+                  child: AppTranslatedText(
+                    AppTranslations.getAreaName(w, lang),
+                    targetLanguage: lang,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
               }).toList(),
               onChanged: (val) {
                 if (val != null) {
@@ -173,12 +212,20 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
                 value: _availableCandidates.contains(_selectedCandidate) ? _selectedCandidate : null,
                 height: 40,
                 width: 180,
-                label: 'Candidate',
+                label: AppTranslations.pick(lang, en: 'Candidate', mr: 'उमेदवार', hi: 'उम्मीदवार'),
                 prefixIcon: const Icon(Icons.person_outline, size: 16, color: Color(0xFF94A3B8)),
                 backgroundColor: Colors.white,
                 borderColor: const Color(0xFFE2E8F0),
                 items: _availableCandidates.map((c) {
-                  return DropdownMenuItem(value: c, child: Text(c));
+                  return DropdownMenuItem(
+                    value: c,
+                    child: AppTranslatedText(
+                      c,
+                      isName: true,
+                      targetLanguage: lang,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
                 }).toList(),
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedCandidate = val);
@@ -190,16 +237,27 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
     );
   }
 
-  Widget _buildStatsRow(int totalVotes, int ourVotes, double voteShare, int winningBooths, int losingBooths) {
+  Widget _buildStatsRow(int totalVotes, int ourVotes, double voteShare, int winningBooths, int losingBooths, String lang) {
+    final totalVotesStr = AppTranslations.formatDigits(totalVotes, lang);
+    final ourVotesStr = AppTranslations.formatDigits(ourVotes, lang);
+    final shareStr = AppTranslations.formatDigits('${voteShare.toStringAsFixed(1)}%', lang);
+    final winStr = AppTranslations.formatDigits(winningBooths, lang);
+    final loseStr = AppTranslations.formatDigits(losingBooths, lang);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return Row(
           children: [
             Expanded(
               child: _buildStatCard(
-                title: 'Total Votes Received',
-                value: ourVotes.toString(),
-                subtitle: 'Total out of $totalVotes votes polled',
+                title: AppTranslations.pick(lang, en: 'Total Votes Received', mr: 'एकूण मिळालेली मते', hi: 'कुल प्राप्त मत'),
+                value: ourVotesStr,
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Total out of $totalVotesStr votes polled',
+                  mr: 'एकूण $totalVotesStr मतदानापैकी मते',
+                  hi: 'कुल $totalVotesStr डाले गए मतों में से',
+                ),
                 icon: Icons.people_alt_outlined,
                 iconColor: const Color(0xFF0284C7),
                 iconBg: const Color(0xFFF0F9FF),
@@ -208,9 +266,14 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatCard(
-                title: 'Vote Share %',
-                value: '${voteShare.toStringAsFixed(1)}%',
-                subtitle: 'Share of total votes cast',
+                title: AppTranslations.pick(lang, en: 'Vote Share %', mr: 'मतदानाची टक्केवारी %', hi: 'मत प्रतिशत %'),
+                value: shareStr,
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Share of total votes cast',
+                  mr: 'एकूण मतदानातील वाटा',
+                  hi: 'कुल डाले गए मतों का हिस्सा',
+                ),
                 icon: Icons.pie_chart_outline_rounded,
                 iconColor: const Color(0xFF9333EA),
                 iconBg: const Color(0xFFFAF5FF),
@@ -220,9 +283,14 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatCard(
-                title: 'Strongholds',
-                value: winningBooths.toString(),
-                subtitle: 'Booths leading in vote count',
+                title: AppTranslations.pick(lang, en: 'Strongholds', mr: 'बालेकिल्ले (आघाडीचे बूथ)', hi: 'मजबूत गढ़ (आगे बूथ)'),
+                value: winStr,
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Booths leading in vote count',
+                  mr: 'मतमोजणीत आघाडीवर असलेले बूथ',
+                  hi: 'मतगणना में आगे रहने वाले बूथ',
+                ),
                 icon: Icons.check_circle_outline_rounded,
                 iconColor: const Color(0xFF16A34A),
                 iconBg: const Color(0xFFF0FDF4),
@@ -231,9 +299,14 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatCard(
-                title: 'Trailing Booths',
-                value: losingBooths.toString(),
-                subtitle: 'Booths requiring strategic outreach',
+                title: AppTranslations.pick(lang, en: 'Trailing Booths', mr: 'पिछाडीवरील बूथ', hi: 'पिछड़े हुए बूथ'),
+                value: loseStr,
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Booths requiring strategic outreach',
+                  mr: 'विशेष लक्ष देण्याची गरज असलेले बूथ',
+                  hi: 'विशेष रणनीति की आवश्यकता वाले बूथ',
+                ),
                 icon: Icons.cancel_outlined,
                 iconColor: const Color(0xFFDC2626),
                 iconBg: const Color(0xFFFEF2F2),
@@ -268,7 +341,15 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                ),
+              ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
@@ -297,7 +378,8 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
     );
   }
 
-  Widget _buildBoothPerformanceTable() {
+  Widget _buildBoothPerformanceTable(String lang) {
+    final boothCountStr = AppTranslations.formatDigits(_results.length, lang);
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -316,12 +398,28 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
               children: [
                 Row(
                   children: [
-                    const Text('Booth Performance', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Booth Performance',
+                        mr: 'बूथनिहाय कामगिरी',
+                        hi: 'बूथवार प्रदर्शन',
+                      ),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(100)),
-                      child: Text('${_results.length} Booths', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                      child: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: '$boothCountStr Booths',
+                          mr: '$boothCountStr बूथ',
+                          hi: '$boothCountStr बूथ',
+                        ),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                      ),
                     ),
                   ],
                 ),
@@ -332,11 +430,12 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
                       ward: _selectedWard,
                       selectedCandidate: _selectedCandidate,
                       results: _results,
+                      lang: lang,
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                   label: Text(
-                    AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                    AppTranslations.getDownloadReport(lang),
                     style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -359,18 +458,49 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
               columnSpacing: 28,
               horizontalMargin: 24,
               columns: [
-                const DataColumn(label: Text('Booth No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+                DataColumn(
+                  label: Text(
+                    AppTranslations.pick(lang, en: 'Booth No', mr: 'बूथ क्र.', hi: 'बूथ सं.'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                  ),
+                ),
                 ..._availableCandidates.map((c) => DataColumn(
-                      label: Text(c, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569))),
+                      label: AppTranslatedText(
+                        c,
+                        isName: true,
+                        targetLanguage: lang,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                      ),
                     )),
-                const DataColumn(label: Text('Total Polled', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-                const DataColumn(label: Text('Winning Candidate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
-                const DataColumn(label: Text('Margin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+                DataColumn(
+                  label: Text(
+                    AppTranslations.pick(lang, en: 'Total Polled', mr: 'एकूण मतदान', hi: 'कुल मतदान'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    AppTranslations.pick(lang, en: 'Winning Candidate', mr: 'विजयी उमेदवार', hi: 'विजयी उम्मीदवार'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    AppTranslations.pick(lang, en: 'Margin', mr: 'मताधिक्य', hi: 'जीत का अंतर'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)),
+                  ),
+                ),
               ],
               rows: _visibleResults.map((r) {
                 return DataRow(
                   cells: [
-                    DataCell(Text(r.boothNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)))),
+                    DataCell(
+                      AppTranslatedText(
+                        r.boothNumber,
+                        targetLanguage: lang,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                      ),
+                    ),
                     ..._availableCandidates.map((c) {
                       final votes = r.votesFor(c);
                       final isWin = r.isWinner(c);
@@ -384,7 +514,7 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            votes.toString(),
+                            AppTranslations.formatDigits(votes, lang),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: (isWin || isSelected) ? FontWeight.bold : FontWeight.normal,
@@ -394,13 +524,23 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
                         ),
                       );
                     }),
-                    DataCell(Text(r.totalVotesCasted.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)))),
+                    DataCell(
+                      Text(
+                        AppTranslations.formatDigits(r.totalVotesCasted, lang),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                      ),
+                    ),
                     DataCell(
                       Row(
                         children: [
                           const Icon(Icons.stars_rounded, size: 14, color: Color(0xFFEAB308)),
                           const SizedBox(width: 4),
-                          Text(r.winner, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+                          AppTranslatedText(
+                            r.winner,
+                            isName: true,
+                            targetLanguage: lang,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                          ),
                         ],
                       ),
                     ),
@@ -408,7 +548,10 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                        child: Text('+${r.margin}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                        child: Text(
+                          '+${AppTranslations.formatDigits(r.margin, lang)}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                        ),
                       ),
                     ),
                   ],
@@ -424,15 +567,20 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
               onLoadMore: () {
                 setState(() => _displayedLimit += 20);
               },
-              label: 'बूथ',
-              isMarathi: true,
+              label: AppTranslations.pick(
+                lang,
+                en: 'booths',
+                mr: 'बूथ',
+                hi: 'बूथ',
+              ),
+              isMarathi: lang == 'mr',
             ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(48),
@@ -442,12 +590,28 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
-        children: const [
-          Icon(Icons.how_to_vote_outlined, size: 48, color: Color(0xFFCBD5E1)),
-          SizedBox(height: 12),
-          const Text('No Election Results Available', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-          SizedBox(height: 6),
-          const Text('Election results data has not been uploaded yet.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+        children: [
+          const Icon(Icons.how_to_vote_outlined, size: 48, color: Color(0xFFCBD5E1)),
+          const SizedBox(height: 12),
+          Text(
+            AppTranslations.pick(
+              lang,
+              en: 'No Election Results Available',
+              mr: 'निवडणूक निकाल उपलब्ध नाहीत',
+              hi: 'चुनाव परिणाम उपलब्ध नहीं हैं',
+            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Election results data has not been uploaded yet.',
+              mr: 'निवडणूक निकालाचा डेटा अद्याप अपलोड केलेला नाही.',
+              hi: 'चुनाव परिणाम डेटा अभी तक अपलोड नहीं किया गया है।',
+            ),
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+          ),
         ],
       ),
     );

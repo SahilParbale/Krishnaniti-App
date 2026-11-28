@@ -303,131 +303,185 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     });
   }
 
+  Widget _buildLocalizedLocationText(
+    String raw,
+    String lang, {
+    TextStyle? style,
+    int? maxLines,
+    TextOverflow? overflow,
+  }) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || trimmed == '-') {
+      return Text(raw, style: style, maxLines: maxLines, overflow: overflow);
+    }
+    final mapped = AppTranslations.getAreaName(trimmed, lang);
+    final changed = mapped.trim().toLowerCase() != trimmed.toLowerCase() &&
+        mapped != AppTranslations.formatDigits(trimmed, lang);
+    if (changed || (lang == 'en' && !DynamicTranslationService.containsDevanagari(trimmed))) {
+      return Text(mapped, style: style, maxLines: maxLines, overflow: overflow);
+    }
+    return AppTranslatedText(
+      trimmed,
+      targetLanguage: lang,
+      style: style,
+      maxLines: maxLines,
+      overflow: overflow,
+    );
+  }
+
   void _showComplaintDetailsModal(ComplaintModel c, String lang) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          width: 540,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.brand50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.brand200),
-                    ),
-                    child: Text(
-                      '#${AppTranslations.formatDigits(c.id, lang)}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.brand700),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: c.status.toLowerCase().contains('pending')
-                          ? const Color(0xFFFEE2E2)
-                          : (c.status.toLowerCase().contains('resolved') ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      AppTranslations.getStatus(c.status, lang),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: c.status.toLowerCase().contains('pending')
-                            ? const Color(0xFFB91C1C)
-                            : (c.status.toLowerCase().contains('resolved') ? const Color(0xFF15803D) : const Color(0xFFB45309)),
+      builder: (ctx) => ValueListenableBuilder<String>(
+        valueListenable: appLanguageValueNotifier,
+        builder: (ctx, activeLang, _) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            width: 540,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.brand50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.brand200),
+                      ),
+                      child: Text(
+                        '#${AppTranslations.formatDigits(c.id, activeLang)}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.brand700),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              AppTranslatedText(
-                c.title,
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.slate900),
-              ),
-              const SizedBox(height: 8),
-              if (c.description.isNotEmpty)
-                AppTranslatedText(
-                  c.description,
-                  style: const TextStyle(fontSize: 13.5, color: AppColors.slate600, height: 1.4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: c.status.toLowerCase().contains('pending')
+                            ? const Color(0xFFFEE2E2)
+                            : (c.status.toLowerCase().contains('resolved') ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        AppTranslations.getStatus(c.status, activeLang),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: c.status.toLowerCase().contains('pending')
+                              ? const Color(0xFFB91C1C)
+                              : (c.status.toLowerCase().contains('resolved') ? const Color(0xFF15803D) : const Color(0xFFB45309)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              const SizedBox(height: 16),
-              const Divider(height: 1, color: AppColors.slate100),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.location_on_outlined, size: 16, color: AppColors.slate400),
-                  const SizedBox(width: 6),
-                  Text(
-                    AppTranslations.getAreaName(c.area ?? c.ward ?? 'Prabhag 12', lang),
-                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.slate700),
-                  ),
-                ],
-              ),
-              if (c.citizenName != null && c.citizenName!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                AppTranslatedText(
+                  c.title,
+                  targetLanguage: activeLang,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.slate900),
+                ),
                 const SizedBox(height: 8),
+                if (c.description.isNotEmpty)
+                  AppTranslatedText(
+                    c.description,
+                    targetLanguage: activeLang,
+                    style: const TextStyle(fontSize: 13.5, color: AppColors.slate600, height: 1.4),
+                  ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: AppColors.slate100),
+                const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.person_outline_rounded, size: 16, color: AppColors.slate400),
+                    const Icon(Icons.location_on_outlined, size: 16, color: AppColors.slate400),
                     const SizedBox(width: 6),
-                    Text(
-                      '${lang == 'mr' ? 'नागरिक:' : (lang == 'hi' ? 'नागरिक:' : 'Citizen:')} ${c.citizenName}',
-                      style: const TextStyle(fontSize: 12.5, color: AppColors.slate700),
-                    ),
-                    if (c.citizenMobile != null && c.citizenMobile!.isNotEmpty) ...[
-                      const SizedBox(width: 12),
-                      const Icon(Icons.phone_outlined, size: 14, color: AppColors.slate400),
-                      const SizedBox(width: 4),
-                      Text(
-                        AppTranslations.formatDigits(c.citizenMobile!, lang),
-                        style: const TextStyle(fontSize: 12.5, color: AppColors.slate700),
+                    Expanded(
+                      child: _buildLocalizedLocationText(
+                        c.area ?? c.location ?? c.ward ?? 'Prabhag 12',
+                        activeLang,
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.slate700),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                    ),
+                  ],
+                ),
+                if (c.citizenName != null && c.citizenName!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline_rounded, size: 16, color: AppColors.slate400),
+                      const SizedBox(width: 6),
+                      Text(
+                        AppTranslations.pick(activeLang, en: 'Citizen: ', mr: 'नागरिक: ', hi: 'नागरिक: '),
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.slate700),
+                      ),
+                      Flexible(
+                        child: AppTranslatedText(
+                          c.citizenName!,
+                          isName: true,
+                          targetLanguage: activeLang,
+                          style: const TextStyle(fontSize: 12.5, color: AppColors.slate700),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (c.citizenMobile != null && c.citizenMobile!.isNotEmpty) ...[
+                        const SizedBox(width: 12),
+                        const Icon(Icons.phone_outlined, size: 14, color: AppColors.slate400),
+                        const SizedBox(width: 4),
+                        Text(
+                          AppTranslations.formatDigits(c.citizenMobile!, activeLang),
+                          style: const TextStyle(fontSize: 12.5, color: AppColors.slate700),
+                        ),
+                      ],
                     ],
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.slate700,
+                        side: const BorderSide(color: AppColors.slate200),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text(
+                        AppTranslations.pick(activeLang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        ref.read(activeScreenProvider.notifier).setScreen('complaints');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brand600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text(
+                        AppTranslations.pick(
+                          activeLang,
+                          en: 'Open in Complaints',
+                          mr: 'तक्रारींमध्ये उघडा',
+                          hi: 'शिकायतों में खोलें',
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.slate700,
-                      side: const BorderSide(color: AppColors.slate200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text(lang == 'mr' ? 'बंद करा' : (lang == 'hi' ? 'बंद करें' : 'Close')),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      ref.read(activeScreenProvider.notifier).setScreen('complaints');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brand600,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text(lang == 'mr' ? 'तक्रारींमध्ये उघडा' : (lang == 'hi' ? 'शिकायतों में खोलें' : 'Open in Complaints')),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -907,7 +961,12 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                lang == 'mr' ? 'तक्रार स्थिती' : (lang == 'hi' ? 'तक्रार स्थिति' : 'Complaint Status Overview'),
+                AppTranslations.pick(
+                  lang,
+                  en: 'Complaint Status Overview',
+                  mr: 'तक्रार स्थिती आढावा',
+                  hi: 'शिकायत स्थिति अवलोकन',
+                ),
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -1189,7 +1248,15 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                                 children: [
                                   Expanded(
                                     child: AppTranslatedText(
-                                      item.title.isNotEmpty ? item.title : 'Citizen Grievance',
+                                      item.title.isNotEmpty
+                                          ? item.title
+                                          : AppTranslations.pick(
+                                              lang,
+                                              en: 'Citizen Grievance',
+                                              mr: 'नागरिक तक्रार',
+                                              hi: 'नागरिक शिकायत',
+                                            ),
+                                      targetLanguage: lang,
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: isPending ? FontWeight.w800 : FontWeight.w600,
@@ -1222,9 +1289,12 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                                 runSpacing: 2,
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  Text(
-                                    AppTranslations.getAreaName(item.area ?? item.location ?? item.ward ?? 'Prabhag 12', lang),
+                                  _buildLocalizedLocationText(
+                                    item.area ?? item.location ?? item.ward ?? 'Prabhag 12',
+                                    lang,
                                     style: const TextStyle(fontSize: 11, color: AppColors.slate500),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const Text('•', style: TextStyle(color: AppColors.slate300, fontSize: 10)),
                                   Text(

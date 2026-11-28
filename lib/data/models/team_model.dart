@@ -41,42 +41,79 @@ class TeamMemberModel {
 
   String get displayName => (nameMarathi != null && nameMarathi!.isNotEmpty) ? nameMarathi! : name;
 
-  String get categoryLabelMarathi {
+  String displayNameFor(String lang) {
+    if (lang == 'en') {
+      return name.trim().isNotEmpty ? name : (nameMarathi ?? '');
+    }
+    return (nameMarathi != null && nameMarathi!.trim().isNotEmpty) ? nameMarathi! : name;
+  }
+
+  String get categoryLabelMarathi => categoryLabel('mr');
+
+  String categoryLabel(String lang) {
     switch (category.toLowerCase()) {
       case 'office':
-        return 'कार्यालयीन टीम';
+        return lang == 'mr'
+            ? 'कार्यालयीन टीम'
+            : (lang == 'hi' ? 'कार्यालय टीम' : 'Office Team');
       case 'party':
-        return 'पक्ष कार्यकर्ते';
+        return lang == 'mr'
+            ? 'पक्ष कार्यकर्ते'
+            : (lang == 'hi' ? 'पार्टी कार्यकर्ता' : 'Party Cadre');
       case 'cooperative':
-        return 'शासकीय व सहकार';
+        return lang == 'mr'
+            ? 'शासकीय व सहकार'
+            : (lang == 'hi' ? 'शासकीय और सहकार' : 'Govt & Cooperative');
       default:
         return category;
     }
   }
 
-  String get roleLabelMarathi {
+  String get roleLabelMarathi => roleLabel('mr');
+
+  String roleLabel(String lang) {
     switch (role.toLowerCase()) {
       case 'office admin':
-        return 'कार्यालय प्रशासक';
+        return lang == 'mr'
+            ? 'कार्यालय प्रशासक'
+            : (lang == 'hi' ? 'कार्यालय प्रशासक' : 'Office Admin');
       case 'supervisor':
-        return 'क्षेत्रीय पर्यवेक्षक';
+        return lang == 'mr'
+            ? 'क्षेत्रीय पर्यवेक्षक'
+            : (lang == 'hi' ? 'क्षेत्रीय पर्यवेक्षक' : 'Supervisor');
       case 'staff':
       case 'executive':
-        return 'कार्यालयीन सहाय्यक';
+        return lang == 'mr'
+            ? 'कार्यालयीन सहाय्यक'
+            : (lang == 'hi' ? 'कार्यालय सहायक' : 'Office Staff');
       case 'driver':
-        return 'अधिकृत चालक';
+        return lang == 'mr'
+            ? 'अधिकृत चालक'
+            : (lang == 'hi' ? 'अधिकृत चालक' : 'Driver');
       case 'peon':
-        return 'शिपाई व सेवक';
+        return lang == 'mr'
+            ? 'शिपाई व सेवक'
+            : (lang == 'hi' ? 'चपरासी व सहायक' : 'Peon');
       case 'helper':
-        return 'मदतनीस';
+        return lang == 'mr'
+            ? 'मदतनीस'
+            : (lang == 'hi' ? 'सहायक' : 'Helper');
       case 'sanitation worker':
-        return 'स्वच्छता समन्वयक';
+        return lang == 'mr'
+            ? 'स्वच्छता समन्वयक'
+            : (lang == 'hi' ? 'स्वच्छता समन्वयक' : 'Sanitation Worker');
       case 'karyakarta':
-        return 'सक्रिय कार्यकर्ता';
+        return lang == 'mr'
+            ? 'सक्रिय कार्यकर्ता'
+            : (lang == 'hi' ? 'सक्रिय कार्यकर्ता' : 'Karyakarta');
       case 'it cell head':
-        return 'आयटी व सोशल मीडिया प्रमुख';
+        return lang == 'mr'
+            ? 'आयटी व सोशल मीडिया प्रमुख'
+            : (lang == 'hi' ? 'आईटी और सोशल मीडिया प्रमुख' : 'IT Cell Head');
       case 'pro':
-        return 'जनसंपर्क अधिकारी';
+        return lang == 'mr'
+            ? 'जनसंपर्क अधिकारी'
+            : (lang == 'hi' ? 'जनसंपर्क अधिकारी' : 'PRO');
       default:
         return role;
     }
@@ -208,29 +245,45 @@ class TeamTaskModel {
     required this.createdAt,
   });
 
-  String get statusLabelMarathi {
+  String get statusLabelMarathi => statusLabel('mr');
+
+  String statusLabel(String lang) {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'resolved':
-        return 'पूर्ण झाले';
+        return lang == 'mr'
+            ? 'पूर्ण झाले'
+            : (lang == 'hi' ? 'पूर्ण हुआ' : 'Completed');
       case 'in progress':
       case 'inprogress':
-        return 'प्रगतीपथावर';
+        return lang == 'mr'
+            ? 'प्रगतीपथावर'
+            : (lang == 'hi' ? 'प्रगति पर' : 'In Progress');
       case 'pending':
       default:
-        return 'प्रलंबित';
+        return lang == 'mr'
+            ? 'प्रलंबित'
+            : (lang == 'hi' ? 'लंबित' : 'Pending');
     }
   }
 
-  String get priorityLabelMarathi {
+  String get priorityLabelMarathi => priorityLabel('mr');
+
+  String priorityLabel(String lang) {
     switch (priority.toLowerCase()) {
       case 'high':
-        return 'तात्काळ (High)';
+        return lang == 'mr'
+            ? 'तात्काळ'
+            : (lang == 'hi' ? 'तत्काल' : 'High');
       case 'medium':
-        return 'मध्यम (Medium)';
+        return lang == 'mr'
+            ? 'मध्यम'
+            : (lang == 'hi' ? 'मध्यम' : 'Medium');
       case 'low':
       default:
-        return 'सामान्य (Low)';
+        return lang == 'mr'
+            ? 'सामान्य'
+            : (lang == 'hi' ? 'सामान्य' : 'Low');
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../../../data/models/voter_model.dart';
 import '../../../../data/models/whatsapp_broadcast_model.dart';
@@ -46,8 +47,9 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
     });
     try {
       final repo = ref.read(whatsAppRepoProvider);
+      final normalizedSearch = AppTranslations.normalizeAsciiDigits(_searchController.text.trim());
       final voters = await repo.getVotersWithMobile(
-        name: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
+        name: normalizedSearch.isEmpty ? null : normalizedSearch,
       );
       if (mounted) {
         setState(() {
@@ -62,7 +64,7 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
 
   Future<void> _launchWaCall(String? mobile) async {
     if (mobile == null || mobile.trim().isEmpty) return;
-    final clean = mobile.replaceAll(RegExp(r'\D'), '');
+    final clean = AppTranslations.normalizeAsciiDigits(mobile).replaceAll(RegExp(r'\D'), '');
     final uri = Uri.parse('https://wa.me/$clean');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -72,7 +74,6 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(desktopLanguageProvider);
-    final isMr = lang == 'mr';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -85,32 +86,41 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.brand50,
-                        borderRadius: BorderRadius.circular(20),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.brand50,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.phone_in_talk_rounded, color: AppColors.brand600, size: 28),
                       ),
-                      child: const Icon(Icons.phone_in_talk_rounded, color: AppColors.brand600, size: 28),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'WhatsApp Call',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(lang, en: 'WhatsApp Call', mr: 'WhatsApp कॉल', hi: 'WhatsApp कॉल'),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Initiate direct WhatsApp voice calling with key ward constituents',
+                                mr: 'प्रभागातील प्रमुख नागरिकांशी थेट WhatsApp व्हॉइस कॉलिंग सुरू करा',
+                                hi: 'वार्ड के प्रमुख नागरिकों के साथ सीधे WhatsApp वॉइस कॉल शुरू करें',
+                              ),
+                              style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Initiate direct WhatsApp voice calling with key ward constituents',
-                          style: const TextStyle(fontSize: 13, color: AppColors.slate500),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
                 Row(
                   children: [
@@ -133,7 +143,12 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Calling Gateway Ready',
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Calling Gateway Ready',
+                              mr: 'कॉलिंग गेटवे सज्ज',
+                              hi: 'कॉलिंग गेटवे तैयार',
+                            ),
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brand600),
                           ),
                         ],
@@ -146,7 +161,7 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                       onPressed: () {
                         final logs = _voters.map((v) => WhatsAppBroadcastModel(
                           id: 'wacall-${v.id}',
-                          title: 'WhatsApp Call: ${v.nameEnglish.isNotEmpty ? v.nameEnglish : v.nameMarathi}',
+                          title: 'WhatsApp Call - ${v.displayNameFor(lang)}',
                           message: 'WhatsApp voice call outreach record for Ward 12 constituency.',
                           sentAt: DateTime.now(),
                           channel: 'whatsapp',
@@ -161,11 +176,12 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                         WhatsAppHistoryReportGenerator.generateAndPrintReport(
                           context: context,
                           broadcasts: logs,
+                          lang: lang,
                         );
                       },
                       icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                       label: Text(
-                        AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                        AppTranslations.getDownloadReport(lang),
                         style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -192,8 +208,16 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTabButton('call', 'Make Call', Icons.phone_forwarded_rounded),
-                  _buildTabButton('history', 'Call History', Icons.history_rounded),
+                  _buildTabButton(
+                    'call',
+                    AppTranslations.pick(lang, en: 'Make Call', mr: 'कॉल करा', hi: 'कॉल करें'),
+                    Icons.phone_forwarded_rounded,
+                  ),
+                  _buildTabButton(
+                    'history',
+                    AppTranslations.pick(lang, en: 'Call History', mr: 'कॉल इतिहास', hi: 'कॉल इतिहास'),
+                    Icons.history_rounded,
+                  ),
                 ],
               ),
             ),
@@ -211,7 +235,12 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search voter by name or mobile...',
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Search voter by name or mobile...',
+                      mr: 'नाव किंवा मोबाईलद्वारे मतदार शोधा...',
+                      hi: 'नाम या मोबाइल से मतदाता खोजें...',
+                    ),
                     prefixIcon: const Icon(Icons.search, size: 20),
                     isDense: true,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -228,7 +257,10 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(40),
-                    child: const Text('No voters found', style: TextStyle(color: AppColors.slate400)),
+                    child: Text(
+                      AppTranslations.pick(lang, en: 'No voters found', mr: 'कोणतेही मतदार आढळले नाहीत', hi: 'कोई मतदाता नहीं मिला'),
+                      style: const TextStyle(color: AppColors.slate400),
+                    ),
                   ),
                 )
               else ...[
@@ -267,17 +299,17 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      isMr && v.nameMarathi.isNotEmpty
-                                          ? v.nameMarathi
-                                          : v.nameEnglish,
+                                    AppTranslatedText(
+                                      v.displayNameFor(lang),
+                                      isName: true,
+                                      targetLanguage: lang,
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.slate800),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      v.mobile ?? '-',
+                                      AppTranslations.formatDigits(v.mobile ?? '-', lang),
                                       style: const TextStyle(fontSize: 12, color: AppColors.slate500),
                                     ),
                                   ],
@@ -285,8 +317,9 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                               ),
                             ],
                           ),
-                          Text(
+                          AppTranslatedText(
                             v.address,
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 11, color: AppColors.slate400),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -305,7 +338,7 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                               onPressed: () => _launchWaCall(v.mobile),
                               icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
                               label: Text(
-                                'WhatsApp Call',
+                                AppTranslations.pick(lang, en: 'WhatsApp Call', mr: 'WhatsApp कॉल', hi: 'WhatsApp कॉल'),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                               ),
                             ),
@@ -322,8 +355,8 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                   onLoadMore: () {
                     setState(() => _displayedLimit += 20);
                   },
-                  label: 'मतदार',
-                  isMarathi: isMr,
+                  label: 'voters',
+                  isMarathi: lang == 'mr',
                 ),
               ],
             ] else ...[
@@ -339,7 +372,7 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'WhatsApp Call History',
+                      AppTranslations.pick(lang, en: 'WhatsApp Call History', mr: 'WhatsApp कॉल इतिहास', hi: 'WhatsApp कॉल इतिहास'),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                     ),
                     const SizedBox(height: 24),
@@ -347,7 +380,12 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                       child: Padding(
                         padding: const EdgeInsets.all(30),
                         child: Text(
-                          'No call logs recorded yet',
+                          AppTranslations.pick(
+                            lang,
+                            en: 'No call logs recorded yet',
+                            mr: 'अद्याप कोणत्याही कॉल नोंदी नाहीत',
+                            hi: 'अभी तक कोई कॉल लॉग दर्ज नहीं है',
+                          ),
                           style: const TextStyle(color: AppColors.slate400),
                         ),
                       ),

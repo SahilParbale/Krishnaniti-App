@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/government_office_model.dart';
 import '../../../data/models/team_model.dart';
 import '../../../data/repositories/government_office_repository.dart';
 import '../../../data/repositories/team_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_load_more_footer.dart';
@@ -75,7 +77,8 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
   }
 
   List<GovernmentOfficeModel> get _filteredOffices {
-    final query = _searchCtrl.text.trim().toLowerCase();
+    final query = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim())
+        .toLowerCase();
     if (query.isEmpty) return _allOffices;
 
     return _allOffices.where((o) {
@@ -88,7 +91,8 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
   }
 
   List<TeamMemberModel> get _filteredStaff {
-    final query = _searchCtrl.text.trim().toLowerCase();
+    final query = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim())
+        .toLowerCase();
     if (query.isEmpty) return _allStaff;
 
     return _allStaff.where((s) {
@@ -103,7 +107,16 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
   }
 
   Future<void> _makePhoneCall(String phoneNumber) async {
-    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    final lang = ref.read(appLanguageProvider);
+    final cleanNumber = AppTranslations.normalizeAsciiDigits(phoneNumber)
+        .replaceAll(RegExp(r'[^0-9+]'), '');
+    final formattedNum = AppTranslations.formatDigits(phoneNumber, lang);
+    final callingMsg = AppTranslations.pick(
+      lang,
+      en: 'Calling $formattedNum...',
+      mr: '$formattedNum वर कॉल करत आहे...',
+      hi: '$formattedNum पर कॉल कर रहे हैं...',
+    );
     final uri = Uri.parse('tel:$cleanNumber');
     try {
       if (await canLaunchUrl(uri)) {
@@ -111,14 +124,14 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Calling $phoneNumber...')),
+            SnackBar(content: Text(callingMsg)),
           );
         }
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Calling $phoneNumber...')),
+          SnackBar(content: Text(callingMsg)),
         );
       }
     }
@@ -166,7 +179,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
   /// Allows switching between Government Office and Cooperative Worker side-by-side so the user
   /// is not forced to exit the page to go to the second entity.
   void _showAddModal({String? initialTab, TeamMemberModel? editingStaff}) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     String modalTab = editingStaff != null ? 'Cooperative' : (initialTab ?? _activeTab);
 
     // Office Form Controllers
@@ -180,7 +193,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
     final staffNameCtrl = TextEditingController(text: editingStaff?.name ?? '');
     String initMobile = editingStaff?.mobile ?? '';
     initMobile = initMobile.replaceAll('+91', '').trim();
-    final staffMobileCtrl = TextEditingController(text: initMobile);
+    final staffMobileCtrl = TextEditingController(
+      text: AppTranslations.formatDigits(initMobile, lang),
+    );
     final staffRoleCtrl = TextEditingController(text: editingStaff?.role ?? '');
     final staffAreaCtrl = TextEditingController(text: editingStaff?.area ?? '');
     final staffKeywordsCtrl = TextEditingController(text: editingStaff?.keywords.join(', ') ?? '');
@@ -195,8 +210,8 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
           builder: (stCtx, setModalState) {
             return Container(
               constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.90,
-        ),
+                maxHeight: MediaQuery.of(context).size.height * 0.90,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -211,18 +226,31 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   AppModalHeader(
                     icon: Icons.account_balance_rounded,
                     title: editingStaff != null
-                        ? (isMr ? 'कर्मचारी बदल करा' : 'Edit Worker')
-                        : (isMr ? 'नवीन नोंद जोडा' : 'Add New Entry'),
-                    subtitle: isMr
-                        ? 'प्रभागातील शासकीय कार्यालये व सहकारी कर्मचारी नोंदवा'
-                        : 'Record government departments, ward offices and workers',
+                        ? AppTranslations.pick(
+                            lang,
+                            en: 'Edit Worker',
+                            mr: 'कर्मचारी बदल करा',
+                            hi: 'कर्मचारी संपादित करें',
+                          )
+                        : AppTranslations.pick(
+                            lang,
+                            en: 'Add New Entry',
+                            mr: 'नवीन नोंद जोडा',
+                            hi: 'नई प्रविष्टि जोड़ें',
+                          ),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Record government departments, ward offices and workers',
+                      mr: 'प्रभागातील शासकीय कार्यालये व सहकारी कर्मचारी नोंदवा',
+                      hi: 'सरकारी विभाग, वार्ड कार्यालय और सहयोगी कर्मचारी दर्ज करें',
+                    ),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
 
                   // 2. SCROLLABLE BODY & BUTTONS
                   Flexible(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(
                         top: 14,
                         left: 18,
                         right: 18,
@@ -231,8 +259,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Tab Pills (Side-by-Side: Government Office | Cooperative Worker)
-                          // Users can switch directly between the two without exiting the page!
+                          // Tab Pills
                           if (editingStaff == null) ...[
                             Container(
                               margin: const EdgeInsets.only(bottom: 16),
@@ -246,7 +273,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                 children: [
                                   Expanded(
                                     child: _TabPill(
-                                      label: isMr ? 'सरकारी कार्यालय' : 'Government Office',
+                                      label: AppTranslations.pick(
+                                        lang,
+                                        en: 'Government Office',
+                                        mr: 'सरकारी कार्यालय',
+                                        hi: 'सरकारी कार्यालय',
+                                      ),
                                       icon: Icons.apartment_rounded,
                                       isActive: modalTab == 'Offices',
                                       onTap: () => setModalState(() => modalTab = 'Offices'),
@@ -255,7 +287,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: _TabPill(
-                                      label: isMr ? 'सहकारी कर्मचारी' : 'Cooperative Worker',
+                                      label: AppTranslations.pick(
+                                        lang,
+                                        en: 'Cooperative Worker',
+                                        mr: 'सहकारी कर्मचारी',
+                                        hi: 'सहयोगी कर्मचारी',
+                                      ),
                                       icon: Icons.handyman_rounded,
                                       isActive: modalTab == 'Cooperative',
                                       onTap: () => setModalState(() => modalTab = 'Cooperative'),
@@ -266,43 +303,79 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                             ),
                           ],
 
-                          // FORM A: Government Office (Strictly 5 fields from Nagarsevak-Managment)
+                          // FORM A: Government Office
                           if (modalTab == 'Offices') ...[
-                            // 1. Office Name (Full Width)
-                            _buildFieldLabel(isMr ? 'कार्याल याचे नाव' : 'Office Name', isRequired: true),
+                            _buildFieldLabel(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Office Name',
+                                mr: 'कार्यालयाचे नाव',
+                                hi: 'कार्यालय का नाम',
+                              ),
+                              isRequired: true,
+                            ),
                             TextField(
                               controller: nameCtrl,
                               decoration: _inputDecoration(
-                                hintText: isMr ? 'उदा. प्रभाग कार्यालय क्र. १२' : 'e.g. PMC Ward Office No. 12',
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. PMC Ward Office No. 12',
+                                  mr: 'उदा. प्रभाग कार्यालय क्र. १२',
+                                  hi: 'उदा. वार्ड कार्यालय क्र. १२',
+                                ),
                                 prefixIcon: Icons.apartment_rounded,
                               ),
                             ),
                             const SizedBox(height: 14),
 
-                            // 2. Address (Full Width)
-                            _buildFieldLabel(isMr ? 'पत्ता' : 'Address', isRequired: true),
+                            _buildFieldLabel(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Address',
+                                mr: 'पत्ता',
+                                hi: 'पता',
+                              ),
+                              isRequired: true,
+                            ),
                             TextField(
                               controller: addrCtrl,
                               maxLines: 2,
                               decoration: _inputDecoration(
-                                hintText: isMr ? 'उदा. शनिवार वाड्यासमोर, पुणे - ४११०३०' : 'e.g. Near Shaniwar Wada, Pune - 411030',
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. Near Shaniwar Wada, Pune - 411030',
+                                  mr: 'उदा. शनिवार वाड्यासमोर, पुणे - ४११०३०',
+                                  hi: 'उदा. शनिवार वाड़ा के पास, पुणे - ४११०३०',
+                                ),
                                 prefixIcon: Icons.location_on_outlined,
                               ),
                             ),
                             const SizedBox(height: 14),
 
-                            // 3 & 4. Officer In-Charge + Contact Number (Side-by-Side)
                             Row(
                               children: [
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildFieldLabel(isMr ? 'अधिकारी / प्रमुख' : 'Officer In-charge', isRequired: true),
+                                      _buildFieldLabel(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Officer In-charge',
+                                          mr: 'अधिकारी / प्रमुख',
+                                          hi: 'प्रभारी अधिकारी',
+                                        ),
+                                        isRequired: true,
+                                      ),
                                       TextField(
                                         controller: officerCtrl,
                                         decoration: _inputDecoration(
-                                          hintText: isMr ? 'उदा. श्री. रमेश गायकवाड' : 'e.g. Shri. Ramesh Gaikwad',
+                                          hintText: AppTranslations.pick(
+                                            lang,
+                                            en: 'e.g. Shri. Ramesh Gaikwad',
+                                            mr: 'उदा. श्री. रमेश गायकवाड',
+                                            hi: 'उदा. श्री रमेश गायकवाड़',
+                                          ),
                                           prefixIcon: Icons.person_outline_rounded,
                                         ),
                                       ),
@@ -314,12 +387,25 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildFieldLabel(isMr ? 'संपर्क' : 'Contact', isRequired: true),
+                                      _buildFieldLabel(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Contact',
+                                          mr: 'संपर्क',
+                                          hi: 'संपर्क नंबर',
+                                        ),
+                                        isRequired: true,
+                                      ),
                                       TextField(
                                         controller: phoneCtrl,
                                         keyboardType: TextInputType.phone,
                                         decoration: _inputDecoration(
-                                          hintText: isMr ? 'उदा. ०२०-२५५०११४०' : 'e.g. 020-25501140',
+                                          hintText: AppTranslations.pick(
+                                            lang,
+                                            en: 'e.g. 020-25501140',
+                                            mr: 'उदा. ०२०-२५५०११४०',
+                                            hi: 'उदा. ०२०-२५५०११४०',
+                                          ),
                                           prefixIcon: Icons.phone_outlined,
                                         ),
                                       ),
@@ -330,18 +416,29 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                             ),
                             const SizedBox(height: 14),
 
-                            // 5. Location / Area (Full Width)
-                            _buildFieldLabel(isMr ? 'ठिकाण' : 'Location / Area', isRequired: true),
+                            _buildFieldLabel(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Location / Area',
+                                mr: 'ठिकाण',
+                                hi: 'स्थान / क्षेत्र',
+                              ),
+                              isRequired: true,
+                            ),
                             TextField(
                               controller: areaCtrl,
                               decoration: _inputDecoration(
-                                hintText: isMr ? 'उदा. शनिवार पेठ' : 'e.g. Shaniwar Peth',
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. Shaniwar Peth',
+                                  mr: 'उदा. शनिवार पेठ',
+                                  hi: 'उदा. शनिवार पेठ',
+                                ),
                                 prefixIcon: Icons.map_outlined,
                               ),
                             ),
                             const SizedBox(height: 24),
 
-                            // Single Submit Button (Wired directly to repo)
                             SizedBox(
                               width: double.infinity,
                               height: 48,
@@ -353,10 +450,19 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                 ),
                                 icon: const Icon(Icons.business_rounded, size: 18),
                                 onPressed: () async {
-                                  if (nameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty) {
+                                  final cleanPhone =
+                                      AppTranslations.normalizeAsciiDigits(phoneCtrl.text.trim());
+                                  if (nameCtrl.text.trim().isEmpty || cleanPhone.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(isMr ? 'कृपया सर्व आवश्यक माहिती भरा' : 'Please fill required fields'),
+                                        content: Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Please fill required fields',
+                                            mr: 'कृपया सर्व आवश्यक माहिती भरा',
+                                            hi: 'कृपया सभी आवश्यक फ़ील्ड भरें',
+                                          ),
+                                        ),
                                         behavior: SnackBarBehavior.floating,
                                       ),
                                     );
@@ -367,7 +473,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                     id: 'gov-${DateTime.now().millisecondsSinceEpoch}',
                                     name: nameCtrl.text.trim(),
                                     officerName: officerCtrl.text.trim().isNotEmpty ? officerCtrl.text.trim() : 'Officer In-Charge',
-                                    contactNumber: phoneCtrl.text.trim(),
+                                    contactNumber: cleanPhone,
                                     address: addrCtrl.text.trim(),
                                     area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Ward 12',
                                     createdAt: DateTime.now().toIso8601String(),
@@ -381,7 +487,14 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(isMr ? 'सरकारी कार्यालय यशस्वीरित्या जोडले गेले!' : 'Office added successfully!'),
+                                        content: Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Office added successfully!',
+                                            mr: 'सरकारी कार्यालय यशस्वीरित्या जोडले गेले!',
+                                            hi: 'सरकारी कार्यालय सफलतापूर्वक जोड़ा गया!',
+                                          ),
+                                        ),
                                         backgroundColor: const Color(0xFF16A34A),
                                         behavior: SnackBarBehavior.floating,
                                       ),
@@ -389,34 +502,58 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                   }
                                 },
                                 label: Text(
-                                  isMr ? 'कार्यालय जतन करा' : 'Save Office',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Save Office',
+                                    mr: 'कार्यालय जतन करा',
+                                    hi: 'कार्यालय सहेजें',
+                                  ),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
                               ),
                             ),
                           ]
 
-                          // FORM B: Cooperative Staff (Strictly 5 fields from Nagarsevak-Managment)
+                          // FORM B: Cooperative Staff
                           else ...[
-                            // 1. Name (Full Width)
-                            _buildFieldLabel(isMr ? 'नाव' : 'Name', isRequired: true),
+                            _buildFieldLabel(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Name',
+                                mr: 'नाव',
+                                hi: 'नाम',
+                              ),
+                              isRequired: true,
+                            ),
                             TextField(
                               controller: staffNameCtrl,
                               decoration: _inputDecoration(
-                                hintText: isMr ? 'उदा. रमेश पाटील' : 'e.g. Ramesh Patil',
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. Ramesh Patil',
+                                  mr: 'उदा. रमेश पाटील',
+                                  hi: 'उदा. रमेश पाटिल',
+                                ),
                                 prefixIcon: Icons.person_outline_rounded,
                               ),
                             ),
                             const SizedBox(height: 14),
 
-                            // 2 & 3. Mobile Number (+91) + Role / Designation (Side-by-Side)
                             Row(
                               children: [
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildFieldLabel(isMr ? 'मोबाइल नंबर' : 'Mobile Number', isRequired: true),
+                                      _buildFieldLabel(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Mobile Number',
+                                          mr: 'मोबाइल नंबर',
+                                          hi: 'मोबाइल नंबर',
+                                        ),
+                                        isRequired: true,
+                                      ),
                                       Row(
                                         children: [
                                           Container(
@@ -428,9 +565,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                               border: Border.all(color: const Color(0xFFCBD5E1)),
                                               borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
                                             ),
-                                            child: const Text(
-                                              '+91',
-                                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                            child: Text(
+                                              '+${AppTranslations.formatDigits("91", lang)}',
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                                             ),
                                           ),
                                           Expanded(
@@ -440,19 +577,18 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                                 controller: staffMobileCtrl,
                                                 keyboardType: TextInputType.phone,
                                                 maxLength: 10,
-                                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                                decoration: const InputDecoration(
+                                                decoration: InputDecoration(
                                                   counterText: '',
-                                                  hintText: '9876543210',
-                                                  hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                                  hintText: AppTranslations.formatDigits('9876543210', lang),
+                                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                                                   filled: true,
                                                   fillColor: Colors.white,
-                                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                                  enabledBorder: OutlineInputBorder(
+                                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                                  enabledBorder: const OutlineInputBorder(
                                                     borderRadius: BorderRadius.horizontal(right: Radius.circular(10)),
                                                     borderSide: BorderSide(color: Color(0xFFCBD5E1)),
                                                   ),
-                                                  focusedBorder: OutlineInputBorder(
+                                                  focusedBorder: const OutlineInputBorder(
                                                     borderRadius: BorderRadius.horizontal(right: Radius.circular(10)),
                                                     borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5),
                                                   ),
@@ -470,13 +606,26 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildFieldLabel(isMr ? 'भूमिका / पद' : 'Role / Designation', isRequired: true),
+                                      _buildFieldLabel(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Role / Designation',
+                                          mr: 'भूमिका / पद',
+                                          hi: 'भूमिका / पद',
+                                        ),
+                                        isRequired: true,
+                                      ),
                                       SizedBox(
                                         height: 44,
                                         child: TextField(
                                           controller: staffRoleCtrl,
                                           decoration: _inputDecoration(
-                                            hintText: isMr ? 'उदा. वायरमन' : 'e.g. Electrician',
+                                            hintText: AppTranslations.pick(
+                                              lang,
+                                              en: 'e.g. Electrician',
+                                              mr: 'उदा. वायरमन',
+                                              hi: 'उदा. इलेक्ट्रीशियन',
+                                            ),
                                             prefixIcon: Icons.badge_outlined,
                                           ),
                                         ),
@@ -488,18 +637,29 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                             ),
                             const SizedBox(height: 14),
 
-                            // 4 & 5. Area / Ward + Auto-assign Keywords (Side-by-Side)
                             Row(
                               children: [
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildFieldLabel(isMr ? 'क्षेत्र / प्रभाग' : 'Area / Ward'),
+                                      _buildFieldLabel(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Area / Ward',
+                                          mr: 'क्षेत्र / प्रभाग',
+                                          hi: 'क्षेत्र / वार्ड',
+                                        ),
+                                      ),
                                       TextField(
                                         controller: staffAreaCtrl,
                                         decoration: _inputDecoration(
-                                          hintText: isMr ? 'उदा. प्रभाग १२' : 'e.g. Ward 12',
+                                          hintText: AppTranslations.pick(
+                                            lang,
+                                            en: 'e.g. Ward 12',
+                                            mr: 'उदा. प्रभाग १२',
+                                            hi: 'उदा. वार्ड १२',
+                                          ),
                                           prefixIcon: Icons.map_outlined,
                                         ),
                                       ),
@@ -511,11 +671,23 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildFieldLabel(isMr ? 'ऑटो-कीवर्ड' : 'Keywords'),
+                                      _buildFieldLabel(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Keywords',
+                                          mr: 'ऑटो-कीवर्ड',
+                                          hi: 'कीवर्ड',
+                                        ),
+                                      ),
                                       TextField(
                                         controller: staffKeywordsCtrl,
                                         decoration: _inputDecoration(
-                                          hintText: isMr ? 'उदा. पाणी, वीज' : 'e.g. water, electric',
+                                          hintText: AppTranslations.pick(
+                                            lang,
+                                            en: 'e.g. water, electric',
+                                            mr: 'उदा. पाणी, वीज',
+                                            hi: 'उदा. पानी, बिजली',
+                                          ),
                                           prefixIcon: Icons.tag_rounded,
                                         ),
                                       ),
@@ -526,7 +698,6 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                             ),
                             const SizedBox(height: 24),
 
-                            // Single Submit Button (Wired directly)
                             SizedBox(
                               width: double.infinity,
                               height: 48,
@@ -541,20 +712,34 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                   if (staffNameCtrl.text.trim().isEmpty || staffRoleCtrl.text.trim().isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(isMr ? 'कृपया नाव आणि पद प्रविष्ट करा' : 'Please fill name and role'),
+                                        content: Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Please fill name and role',
+                                            mr: 'कृपया नाव आणि पद प्रविष्ट करा',
+                                            hi: 'कृपया नाम और पद दर्ज करें',
+                                          ),
+                                        ),
                                         behavior: SnackBarBehavior.floating,
                                       ),
                                     );
                                     return;
                                   }
 
-                                  final cleanMobile = staffMobileCtrl.text.trim();
+                                  final cleanMobile = AppTranslations.normalizeAsciiDigits(
+                                    staffMobileCtrl.text.trim(),
+                                  ).replaceAll(RegExp(r'[^0-9]'), '');
                                   if (cleanMobile.length != 10) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(isMr
-                                            ? 'कृपया वैध १० अंकी मोबाइल क्रमांक प्रविष्ट करा'
-                                            : 'Please enter valid 10-digit mobile number'),
+                                        content: Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Please enter valid 10-digit mobile number',
+                                            mr: 'कृपया वैध १० अंकी मोबाइल क्रमांक प्रविष्ट करा',
+                                            hi: 'कृपया मान्य १० अंकों का मोबाइल नंबर दर्ज करें',
+                                          ),
+                                        ),
                                         behavior: SnackBarBehavior.floating,
                                       ),
                                     );
@@ -603,8 +788,18 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                       SnackBar(
                                         content: Text(
                                           editingStaff != null
-                                              ? (isMr ? 'कर्मचारी माहिती अद्यतनित केली!' : 'Worker updated successfully!')
-                                              : (isMr ? 'कर्मचारी यशस्वीरित्या जोडला गेला!' : 'Worker added successfully!'),
+                                              ? AppTranslations.pick(
+                                                  lang,
+                                                  en: 'Worker updated successfully!',
+                                                  mr: 'कर्मचारी माहिती अद्यतनित केली!',
+                                                  hi: 'कर्मचारी जानकारी अपडेट की गई!',
+                                                )
+                                              : AppTranslations.pick(
+                                                  lang,
+                                                  en: 'Worker added successfully!',
+                                                  mr: 'कर्मचारी यशस्वीरित्या जोडला गेला!',
+                                                  hi: 'कर्मचारी सफलतापूर्वक जोड़ा गया!',
+                                                ),
                                         ),
                                         backgroundColor: const Color(0xFF16A34A),
                                         behavior: SnackBarBehavior.floating,
@@ -614,8 +809,18 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                                 },
                                 label: Text(
                                   editingStaff != null
-                                      ? (isMr ? 'अपडेट करा' : 'Update')
-                                      : (isMr ? 'जतन करा' : 'Save'),
+                                      ? AppTranslations.pick(
+                                          lang,
+                                          en: 'Update',
+                                          mr: 'अपडेट करा',
+                                          hi: 'अपडेट करें',
+                                        )
+                                      : AppTranslations.pick(
+                                          lang,
+                                          en: 'Save',
+                                          mr: 'जतन करा',
+                                          hi: 'सहेजें',
+                                        ),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
                               ),
@@ -635,7 +840,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
   }
 
   void _showDeleteConfirmation(GovernmentOfficeModel item) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
+    final displayName =
+        DynamicTranslationService.getCachedTranslation(item.name, lang) ?? item.name;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -644,19 +851,34 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.red),
             const SizedBox(width: 8),
-            Text(isMr ? 'कार्यालय हटवा' : 'Delete Office Entry'),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Delete Office Entry',
+                  mr: 'कार्यालय हटवा',
+                  hi: 'कार्यालय प्रविष्टि हटाएं',
+                ),
+              ),
+            ),
           ],
         ),
         content: Text(
-          isMr
-              ? 'आपण खात्रीपूर्वक "${item.name}" हे कार्यालय हटवू इच्छिता? ही क्रिया पूर्ववत करता येणार नाही.'
-              : 'Are you sure you want to delete "${item.name}"? This cannot be undone.',
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to delete "$displayName"? This cannot be undone.',
+            mr: 'आपण खात्रीपूर्वक "$displayName" हे कार्यालय हटवू इच्छिता? ही क्रिया पूर्ववत करता येणार नाही.',
+            hi: 'क्या आप वाकई "$displayName" को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।',
+          ),
           style: const TextStyle(fontSize: 14, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(isMr ? 'रद्द करा' : 'Cancel', style: const TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -672,14 +894,23 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(isMr ? 'कार्यालय हटवले गेले' : 'Office entry deleted'),
+                    content: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Office entry deleted',
+                        mr: 'कार्यालय हटवले गेले',
+                        hi: 'कार्यालय हटाया गया',
+                      ),
+                    ),
                     backgroundColor: Colors.red,
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
             },
-            child: Text(isMr ? 'हटवा' : 'Delete'),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+            ),
           ),
         ],
       ),
@@ -687,7 +918,14 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
   }
 
   void _showDeleteStaffConfirmation(TeamMemberModel member) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
+    final rawMemberName = member.displayName;
+    final displayName = DynamicTranslationService.getCachedTranslation(
+          rawMemberName,
+          lang,
+          isName: true,
+        ) ??
+        rawMemberName;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -696,19 +934,34 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.red),
             const SizedBox(width: 8),
-            Text(isMr ? 'कर्मचारी हटवा' : 'Delete Worker'),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Delete Worker',
+                  mr: 'कर्मचारी हटवा',
+                  hi: 'कर्मचारी हटाएं',
+                ),
+              ),
+            ),
           ],
         ),
         content: Text(
-          isMr
-              ? 'आपण खात्रीपूर्वक "${member.name}" यांना यादीतून हटवू इच्छिता?'
-              : 'Are you sure you want to delete "${member.name}"? This action cannot be undone.',
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to delete "$displayName"? This action cannot be undone.',
+            mr: 'आपण खात्रीपूर्वक "$displayName" यांना यादीतून हटवू इच्छिता?',
+            hi: 'क्या आप वाकई "$displayName" को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।',
+          ),
           style: const TextStyle(fontSize: 14, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(isMr ? 'रद्द करा' : 'Cancel', style: const TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -724,14 +977,23 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(isMr ? 'कर्मचारी हटवला गेला' : 'Worker deleted successfully'),
+                    content: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Worker deleted successfully',
+                        mr: 'कर्मचारी हटवला गेला',
+                        hi: 'कर्मचारी सफलतापूर्वक हटाया गया',
+                      ),
+                    ),
                     backgroundColor: Colors.red,
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
             },
-            child: Text(isMr ? 'हटवा' : 'Delete'),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+            ),
           ),
         ],
       ),
@@ -740,7 +1002,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final displayedOffices = _filteredOffices;
     final displayedStaff = _filteredStaff;
 
@@ -762,7 +1024,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -776,8 +1043,18 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
             children: [
               Text(
                 _activeTab == 'Offices'
-                    ? (isMr ? 'सरकारी कार्यालये' : 'Government Offices')
-                    : (isMr ? 'शासकीय कर्मचारी' : 'Government Employees'),
+                    ? AppTranslations.pick(
+                        lang,
+                        en: 'Government Offices',
+                        mr: 'सरकारी कार्यालये',
+                        hi: 'सरकारी कार्यालय',
+                      )
+                    : AppTranslations.pick(
+                        lang,
+                        en: 'Government Employees',
+                        mr: 'शासकीय कर्मचारी',
+                        hi: 'सरकारी कर्मचारी',
+                      ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -788,9 +1065,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                 ),
               ),
               Text(
-                isMr
-                    ? 'महत्वाच्या सरकारी कार्यालयांची व संपर्काची यादी'
-                    : 'Directory of important government offices and contacts',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Directory of important government offices and contacts',
+                  mr: 'महत्वाच्या सरकारी कार्यालयांची व संपर्काची यादी',
+                  hi: 'महत्वपूर्ण सरकारी कार्यालयों और संपर्कों की निर्देशिका',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -809,8 +1089,18 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
           icon: Icon(_activeTab == 'Offices' ? Icons.add_business_rounded : Icons.person_add_alt_1_rounded),
           label: Text(
             _activeTab == 'Offices'
-                ? (isMr ? 'नवीन कार्यालय' : 'Add Office')
-                : (isMr ? 'नवीन कर्मचारी' : 'Add Staff'),
+                ? AppTranslations.pick(
+                    lang,
+                    en: 'Add Office',
+                    mr: 'नवीन कार्यालय',
+                    hi: 'कार्यालय जोड़ें',
+                  )
+                : AppTranslations.pick(
+                    lang,
+                    en: 'Add Staff',
+                    mr: 'नवीन कर्मचारी',
+                    hi: 'कर्मचारी जोड़ें',
+                  ),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           onPressed: () => _showAddModal(initialTab: _activeTab),
@@ -822,7 +1112,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
               )
             : Column(
                 children: [
-                  _buildTabBar(isMr),
+                  _buildTabBar(lang),
                   Expanded(
                     child: _activeTab == 'Files'
                         ? const FileTrackerTabView()
@@ -834,125 +1124,181 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                      // Search Bar & Action Buttons
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _searchCtrl,
-                                onChanged: (_) => setState(() => _displayedLimit = 20),
-                                decoration: InputDecoration(
-                                  hintText: _activeTab == 'Offices'
-                                      ? (isMr ? 'कार्यालय, अधिकारी किंवा विभाग शोधा...' : 'Search by office, officer or area...')
-                                      : (isMr ? 'नाव किंवा मोबाइल नंबर शोधा...' : 'Search Name or Mobile...'),
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
-                                  suffixIcon: _searchCtrl.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear, size: 18),
-                                          onPressed: () {
-                                            _searchCtrl.clear();
-                                            setState(() => _displayedLimit = 20);
-                                          },
-                                        )
-                                      : null,
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                  // Search Bar & Action Buttons
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            controller: _searchCtrl,
+                                            onChanged: (_) => setState(() => _displayedLimit = 20),
+                                            decoration: InputDecoration(
+                                              hintText: _activeTab == 'Offices'
+                                                  ? AppTranslations.pick(
+                                                      lang,
+                                                      en: 'Search by office, officer or area...',
+                                                      mr: 'कार्यालय, अधिकारी किंवा विभाग शोधा...',
+                                                      hi: 'कार्यालय, अधिकारी या क्षेत्र खोजें...',
+                                                    )
+                                                  : AppTranslations.pick(
+                                                      lang,
+                                                      en: 'Search Name or Mobile...',
+                                                      mr: 'नाव किंवा मोबाइल नंबर शोधा...',
+                                                      hi: 'नाम या मोबाइल नंबर खोजें...',
+                                                    ),
+                                              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                              prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
+                                              suffixIcon: _searchCtrl.text.isNotEmpty
+                                                  ? IconButton(
+                                                      icon: const Icon(Icons.clear, size: 18),
+                                                      onPressed: () {
+                                                        _searchCtrl.clear();
+                                                        setState(() => _displayedLimit = 20);
+                                                      },
+                                                    )
+                                                  : null,
+                                              filled: true,
+                                              fillColor: Colors.white,
+                                              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        if (_activeTab == 'Offices') ...[
+                                          const SizedBox(width: 8),
+                                          Tooltip(
+                                            message: _viewMode == 'grid'
+                                                ? AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Table View',
+                                                    mr: 'तक्ता दृश्य',
+                                                    hi: 'तालिका दृश्य',
+                                                  )
+                                                : AppTranslations.pick(
+                                                    lang,
+                                                    en: 'Grid View',
+                                                    mr: 'ग्रिड दृश्य',
+                                                    hi: 'ग्रिड दृश्य',
+                                                  ),
+                                            child: InkWell(
+                                              onTap: () {
+                                                setState(() {
+                                                  _viewMode = _viewMode == 'grid' ? 'table' : 'grid';
+                                                });
+                                              },
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: Container(
+                                                height: 48,
+                                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                                ),
+                                                child: Icon(
+                                                  _viewMode == 'grid' ? Icons.table_chart_rounded : Icons.grid_view_rounded,
+                                                  size: 20,
+                                                  color: const Color(0xFF0284C7),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          AppPdfButton.icon(
+                                            tooltip: AppTranslations.getDownloadReport(lang),
+                                            onPressed: () {
+                                              GovOfficeReportGenerator.generateAndPrintOfficeReport(
+                                                offices: displayedOffices,
+                                                lang: lang,
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                  ),
-                                ),
+
+                                  // Content Views
+                                  if (_activeTab == 'Offices') ...[
+                                    if (displayedOffices.isEmpty)
+                                      _buildEmptyState(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'No Government Offices Found',
+                                          mr: 'कोणतेही कार्यालय सापडले नाही',
+                                          hi: 'कोई सरकारी कार्यालय नहीं मिला',
+                                        ),
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Try adjusting your search terms or add an office.',
+                                          mr: 'कृपया शोध निकष बदला किंवा नवीन कार्यालय जोडा.',
+                                          hi: 'कृपया खोज शब्द बदलें या नया कार्यालय जोड़ें।',
+                                        ),
+                                      )
+                                    else ...[
+                                      if (_viewMode == 'grid')
+                                        _buildOfficeGrid(_visibleOffices, lang)
+                                      else
+                                        _buildOfficeTable(_visibleOffices, lang),
+                                      AppLoadMoreFooter(
+                                        currentCount: _visibleOffices.length,
+                                        totalCount: displayedOffices.length,
+                                        pageSize: 20,
+                                        onLoadMore: () => setState(() => _displayedLimit += 20),
+                                        label: AppTranslations.pick(
+                                          lang,
+                                          en: 'offices',
+                                          mr: 'कार्यालये',
+                                          hi: 'कार्यालय',
+                                        ),
+                                        isMarathi: lang == 'mr',
+                                      ),
+                                    ],
+                                  ] else ...[
+                                    if (displayedStaff.isEmpty)
+                                      _buildEmptyState(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'No Cooperative Workers Found',
+                                          mr: 'कोणतेही सहकारी कर्मचारी आढळले नाहीत',
+                                          hi: 'कोई सहयोगी कर्मचारी नहीं मिला',
+                                        ),
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'Start by adding workers to this category.',
+                                          mr: 'कृपया या श्रेणीमध्ये नवीन कर्मचारी जोडा.',
+                                          hi: 'कृपया इस श्रेणी में नए कर्मचारी जोड़ें।',
+                                        ),
+                                      )
+                                    else ...[
+                                      _buildStaffGrid(_visibleStaff, lang),
+                                      AppLoadMoreFooter(
+                                        currentCount: _visibleStaff.length,
+                                        totalCount: displayedStaff.length,
+                                        pageSize: 20,
+                                        onLoadMore: () => setState(() => _displayedLimit += 20),
+                                        label: AppTranslations.pick(
+                                          lang,
+                                          en: 'workers',
+                                          mr: 'कर्मचारी',
+                                          hi: 'कर्मचारी',
+                                        ),
+                                        isMarathi: lang == 'mr',
+                                      ),
+                                    ],
+                                  ],
+                                ],
                               ),
                             ),
-                            if (_activeTab == 'Offices') ...[
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _viewMode = _viewMode == 'grid' ? 'table' : 'grid';
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(10),
-                                child: Container(
-                                  height: 48,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                                  ),
-                                  child: Icon(
-                                    _viewMode == 'grid' ? Icons.table_chart_rounded : Icons.grid_view_rounded,
-                                    size: 20,
-                                    color: const Color(0xFF0284C7),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              AppPdfButton.icon(
-                                tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
-                                onPressed: () {
-                                  GovOfficeReportGenerator.generateAndPrintOfficeReport(
-                                    offices: displayedOffices,
-                                  );
-                                },
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-
-                      // Content Views
-                      if (_activeTab == 'Offices') ...[
-                        if (displayedOffices.isEmpty)
-                          _buildEmptyState(
-                            isMr ? 'कोणतेही कार्यालय सापडले नाही' : 'No Government Offices Found',
-                            isMr ? 'कृपया शोध निकष बदला किंवा नवीन कार्यालय जोडा.' : 'Try adjusting your search terms or add an office.',
-                          )
-                        else ...[
-                          if (_viewMode == 'grid')
-                            _buildOfficeGrid(_visibleOffices, isMr)
-                          else
-                            _buildOfficeTable(_visibleOffices, isMr),
-                          AppLoadMoreFooter(
-                            currentCount: _visibleOffices.length,
-                            totalCount: displayedOffices.length,
-                            pageSize: 20,
-                            onLoadMore: () => setState(() => _displayedLimit += 20),
-                            label: isMr ? 'कार्यालये' : 'offices',
-                            isMarathi: isMr,
                           ),
-                        ],
-                      ] else ...[
-                        if (displayedStaff.isEmpty)
-                          _buildEmptyState(
-                            isMr ? 'कोणतेही सहकारी कर्मचारी आढळले नाहीत' : 'No Cooperative Workers Found',
-                            isMr ? 'कृपया या श्रेणीमध्ये नवीन कर्मचारी जोडा.' : 'Start by adding workers to this category.',
-                          )
-                        else ...[
-                          _buildStaffGrid(_visibleStaff, isMr),
-                          AppLoadMoreFooter(
-                            currentCount: _visibleStaff.length,
-                            totalCount: displayedStaff.length,
-                            pageSize: 20,
-                            onLoadMore: () => setState(() => _displayedLimit += 20),
-                            label: isMr ? 'कर्मचारी' : 'workers',
-                            isMarathi: isMr,
-                          ),
-                        ],
-                      ],
-                    ],
-                  ),
-                ),
-              ),
                   ),
                 ],
               ),
@@ -960,7 +1306,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
     );
   }
 
-  Widget _buildTabBar(bool isMr) {
+  Widget _buildTabBar(String lang) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(4),
@@ -1002,7 +1348,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isMr ? 'कार्यालये' : 'Offices',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Offices',
+                        mr: 'कार्यालये',
+                        hi: 'कार्यालय',
+                      ),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: _activeTab == 'Offices' ? FontWeight.bold : FontWeight.w600,
@@ -1039,7 +1390,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isMr ? 'सहकारी कर्मचारी' : 'Cooperative',
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Cooperative',
+                        mr: 'सहकारी कर्मचारी',
+                        hi: 'सहयोगी कर्मचारी',
+                      ),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: _activeTab == 'Cooperative' ? FontWeight.bold : FontWeight.w600,
@@ -1086,7 +1442,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
     );
   }
 
-  Widget _buildOfficeGrid(List<GovernmentOfficeModel> items, bool isMr) {
+  Widget _buildOfficeGrid(List<GovernmentOfficeModel> items, String lang) {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -1131,8 +1487,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppTranslatedText(
                           item.name,
+                          targetLanguage: lang,
                           style: const TextStyle(
                             fontSize: 15.5,
                             fontWeight: FontWeight.bold,
@@ -1147,8 +1504,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                             color: const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
-                            item.area,
+                          child: AppTranslatedText(
+                            AppTranslations.getAreaName(item.area, lang),
+                            targetLanguage: lang,
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                           ),
                         ),
@@ -1157,7 +1515,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
-                    tooltip: isMr ? 'हटवा' : 'Delete',
+                    tooltip: AppTranslations.pick(
+                      lang,
+                      en: 'Delete',
+                      mr: 'हटवा',
+                      hi: 'हटाएं',
+                    ),
                     visualDensity: VisualDensity.compact,
                     onPressed: () => _showDeleteConfirmation(item),
                   ),
@@ -1173,8 +1536,10 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   const Icon(Icons.person_outline_rounded, size: 16, color: Color(0xFF64748B)),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
+                    child: AppTranslatedText(
                       item.officerName,
+                      isName: true,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                     ),
                   ),
@@ -1189,8 +1554,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF64748B)),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
+                    child: AppTranslatedText(
                       item.address,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.3),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -1206,7 +1572,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   const Icon(Icons.phone_outlined, size: 16, color: Color(0xFF64748B)),
                   const SizedBox(width: 6),
                   Text(
-                    item.contactNumber,
+                    AppTranslations.formatDigits(item.contactNumber, lang),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                   ),
                 ],
@@ -1226,46 +1592,62 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                       ),
                       icon: const Icon(Icons.call, size: 16),
                       label: Text(
-                        isMr ? 'कॉल करा' : 'Call Now',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Call Now',
+                          mr: 'कॉल करा',
+                          hi: 'कॉल करें',
+                        ),
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                       onPressed: () => _makePhoneCall(item.contactNumber),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _openMaps(item),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      height: 38,
-                      width: 38,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                  Tooltip(
+                    message: AppTranslations.pick(
+                      lang,
+                      en: 'Directions',
+                      mr: 'नकाशा / मार्ग',
+                      hi: 'दिशा-निर्देश',
+                    ),
+                    child: InkWell(
+                      onTap: () => _openMaps(item),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        height: 38,
+                        width: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: const Icon(Icons.directions_outlined, size: 18, color: Color(0xFF0284C7)),
                       ),
-                      child: const Icon(Icons.directions_outlined, size: 18, color: Color(0xFF0284C7)),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () async {
-                      final res = await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => GovernmentOfficeDetailScreen(office: item)),
-                      );
-                      if (res == true) _loadData();
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      height: 38,
-                      width: 38,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                  Tooltip(
+                    message: AppTranslations.getDetails(lang),
+                    child: InkWell(
+                      onTap: () async {
+                        final res = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => GovernmentOfficeDetailScreen(office: item)),
+                        );
+                        if (res == true) _loadData();
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        height: 38,
+                        width: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: const Icon(Icons.arrow_forward_rounded, size: 18, color: Color(0xFF0284C7)),
                       ),
-                      child: const Icon(Icons.arrow_forward_rounded, size: 18, color: Color(0xFF0284C7)),
                     ),
                   ),
                 ],
@@ -1277,7 +1659,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
     );
   }
 
-  Widget _buildStaffGrid(List<TeamMemberModel> items, bool isMr) {
+  Widget _buildStaffGrid(List<TeamMemberModel> items, String lang) {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -1286,6 +1668,14 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (ctx, index) {
         final member = items[index];
+        final rawName = lang == 'mr' &&
+                member.nameMarathi != null &&
+                member.nameMarathi!.isNotEmpty
+            ? member.nameMarathi!
+            : member.displayName;
+        final rawRole = lang == 'mr'
+            ? member.roleLabelMarathi
+            : AppTranslations.getRoleName(member.role, lang);
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -1322,8 +1712,10 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          member.displayName,
+                        AppTranslatedText(
+                          rawName,
+                          isName: true,
+                          targetLanguage: lang,
                           style: const TextStyle(
                             fontSize: 15.5,
                             fontWeight: FontWeight.bold,
@@ -1331,8 +1723,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          isMr ? member.roleLabelMarathi : member.role,
+                        AppTranslatedText(
+                          rawRole,
+                          targetLanguage: lang,
                           style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
@@ -1347,13 +1740,23 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF0284C7)),
-                        tooltip: isMr ? 'बदल करा' : 'Edit',
+                        tooltip: AppTranslations.pick(
+                          lang,
+                          en: 'Edit',
+                          mr: 'बदल करा',
+                          hi: 'संपादित करें',
+                        ),
                         visualDensity: VisualDensity.compact,
                         onPressed: () => _showAddModal(editingStaff: member),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
-                        tooltip: isMr ? 'हटवा' : 'Delete',
+                        tooltip: AppTranslations.pick(
+                          lang,
+                          en: 'Delete',
+                          mr: 'हटवा',
+                          hi: 'हटाएं',
+                        ),
                         visualDensity: VisualDensity.compact,
                         onPressed: () => _showDeleteStaffConfirmation(member),
                       ),
@@ -1371,7 +1774,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   const Icon(Icons.phone_outlined, size: 15, color: Color(0xFF64748B)),
                   const SizedBox(width: 6),
                   Text(
-                    member.mobile,
+                    AppTranslations.formatDigits(member.mobile, lang),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                   ),
                 ],
@@ -1385,8 +1788,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                     const Icon(Icons.location_on_outlined, size: 15, color: Color(0xFF64748B)),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(
-                        member.area!,
+                      child: AppTranslatedText(
+                        AppTranslations.getAreaName(member.area!, lang),
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
                       ),
                     ),
@@ -1408,8 +1812,9 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: Text(
+                      child: AppTranslatedText(
                         k,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
                       ),
                     );
@@ -1430,7 +1835,12 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   ),
                   icon: const Icon(Icons.call, size: 16),
                   label: Text(
-                    isMr ? 'कॉल करा' : 'Call Now',
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Call Now',
+                      mr: 'कॉल करा',
+                      hi: 'कॉल करें',
+                    ),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                   onPressed: () => _makePhoneCall(member.mobile),
@@ -1443,7 +1853,7 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
     );
   }
 
-  Widget _buildOfficeTable(List<GovernmentOfficeModel> items, bool isMr) {
+  Widget _buildOfficeTable(List<GovernmentOfficeModel> items, String lang) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -1460,13 +1870,48 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
             horizontalMargin: 16,
             columnSpacing: 20,
             columns: [
-              DataColumn(label: Text(isMr ? 'अ.क्र.' : '#', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'कार्यालय नाव' : 'Office Name', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'पत्ता' : 'Address', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'अधिकारी' : 'Officer In-Charge', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'संपर्क क्रमांक' : 'Contact No', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'ठिकाण' : 'Location', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text(isMr ? 'कृती' : 'Actions', style: const TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  AppTranslations.pick(lang, en: '#', mr: 'अ.क्र.', hi: 'क्र.'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  AppTranslations.pick(lang, en: 'Office Name', mr: 'कार्यालय नाव', hi: 'कार्यालय नाम'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  AppTranslations.pick(lang, en: 'Address', mr: 'पत्ता', hi: 'पता'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  AppTranslations.pick(lang, en: 'Officer In-Charge', mr: 'अधिकारी', hi: 'प्रभारी अधिकारी'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  AppTranslations.pick(lang, en: 'Contact No', mr: 'संपर्क क्रमांक', hi: 'संपर्क नंबर'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  AppTranslations.pick(lang, en: 'Location', mr: 'ठिकाण', hi: 'स्थान'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  AppTranslations.pick(lang, en: 'Actions', mr: 'कृती', hi: 'कार्रवाई'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             rows: items.asMap().entries.map((entry) {
               final idx = entry.key + 1;
@@ -1474,12 +1919,13 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
 
               return DataRow(
                 cells: [
-                  DataCell(Text('$idx')),
+                  DataCell(Text(AppTranslations.formatDigits(idx, lang))),
                   DataCell(
                     SizedBox(
                       width: 180,
-                      child: Text(
+                      child: AppTranslatedText(
                         item.name,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1489,15 +1935,23 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                   DataCell(
                     SizedBox(
                       width: 180,
-                      child: Text(
+                      child: AppTranslatedText(
                         item.address,
+                        targetLanguage: lang,
                         style: const TextStyle(fontSize: 12),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
-                  DataCell(Text(item.officerName, style: const TextStyle(fontSize: 12))),
+                  DataCell(
+                    AppTranslatedText(
+                      item.officerName,
+                      isName: true,
+                      targetLanguage: lang,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
                   DataCell(
                     InkWell(
                       onTap: () => _makePhoneCall(item.contactNumber),
@@ -1507,26 +1961,32 @@ class _GovernmentOfficeScreenState extends ConsumerState<GovernmentOfficeScreen>
                           const Icon(Icons.call, size: 12, color: Color(0xFF16A34A)),
                           const SizedBox(width: 4),
                           Text(
-                            item.contactNumber,
+                            AppTranslations.formatDigits(item.contactNumber, lang),
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  DataCell(Text(item.area, style: const TextStyle(fontSize: 12))),
+                  DataCell(
+                    AppTranslatedText(
+                      AppTranslations.getAreaName(item.area, lang),
+                      targetLanguage: lang,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
                   DataCell(
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
                           icon: const Icon(Icons.phone_forwarded, size: 16, color: Color(0xFF16A34A)),
-                          tooltip: 'Call',
+                          tooltip: AppTranslations.pick(lang, en: 'Call', mr: 'कॉल करा', hi: 'कॉल करें'),
                           onPressed: () => _makePhoneCall(item.contactNumber),
                         ),
                         IconButton(
                           icon: const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF0284C7)),
-                          tooltip: 'View Details',
+                          tooltip: AppTranslations.pick(lang, en: 'View Details', mr: 'तपशील पहा', hi: 'विवरण देखें'),
                           onPressed: () async {
                             final res = await Navigator.push(
                               context,

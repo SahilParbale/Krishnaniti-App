@@ -1,5 +1,6 @@
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../shell/desktop_sidebar.dart';
 import '../../common/desktop_modal_dialog.dart';
 import 'package:flutter/material.dart';
@@ -77,13 +78,19 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
   }
 
   List<TeamMemberModel> get _filteredMembers {
+    final rawQuery = _searchTerm.trim().toLowerCase();
+    final normalizedQuery = AppTranslations.normalizeAsciiDigits(rawQuery);
     return _teamMembers.where((m) {
-      final matchesSearch = _searchTerm.isEmpty ||
-          m.name.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          (m.nameMarathi?.toLowerCase().contains(_searchTerm.toLowerCase()) ?? false) ||
-          m.mobile.contains(_searchTerm) ||
-          m.role.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-          (m.area?.toLowerCase().contains(_searchTerm.toLowerCase()) ?? false);
+      final matchesSearch = rawQuery.isEmpty ||
+          m.name.toLowerCase().contains(normalizedQuery) ||
+          (m.nameMarathi?.toLowerCase().contains(rawQuery) ?? false) ||
+          AppTranslations.normalizeAsciiDigits(m.mobile).contains(normalizedQuery) ||
+          m.role.toLowerCase().contains(normalizedQuery) ||
+          m.roleLabel('mr').toLowerCase().contains(rawQuery) ||
+          m.roleLabel('hi').toLowerCase().contains(rawQuery) ||
+          AppTranslations.normalizeAsciiDigits(m.area ?? '').toLowerCase().contains(normalizedQuery) ||
+          AppTranslations.getAreaName(m.area ?? '', 'mr').toLowerCase().contains(rawQuery) ||
+          AppTranslations.getAreaName(m.area ?? '', 'hi').toLowerCase().contains(rawQuery);
 
       final matchesArea = _selectedArea == 'All' ||
           (m.area != null && m.area!.toLowerCase().contains(_selectedArea.toLowerCase()));
@@ -96,71 +103,117 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
   }
 
   void _showAddStaffModal({TeamMemberModel? item}) {
-    final nameController = TextEditingController(text: item?.name ?? '');
-    final mobileController = TextEditingController(text: item?.mobile ?? '');
-    final roleController = TextEditingController(text: item?.role ?? 'Office Admin');
-    final areaController = TextEditingController(text: item?.area ?? 'Ward 12');
+    final currentLang = ref.read(desktopLanguageProvider);
+    final nameController = TextEditingController(text: item?.displayNameFor(currentLang) ?? '');
+    final mobileController = TextEditingController(
+      text: item != null ? AppTranslations.formatDigits(item.mobile, currentLang) : '',
+    );
+    final roleController = TextEditingController(
+      text: item?.role ??
+          AppTranslations.pick(
+            currentLang,
+            en: 'Office Admin',
+            mr: 'कार्यालय प्रशासक',
+            hi: 'कार्यालय प्रशासक',
+          ),
+    );
+    final areaController = TextEditingController(
+      text: item?.area ?? AppTranslations.getAreaName('Ward 12', currentLang),
+    );
     final emailController = TextEditingController(text: item?.email ?? '');
     String category = item?.category ?? _activeTab;
+    String? nameError;
 
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          return DesktopModalDialog(
-            title: item == null ? 'Add Team Member' : 'Edit Staff Details',
-            subtitle: 'Staff and administrative team assignments',
-            icon: Icons.badge_rounded,
-            width: 600,
-            onClose: () => Navigator.pop(ctx),
-            actions: [
-              DesktopModalDialog.cancelButton(ctx),
-              const SizedBox(width: 12),
-              DesktopModalDialog.primaryButton(
-                text: item == null ? 'Add Member' : 'Save Changes',
-                onPressed: () async {
-                            if (nameController.text.trim().isEmpty) return;
-                            final newMember = TeamMemberModel(
-                              id: item?.id ?? 'stf-${DateTime.now().millisecondsSinceEpoch}',
-                              name: nameController.text.trim(),
-                              nameMarathi: nameController.text.trim(),
-                              mobile: mobileController.text.trim(),
-                              role: roleController.text.trim(),
-                              area: areaController.text.trim(),
-                              category: category,
-                              email: emailController.text.trim().isNotEmpty ? emailController.text.trim() : null,
-                            );
+      builder: (ctx) => Consumer(
+        builder: (ctx, dialogRef, _) {
+          final lang = dialogRef.watch(desktopLanguageProvider);
+          return StatefulBuilder(
+            builder: (ctx, setModalState) {
+              return DesktopModalDialog(
+                title: item == null
+                    ? AppTranslations.pick(lang, en: 'Add Team Member', mr: 'टीम सदस्य जोडा', hi: 'टीम सदस्य जोड़ें')
+                    : AppTranslations.pick(lang, en: 'Edit Staff Details', mr: 'कर्मचारी तपशील संपादित करा', hi: 'स्टाफ विवरण संपादित करें'),
+                subtitle: AppTranslations.pick(
+                  lang,
+                  en: 'Staff and administrative team assignments',
+                  mr: 'कर्मचारी आणि प्रशासकीय टीम नियुक्त्या',
+                  hi: 'स्टाफ और प्रशासनिक टीम जिम्मेदारियां',
+                ),
+                icon: Icons.badge_rounded,
+                width: 600,
+                onClose: () => Navigator.pop(ctx),
+                actions: [
+                  DesktopModalDialog.cancelButton(
+                    ctx,
+                    text: AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                  ),
+                  const SizedBox(width: 12),
+                  DesktopModalDialog.primaryButton(
+                    text: item == null
+                        ? AppTranslations.pick(lang, en: 'Add Member', mr: 'सदस्य जोडा', hi: 'सदस्य जोड़ें')
+                        : AppTranslations.pick(lang, en: 'Save Changes', mr: 'बदल जतन करा', hi: 'परिवर्तन सहेजें'),
+                    onPressed: () async {
+                      if (nameController.text.trim().isEmpty) {
+                        setModalState(() {
+                          nameError = AppTranslations.pick(
+                            lang,
+                            en: 'Please enter full name',
+                            mr: 'कृपया पूर्ण नाव प्रविष्ट करा',
+                            hi: 'कृपया पूरा नाम दर्ज करें',
+                          );
+                        });
+                        return;
+                      }
+                      final newMember = TeamMemberModel(
+                        id: item?.id ?? 'stf-${DateTime.now().millisecondsSinceEpoch}',
+                        name: nameController.text.trim(),
+                        nameMarathi: nameController.text.trim(),
+                        mobile: AppTranslations.normalizeAsciiDigits(mobileController.text.trim()),
+                        role: roleController.text.trim(),
+                        area: AppTranslations.normalizeAsciiDigits(areaController.text.trim()),
+                        category: category,
+                        email: emailController.text.trim().isNotEmpty ? emailController.text.trim() : null,
+                      );
 
-                            final repo = ref.read(teamRepoProvider);
-                            if (item == null) {
-                              await repo.addTeamMember(newMember);
-                            } else {
-                              await repo.updateTeamMember(newMember);
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            _fetchTeam();
-                          },
-              ),
-            ],
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Name
-                    const Text('Full Name *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      final repo = ref.read(teamRepoProvider);
+                      if (item == null) {
+                        await repo.addTeamMember(newMember);
+                      } else {
+                        await repo.updateTeamMember(newMember);
+                      }
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      _fetchTeam();
+                    },
+                  ),
+                ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name
+                    Text(
+                      AppTranslations.pick(lang, en: 'Full Name *', mr: 'पूर्ण नाव *', hi: 'पूरा नाम *'),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: nameController,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Sagar R. Shinde...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      onChanged: (_) {
+                        if (nameError != null) {
+                          setModalState(() => nameError = null);
+                        }
+                      },
+                      decoration: desktopInputDecoration(
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'e.g. Sagar R. Shinde...',
+                          mr: 'उदा. सागर रा. शिंदे...',
+                          hi: 'उदा. सागर रा. शिंदे...',
+                        ),
+                        errorText: nameError,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -172,20 +225,16 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Mobile *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Mobile *', mr: 'मोबाईल *', hi: 'मोबाइल *'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                               const SizedBox(height: 6),
                               TextField(
                                 controller: mobileController,
                                 keyboardType: TextInputType.phone,
-                                decoration: InputDecoration(
-                                  hintText: '98XXXXXXXX',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: desktopInputDecoration(
+                                  hintText: AppTranslations.formatDigits('98XXXXXXXX', lang),
                                 ),
                               ),
                             ],
@@ -196,19 +245,20 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Role *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Role *', mr: 'पद / भूमिका *', hi: 'पद / भूमिका *'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                               const SizedBox(height: 6),
                               TextField(
                                 controller: roleController,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Office Admin, Supervisor...',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: desktopInputDecoration(
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Office Admin, Supervisor...',
+                                    mr: 'उदा. कार्यालय प्रशासक, पर्यवेक्षक...',
+                                    hi: 'उदा. कार्यालय प्रशासक, पर्यवेक्षक...',
+                                  ),
                                 ),
                               ),
                             ],
@@ -225,26 +275,54 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Category', mr: 'श्रेणी', hi: 'श्रेणी'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
+                              AppDropdown<String>(
                                 value: category,
-                                items: const [
-                                  DropdownMenuItem(value: 'Office', child: Text('Office Team')),
-                                  DropdownMenuItem(value: 'Party', child: Text('Party Workers')),
-                                  DropdownMenuItem(value: 'Cooperative', child: Text('Government Employees')),
+                                height: 44,
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                borderColor: AppColors.slate200,
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'Office',
+                                    child: Padding(
+                                      padding: EdgeInsets.zero,
+                                      child: Text(
+                                        AppTranslations.pick(lang, en: 'Office Team', mr: 'कार्यालयीन टीम', hi: 'कार्यालय टीम'),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Party',
+                                    child: Padding(
+                                      padding: EdgeInsets.zero,
+                                      child: Text(
+                                        AppTranslations.pick(lang, en: 'Party Workers', mr: 'पक्ष कार्यकर्ते', hi: 'पार्टी कार्यकर्ता'),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Cooperative',
+                                    child: Padding(
+                                      padding: EdgeInsets.zero,
+                                      child: Text(
+                                        AppTranslations.pick(lang, en: 'Government Employees', mr: 'शासकीय कर्मचारी', hi: 'सरकारी कर्मचारी'),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) setModalState(() => category = val);
                                 },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                ),
                               ),
                             ],
                           ),
@@ -254,19 +332,20 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Assigned Area', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                              Text(
+                                AppTranslations.pick(lang, en: 'Assigned Area', mr: 'नेमलेला परिसर', hi: 'निर्धारित क्षेत्र'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                              ),
                               const SizedBox(height: 6),
                               TextField(
                                 controller: areaController,
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Ward 12',
-                                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: desktopInputDecoration(
+                                  hintText: AppTranslations.pick(
+                                    lang,
+                                    en: 'e.g. Ward 12',
+                                    mr: 'उदा. प्रभाग १२',
+                                    hi: 'उदा. वार्ड १२',
+                                  ),
                                 ),
                               ),
                             ],
@@ -277,55 +356,76 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                     const SizedBox(height: 16),
 
                     // Email
-                    const Text('Email Address', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                    Text(
+                      AppTranslations.pick(lang, en: 'Email Address', mr: 'ईमेल पत्ता', hi: 'ईमेल पता'),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                    ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: emailController,
-                      decoration: InputDecoration(
-                        hintText: 'staff@office.gov.in',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
-                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  filled: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
+                      decoration: desktopInputDecoration(hintText: 'staff@office.gov.in'),
                     ),
-                                      ],
-            ),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),
-    );  }
+    );
+  }
 
   void _showDeleteConfirm(TeamMemberModel item) {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Staff'),
-        content: Text('Are you sure you want to delete "${item.displayName}"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final repo = ref.read(teamRepoProvider);
-              await repo.deleteTeamMember(item.id);
-              if (ctx.mounted) Navigator.pop(ctx);
-              _fetchTeam();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+      builder: (ctx) => Consumer(
+        builder: (ctx, dialogRef, _) {
+          final lang = dialogRef.watch(desktopLanguageProvider);
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(AppTranslations.pick(lang, en: 'Delete Staff', mr: 'कर्मचारी हटवा', hi: 'स्टाफ हटाएं')),
+            content: AppTranslatedText(
+              item.displayNameFor(lang),
+              isName: true,
+              targetLanguage: lang,
+              builder: (_, translatedName) => Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Are you sure you want to delete "$translatedName"?',
+                  mr: 'तुम्हाला खात्री आहे की तुम्ही "$translatedName" यांना हटवू इच्छिता?',
+                  hi: 'क्या आप वाकई "$translatedName" को हटाना चाहते हैं?',
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें')),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final repo = ref.read(teamRepoProvider);
+                  await repo.deleteTeamMember(item.id);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _fetchTeam();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+                child: Text(
+                  AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(desktopLanguageProvider);
     final filtered = _filteredMembers;
     final visible = _visibleMembers;
 
@@ -335,22 +435,22 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          _buildHeader(filtered.length),
+          _buildHeader(filtered.length, lang),
           const SizedBox(height: 20),
 
           // Tab Bar
-          _buildTabBar(),
+          _buildTabBar(lang),
           const SizedBox(height: 16),
 
           // Search Row
-          _buildSearchRow(),
+          _buildSearchRow(lang),
           const SizedBox(height: 24),
 
           // Grid
           if (_loading)
             _buildLoadingGrid()
           else
-            _buildCardGrid(visible),
+            _buildCardGrid(visible, lang),
 
           // Load More Footer
           if (!_loading && filtered.isNotEmpty)
@@ -361,15 +461,16 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
               onLoadMore: () {
                 setState(() => _displayedLimit += 20);
               },
-              label: 'सदस्य',
-              isMarathi: true,
+              label: 'members',
+              isMarathi: lang == 'mr',
             ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(int count) {
+  Widget _buildHeader(int count, String lang) {
+    final formattedCount = AppTranslations.formatDigits(count, lang);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -378,9 +479,9 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
           children: [
             Row(
               children: [
-                const Text(
-                  'My Team',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                Text(
+                  AppTranslations.pick(lang, en: 'My Team', mr: 'माझी टीम', hi: 'मेरी टीम'),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
                 ),
                 const SizedBox(width: 10),
                 Container(
@@ -390,14 +491,27 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(color: const Color(0xFFBAE6FD)),
                   ),
-                  child: Text('Total: $count', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))),
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Total: $formattedCount',
+                      mr: 'एकूण: $formattedCount',
+                      hi: 'कुल: $formattedCount',
+                    ),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Office team, government liaisons, and political party workers',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Office team, government liaisons, and political party workers',
+                mr: 'कार्यालयीन टीम, शासकीय समन्वयक आणि पक्ष कार्यकर्ते',
+                hi: 'कार्यालय टीम, सरकारी समन्वयक और पार्टी कार्यकर्ता',
+              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -412,11 +526,12 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                   context: context,
                   staffList: _filteredMembers,
                   activeCategory: _activeTab,
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
               label: Text(
-                AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                AppTranslations.getDownloadReport(lang),
                 style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
@@ -440,12 +555,12 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.add, size: 16, color: Colors.white),
-                  SizedBox(width: 8),
+                children: [
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
                   Text(
-                    'Add Staff',
-                    style: TextStyle(
+                    AppTranslations.pick(lang, en: 'Add Staff', mr: 'कर्मचारी जोडा', hi: 'स्टाफ जोड़ें'),
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -461,11 +576,23 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(String lang) {
     final tabs = [
-      {'key': 'Office', 'label': 'Office Team', 'icon': Icons.apartment_rounded},
-      {'key': 'Party', 'label': 'Party Workers', 'icon': Icons.flag_outlined},
-      {'key': 'Cooperative', 'label': 'Government Employees', 'icon': Icons.business_outlined},
+      {
+        'key': 'Office',
+        'label': AppTranslations.pick(lang, en: 'Office Team', mr: 'कार्यालयीन टीम', hi: 'कार्यालय टीम'),
+        'icon': Icons.apartment_rounded,
+      },
+      {
+        'key': 'Party',
+        'label': AppTranslations.pick(lang, en: 'Party Workers', mr: 'पक्ष कार्यकर्ते', hi: 'पार्टी कार्यकर्ता'),
+        'icon': Icons.flag_outlined,
+      },
+      {
+        'key': 'Cooperative',
+        'label': AppTranslations.pick(lang, en: 'Government Employees', mr: 'शासकीय कर्मचारी', hi: 'सरकारी कर्मचारी'),
+        'icon': Icons.business_outlined,
+      },
     ];
 
     return Row(
@@ -507,7 +634,7 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
     );
   }
 
-  Widget _buildSearchRow() {
+  Widget _buildSearchRow(String lang) {
     return Row(
       children: [
         // Name / Mobile Search (Col 6)
@@ -524,12 +651,17 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                 _searchTerm = val;
                 _displayedLimit = 20;
               }),
-              decoration: const InputDecoration(
-                hintText: 'Search staff by name, role, mobile...',
-                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+              decoration: InputDecoration(
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search staff by name, role, mobile...',
+                  mr: 'नाव, पद, मोबाईलद्वारे कर्मचारी शोधा...',
+                  hi: 'नाम, पद, मोबाइल से स्टाफ खोजें...',
+                ),
+                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
           ),
@@ -546,9 +678,28 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: _uniqueAreas.map((area) {
+              if (area == 'All') {
+                return DropdownMenuItem(
+                  value: area,
+                  child: Padding(
+                    padding: EdgeInsets.zero,
+                    child: Text(
+                      AppTranslations.getAllAreas(lang),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                );
+              }
+              final areaLabel = AppTranslations.getAreaName(area, lang);
               return DropdownMenuItem(
                 value: area,
-                child: Text(area == 'All' ? 'All Areas' : area, overflow: TextOverflow.ellipsis),
+                child: areaLabel != area
+                    ? Padding(
+                        padding: EdgeInsets.zero,
+                        child: Text(areaLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      )
+                    : Text(area, overflow: TextOverflow.ellipsis),
               );
             }).toList(),
             onChanged: (val) {
@@ -573,7 +724,22 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
             backgroundColor: Colors.white,
             borderColor: const Color(0xFFE2E8F0),
             items: [
-              const DropdownMenuItem(value: 'All', child: Text('All Wings / Cells')),
+              DropdownMenuItem(
+                value: 'All',
+                child: Padding(
+                  padding: EdgeInsets.zero,
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'All Wings / Cells',
+                      mr: 'सर्व आघाड्या / सेल',
+                      hi: 'सभी प्रकोष्ठ / सेल',
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
               ..._uniqueWings.where((w) => w != 'All').map((wing) {
                 return DropdownMenuItem(value: wing, child: Text(wing, overflow: TextOverflow.ellipsis));
               }),
@@ -592,7 +758,27 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
     );
   }
 
-  Widget _buildCardGrid(List<TeamMemberModel> items) {
+  static const Set<String> _knownRoleKeys = {
+    'office admin',
+    'supervisor',
+    'staff',
+    'executive',
+    'driver',
+    'peon',
+    'helper',
+    'sanitation worker',
+    'karyakarta',
+    'it cell head',
+    'pro',
+  };
+
+  static const Set<String> _knownCategoryKeys = {
+    'office',
+    'party',
+    'cooperative',
+  };
+
+  Widget _buildCardGrid(List<TeamMemberModel> items, String lang) {
     if (items.isEmpty) {
       return Container(
         width: double.infinity,
@@ -603,10 +789,18 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
-          children: const [
-            Icon(Icons.badge_outlined, size: 48, color: Color(0xFFCBD5E1)),
-            SizedBox(height: 12),
-            const Text('No staff members found', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          children: [
+            const Icon(Icons.badge_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No staff members found',
+                mr: 'कोणतेही कर्मचारी आढळले नाहीत',
+                hi: 'कोई स्टाफ सदस्य नहीं मिला',
+              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );
@@ -628,6 +822,11 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
           ),
           itemBuilder: (context, index) {
             final item = items[index];
+            final memberName = item.displayNameFor(lang);
+            final isKnownRole = _knownRoleKeys.contains(item.role.trim().toLowerCase());
+            final isKnownCategory = _knownCategoryKeys.contains(item.category.trim().toLowerCase());
+            final rawArea = (item.area != null && item.area!.trim().isNotEmpty) ? item.area!.trim() : 'Ward 12';
+            final mappedArea = AppTranslations.getAreaName(rawArea, lang);
 
             return Container(
               decoration: BoxDecoration(
@@ -645,9 +844,19 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: const Color(0xFFF0F9FF),
-                        child: Text(
-                          item.displayName.isNotEmpty ? item.displayName[0] : 'U',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                        child: AppTranslatedText(
+                          memberName,
+                          isName: true,
+                          targetLanguage: lang,
+                          builder: (_, translatedName) {
+                            final initial = translatedName.trim().isNotEmpty
+                                ? translatedName.trim()[0].toUpperCase()
+                                : AppTranslations.pick(lang, en: 'U', mr: 'स', hi: 'स');
+                            return Text(
+                              initial,
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -655,17 +864,30 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              item.displayName,
+                            AppTranslatedText(
+                              memberName,
+                              isName: true,
+                              targetLanguage: lang,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              item.roleLabelMarathi,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF0284C7)),
-                            ),
+                            if (isKnownRole)
+                              Text(
+                                item.roleLabel(lang),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF0284C7)),
+                              )
+                            else
+                              AppTranslatedText(
+                                item.role,
+                                targetLanguage: lang,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF0284C7)),
+                              ),
                           ],
                         ),
                       ),
@@ -678,7 +900,10 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                     children: [
                       const Icon(Icons.phone_outlined, size: 14, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 6),
-                      Text(item.mobile, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                      Text(
+                        AppTranslations.formatDigits(item.mobile, lang),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -688,7 +913,22 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                     children: [
                       const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 6),
-                      Text(item.area ?? 'Ward 12', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      Expanded(
+                        child: mappedArea != rawArea
+                            ? Text(
+                                mappedArea,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              )
+                            : AppTranslatedText(
+                                rawArea,
+                                targetLanguage: lang,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              ),
+                      ),
                     ],
                   ),
                   const Spacer(),
@@ -700,11 +940,29 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(item.categoryLabelMarathi, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                        if (isKnownCategory)
+                          Text(
+                            item.categoryLabel(lang),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                          )
+                        else
+                          AppTranslatedText(
+                            item.category,
+                            targetLanguage: lang,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                          ),
                         Row(
                           children: [
-                            IconButton(icon: const Icon(Icons.edit_outlined, size: 16), onPressed: () => _showAddStaffModal(item: item)),
-                            IconButton(icon: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFDC2626)), onPressed: () => _showDeleteConfirm(item)),
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, size: 16),
+                              tooltip: AppTranslations.pick(lang, en: 'Edit', mr: 'संपादित करा', hi: 'संपादित करें'),
+                              onPressed: () => _showAddStaffModal(item: item),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFDC2626)),
+                              tooltip: AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएं'),
+                              onPressed: () => _showDeleteConfirm(item),
+                            ),
                           ],
                         ),
                       ],
@@ -733,7 +991,7 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
             mainAxisSpacing: 20,
             mainAxisExtent: 220,
           ),
-          itemBuilder: (_, __) => Container(
+          itemBuilder: (_, _) => Container(
             decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(20)),
           ),
         );

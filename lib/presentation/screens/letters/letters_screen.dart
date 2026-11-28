@@ -3,14 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/localization/app_strings.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/services/translation_service.dart';
 import '../../../data/models/letter_model.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'letter_detail_screen.dart';
+import 'letter_form_constants.dart';
 import 'new_letter_bottom_sheet.dart';
 import 'letter_type_manager_sheet.dart';
 import '../../navigation/app_drawer.dart';
@@ -119,40 +118,83 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   }
 
   List<LetterModel> get _filteredLetters {
+    final lang = ref.read(appLanguageProvider);
     return _currentList.where((l) {
       if (_isOutgoing && _selectedStatus != 'All') {
         if (l.status.toLowerCase() != _selectedStatus.toLowerCase()) return false;
       }
 
       if (_searchQuery.isNotEmpty) {
-        final q = _searchQuery.toLowerCase();
-        final matches = l.id.toLowerCase().contains(q) ||
-            l.title.toLowerCase().contains(q) ||
-            l.citizenName.toLowerCase().contains(q) ||
-            (l.area != null && l.area!.toLowerCase().contains(q)) ||
-            (l.letterType != null && l.letterType!.toLowerCase().contains(q)) ||
-            (l.description != null && l.description!.toLowerCase().contains(q));
+        final q = AppTranslations.normalizeAsciiDigits(_searchQuery).toLowerCase();
+        final typeRaw = l.letterType ?? '';
+        String? typeLocalized;
+        if (typeRaw.isNotEmpty) {
+          for (final opt in kLetterTypeOptions) {
+            if (opt.key.toLowerCase() == typeRaw.toLowerCase()) {
+              typeLocalized = opt.getLabel(lang);
+              break;
+            }
+          }
+          typeLocalized ??= DynamicTranslationService.getCachedTranslation(typeRaw, lang);
+        }
+        final areaLocalized = l.area != null ? AppTranslations.getAreaName(l.area!, lang) : null;
+        final titleLocalized = DynamicTranslationService.getCachedTranslation(l.title, lang);
+        final citizenLocalized = DynamicTranslationService.getCachedTranslation(
+          l.citizenName,
+          lang,
+          isName: true,
+        );
+
+        final matches = AppTranslations.normalizeAsciiDigits(l.id).toLowerCase().contains(q) ||
+            AppTranslations.normalizeAsciiDigits(l.title).toLowerCase().contains(q) ||
+            (titleLocalized != null &&
+                AppTranslations.normalizeAsciiDigits(titleLocalized).toLowerCase().contains(q)) ||
+            AppTranslations.normalizeAsciiDigits(l.citizenName).toLowerCase().contains(q) ||
+            (citizenLocalized != null &&
+                AppTranslations.normalizeAsciiDigits(citizenLocalized).toLowerCase().contains(q)) ||
+            (l.area != null &&
+                AppTranslations.normalizeAsciiDigits(l.area!).toLowerCase().contains(q)) ||
+            (areaLocalized != null &&
+                AppTranslations.normalizeAsciiDigits(areaLocalized).toLowerCase().contains(q)) ||
+            (l.letterType != null &&
+                AppTranslations.normalizeAsciiDigits(l.letterType!).toLowerCase().contains(q)) ||
+            (typeLocalized != null &&
+                AppTranslations.normalizeAsciiDigits(typeLocalized).toLowerCase().contains(q)) ||
+            (l.description != null &&
+                AppTranslations.normalizeAsciiDigits(l.description!).toLowerCase().contains(q)) ||
+            (l.mobile.isNotEmpty &&
+                AppTranslations.normalizeAsciiDigits(l.mobile).toLowerCase().contains(q));
         if (!matches) return false;
       }
 
       if (_areaSearch.isNotEmpty) {
-        final a = _areaSearch.toLowerCase();
-        if (l.area == null || !l.area!.toLowerCase().contains(a)) {
+        final a = AppTranslations.normalizeAsciiDigits(_areaSearch).toLowerCase();
+        final areaRaw = l.area != null
+            ? AppTranslations.normalizeAsciiDigits(l.area!).toLowerCase()
+            : '';
+        final areaLoc = l.area != null
+            ? AppTranslations.normalizeAsciiDigits(AppTranslations.getAreaName(l.area!, lang)).toLowerCase()
+            : '';
+        if (l.area == null || (!areaRaw.contains(a) && !areaLoc.contains(a))) {
           return false;
         }
       }
 
       if (_dateSearch.isNotEmpty) {
         final d = _getLetterDate(l);
-        final dateStr1 = DateFormat('MMM d, yyyy').format(d).toLowerCase();
-        final dateStr2 = DateFormat('dd MMM yyyy').format(d).toLowerCase();
-        final dateStr3 = DateFormat('dd/MM/yyyy').format(d).toLowerCase();
-        final dateStr4 = DateFormat('yyyy-MM-dd').format(d).toLowerCase();
-        final ds = _dateSearch.toLowerCase();
-        final matchesDate = dateStr1.contains(ds) ||
-            dateStr2.contains(ds) ||
-            dateStr3.contains(ds) ||
-            dateStr4.contains(ds);
+        final ds = AppTranslations.normalizeAsciiDigits(_dateSearch).toLowerCase();
+        final candidates = [
+          DateFormat('MMM d, yyyy').format(d),
+          DateFormat('dd MMM yyyy').format(d),
+          DateFormat('dd/MM/yyyy').format(d),
+          DateFormat('yyyy-MM-dd').format(d),
+          AppTranslations.formatDate(d, lang, pattern: 'MMM d, yyyy'),
+          AppTranslations.formatDate(d, lang, pattern: 'dd MMM yyyy'),
+          AppTranslations.formatDate(d, lang, pattern: 'dd/MM/yyyy'),
+        ];
+        final matchesDate = candidates.any(
+          (c) => AppTranslations.normalizeAsciiDigits(c).toLowerCase().contains(ds),
+        );
         if (!matchesDate) return false;
       }
 
@@ -174,15 +216,58 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     });
   }
 
-  void _shareOnWhatsApp(LetterModel letter) async {
-    final text = Uri.encodeComponent(
-      'Official Correspondence: ${letter.title}\n'
-      'Type: ${letter.letterType ?? 'Official Letter'}\n'
-      'Status: ${letter.status}\n'
-      'Citizen: ${letter.citizenName}\n'
-      'Nagarsevak Office, Prabhag 12',
+  String _formatDateSearchDisplay(String rawDate, String lang) {
+    final parsed = DateFormat('MMM d, yyyy').tryParse(rawDate);
+    if (parsed != null) {
+      return AppTranslations.formatDate(parsed, lang, pattern: 'MMM d, yyyy');
+    }
+    return AppTranslations.formatDigits(rawDate, lang);
+  }
+
+  String _resolveTypeDisplaySync(String? rawType, String lang) {
+    if (rawType == null || rawType.trim().isEmpty) {
+      return AppTranslations.pick(lang, en: 'Official Letter', mr: 'अधिकृत पत्र', hi: 'आधिकारिक पत्र');
+    }
+    for (final opt in kLetterTypeOptions) {
+      if (opt.key.toLowerCase() == rawType.trim().toLowerCase()) {
+        return opt.getLabel(lang);
+      }
+    }
+    return rawType;
+  }
+
+  Future<void> _shareOnWhatsApp(LetterModel letter) async {
+    final lang = ref.read(appLanguageProvider);
+    final trTitle = await DynamicTranslationService.translateOrRaw(letter.title, lang);
+    final rawType = _resolveTypeDisplaySync(letter.letterType, lang);
+    final trType = await DynamicTranslationService.translateOrRaw(rawType, lang);
+    final trCitizen = letter.citizenName == 'Citizen'
+        ? AppTranslations.pick(lang, en: 'Citizen', mr: 'नागरिक', hi: 'नागरिक')
+        : await DynamicTranslationService.translateOrRaw(letter.citizenName, lang, isName: true);
+    final trStatus = letter.status.toLowerCase() == 'received'
+        ? AppTranslations.pick(lang, en: 'Received', mr: 'प्राप्त', hi: 'प्राप्त')
+        : AppTranslations.getStatus(letter.status, lang);
+
+    final message = AppTranslations.pick(
+      lang,
+      en: 'Official Correspondence: $trTitle\n'
+          'Type: $trType\n'
+          'Status: $trStatus\n'
+          'Citizen: $trCitizen\n'
+          'Nagarsevak Office, Prabhag 12',
+      mr: 'अधिकृत पत्रव्यवहार: $trTitle\n'
+          'प्रकार: $trType\n'
+          'स्थिती: $trStatus\n'
+          'नागरिक: $trCitizen\n'
+          'नगरसेवक कार्यालय, प्रभाग १२',
+      hi: 'आधिकारिक पत्राचार: $trTitle\n'
+          'प्रकार: $trType\n'
+          'स्थिति: $trStatus\n'
+          'नागरिक: $trCitizen\n'
+          'नगरसेवक कार्यालय, वार्ड १२',
     );
-    final cleanMobile = letter.mobile.replaceAll(RegExp(r'\D'), '');
+    final text = Uri.encodeComponent(message);
+    final cleanMobile = AppTranslations.normalizeAsciiDigits(letter.mobile).replaceAll(RegExp(r'\D'), '');
     final uri = cleanMobile.isNotEmpty
         ? Uri.parse('https://wa.me/91$cleanMobile?text=$text')
         : Uri.parse('https://wa.me/?text=$text');
@@ -211,7 +296,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final filtered = _filteredLetters;
 
     final outCount = _outgoingLetters.length;
@@ -238,7 +322,12 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -502,7 +591,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                       // Area Search / Filter Button
                       Expanded(
                         child: InkWell(
-                          onTap: () => _openAreaPickerSheet(context, isMr),
+                          onTap: () => _openAreaPickerSheet(context, lang),
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             height: 38,
@@ -521,18 +610,33 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                 const Icon(Icons.location_on_outlined, color: Color(0xFF0284C7), size: 16),
                                 const SizedBox(width: 6),
                                 Expanded(
-                                  child: Text(
-                                    _areaSearch.isNotEmpty
-                                        ? _areaSearch
-                                        : (lang == 'mr' ? 'भाग शोधा...' : (lang == 'hi' ? 'क्षेत्र खोजें...' : 'Search area...')),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: _areaSearch.isNotEmpty ? FontWeight.w600 : FontWeight.w500,
-                                      color: _areaSearch.isNotEmpty ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
-                                    ),
-                                  ),
+                                  child: _areaSearch.isNotEmpty
+                                      ? AppTranslatedText(
+                                          AppTranslations.getAreaName(_areaSearch, lang),
+                                          targetLanguage: lang,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        )
+                                      : Text(
+                                          AppTranslations.pick(
+                                            lang,
+                                            en: 'Search area...',
+                                            mr: 'भाग शोधा...',
+                                            hi: 'क्षेत्र खोजें...',
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF94A3B8),
+                                          ),
+                                        ),
                                 ),
                                 if (_areaSearch.isNotEmpty)
                                   GestureDetector(
@@ -557,7 +661,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                       // Date Search / Filter Button
                       Expanded(
                         child: InkWell(
-                          onTap: () => _openDateFilterSheet(context, isMr),
+                          onTap: () => _openDateFilterSheet(context, lang),
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             height: 38,
@@ -578,8 +682,13 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                 Expanded(
                                   child: Text(
                                     _dateSearch.isNotEmpty
-                                        ? _dateSearch
-                                        : (lang == 'mr' ? 'तारीख निवडा...' : (lang == 'hi' ? 'तिथि चुनें...' : 'Filter by date...')),
+                                        ? _formatDateSearchDisplay(_dateSearch, lang)
+                                        : AppTranslations.pick(
+                                            lang,
+                                            en: 'Filter by date...',
+                                            mr: 'तारीख निवडा...',
+                                            hi: 'तिथि चुनें...',
+                                          ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -618,7 +727,10 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                         children: [
                           if (_areaSearch.isNotEmpty)
                             _buildActiveFilterChip(
-                              label: '${lang == "mr" ? "भाग: " : (lang == "hi" ? "क्षेत्र: " : "Area: ")}$_areaSearch',
+                              label: AppTranslations.getAreaName(_areaSearch, lang),
+                              prefix: AppTranslations.pick(lang, en: 'Area: ', mr: 'भाग: ', hi: 'क्षेत्र: '),
+                              translateDynamic: true,
+                              lang: lang,
                               onDelete: () {
                                 _areaController.clear();
                                 setState(() => _areaSearch = '');
@@ -627,7 +739,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                           if (_dateSearch.isNotEmpty) ...[
                             const SizedBox(width: 6),
                             _buildActiveFilterChip(
-                              label: '${lang == "mr" ? "तारीख: " : (lang == "hi" ? "तिथि: " : "Date: ")}$_dateSearch',
+                              label: '${AppTranslations.pick(lang, en: 'Date: ', mr: 'तारीख: ', hi: 'तिथि: ')}${_formatDateSearchDisplay(_dateSearch, lang)}',
+                              lang: lang,
                               onDelete: () {
                                 _dateController.clear();
                                 setState(() => _dateSearch = '');
@@ -637,7 +750,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                           if (_isOutgoing && _selectedStatus != 'All') ...[
                             const SizedBox(width: 6),
                             _buildActiveFilterChip(
-                              label: '${lang == "mr" ? "स्थिती: " : (lang == "hi" ? "स्थिति: " : "Status: ")}${AppTranslations.getStatus(_selectedStatus, lang)}',
+                              label: '${AppTranslations.pick(lang, en: 'Status: ', mr: 'स्थिती: ', hi: 'स्थिति: ')}${AppTranslations.getStatus(_selectedStatus, lang)}',
+                              lang: lang,
                               onDelete: () => setState(() => _selectedStatus = 'All'),
                             ),
                           ],
@@ -645,7 +759,12 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                           GestureDetector(
                             onTap: _clearAllFilters,
                             child: Text(
-                              isMr ? 'सर्व साफ करा' : 'Clear all',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Clear all',
+                                mr: 'सर्व साफ करा',
+                                hi: 'सभी साफ़ करें',
+                              ),
                               style: const TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
@@ -682,7 +801,12 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                isMr ? AppStrings.noDataFoundMr : AppStrings.noDataFound,
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'No records found',
+                                  mr: 'कोणतीही माहिती आढळली नाही',
+                                  hi: 'कोई रिकॉर्ड नहीं मिला',
+                                ),
                                 style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w600),
                               ),
                               if (_searchQuery.isNotEmpty || _areaSearch.isNotEmpty || _dateSearch.isNotEmpty || (_isOutgoing && _selectedStatus != 'All')) ...[
@@ -691,7 +815,12 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                   onPressed: _clearAllFilters,
                                   icon: const Icon(Icons.filter_alt_off_rounded, size: 16),
                                   label: Text(
-                                    isMr ? 'फिल्टर साफ करा' : 'Clear Filters',
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Clear Filters',
+                                      mr: 'फिल्टर साफ करा',
+                                      hi: 'फ़िल्टर साफ़ करें',
+                                    ),
                                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                   ),
                                   style: OutlinedButton.styleFrom(
@@ -721,8 +850,13 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                     onLoadMore: () {
                                       setState(() => _displayedLimit += 20);
                                     },
-                                    label: lang == 'mr' ? 'पत्रे' : (lang == 'hi' ? 'पत्र' : 'letters'),
-                                    isMarathi: isMr,
+                                    label: AppTranslations.pick(
+                                      lang,
+                                      en: 'letters',
+                                      mr: 'पत्रे',
+                                      hi: 'पत्र',
+                                    ),
+                                    isMarathi: lang == 'mr',
                                   );
                               }
                               final item = _visibleLetters[idx];
@@ -730,7 +864,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: _LetterCard(
                                   letter: item,
-                                  isMr: isMr,
                                   lang: lang,
                                   onTap: () => _openDetailScreen(item),
                                   onWhatsApp: () => _shareOnWhatsApp(item),
@@ -752,8 +885,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
           icon: Icon(_isOutgoing ? Icons.add_rounded : Icons.document_scanner_outlined, size: 20),
           label: Text(
             _isOutgoing
-                ? (lang == 'mr' ? 'नवीन जावक पत्र' : (lang == 'hi' ? 'नया जावक पत्र' : 'New Letter'))
-                : (lang == 'mr' ? 'आवक पत्र स्कॅन करा' : (lang == 'hi' ? 'आवक पत्र स्कैन करें' : 'Scan Incoming Letter')),
+                ? AppTranslations.pick(lang, en: 'New Letter', mr: 'नवीन जावक पत्र', hi: 'नया जावक पत्र')
+                : AppTranslations.pick(lang, en: 'Scan Incoming Letter', mr: 'आवक पत्र स्कॅन करा', hi: 'आवक पत्र स्कैन करें'),
             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
           ),
         ),
@@ -761,7 +894,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     );
   }
 
-  Future<void> _pickCustomDate(BuildContext context, bool isMr) async {
+  Future<void> _pickCustomDate(BuildContext context) async {
     final picked = await showThemedDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -791,8 +924,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     });
   }
 
-  void _openAreaPickerSheet(BuildContext context, bool isMr) {
-    final lang = ref.read(appLanguageProvider);
+  void _openAreaPickerSheet(BuildContext context, String lang) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -802,7 +934,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
       builder: (ctx) => _LettersAreaPickerSheet(
         initialArea: _areaSearch,
         areas: _areaSuggestions,
-        isMr: isMr,
         lang: lang,
         onSelect: (selected) {
           Navigator.pop(ctx);
@@ -815,8 +946,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     );
   }
 
-  void _openDateFilterSheet(BuildContext context, bool isMr) {
-    final lang = ref.read(appLanguageProvider);
+  void _openDateFilterSheet(BuildContext context, String lang) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -826,11 +956,10 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
       builder: (ctx) => _LettersDateFilterSheet(
         initialDate: _dateSearch,
         dates: _dateSuggestions,
-        isMr: isMr,
         lang: lang,
         onPickCalendar: () async {
           Navigator.pop(ctx);
-          await _pickCustomDate(context, isMr);
+          await _pickCustomDate(context);
         },
         onSelect: (selected) {
           Navigator.pop(ctx);
@@ -843,7 +972,14 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
     );
   }
 
-  Widget _buildActiveFilterChip({required String label, required VoidCallback onDelete}) {
+  Widget _buildActiveFilterChip({
+    required String label,
+    String prefix = '',
+    bool translateDynamic = false,
+    required String lang,
+    required VoidCallback onDelete,
+  }) {
+    const chipStyle = TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155));
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 3, 4, 3),
       decoration: BoxDecoration(
@@ -854,10 +990,18 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          ),
+          if (translateDynamic)
+            AppTranslatedText(
+              label,
+              prefix: prefix,
+              targetLanguage: lang,
+              style: chipStyle,
+            )
+          else
+            Text(
+              '$prefix$label',
+              style: chipStyle,
+            ),
           const SizedBox(width: 4),
           GestureDetector(
             onTap: onDelete,
@@ -874,14 +1018,12 @@ class _LettersScreenState extends ConsumerState<LettersScreen>
 // -----------------------------------------------------------------------------
 class _LetterCard extends StatelessWidget {
   final LetterModel letter;
-  final bool isMr;
   final String lang;
   final VoidCallback onTap;
   final VoidCallback onWhatsApp;
 
   const _LetterCard({
     required this.letter,
-    required this.isMr,
     this.lang = 'en',
     required this.onTap,
     required this.onWhatsApp,
@@ -933,21 +1075,25 @@ class _LetterCard extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: letter.isIncoming ? const Color(0xFFE0F2FE) : const Color(0xFFF3E8FF),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                letter.letterType ?? 'Official',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: letter.isIncoming ? const Color(0xFF0369A1) : const Color(0xFF7E22CE),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: letter.isIncoming ? const Color(0xFFE0F2FE) : const Color(0xFFF3E8FF),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: _buildLetterTypeText(
+                                  letter.letterType,
+                                  lang,
+                                  TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: letter.isIncoming ? const Color(0xFF0369A1) : const Color(0xFF7E22CE),
+                                  ),
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 8),
                             _buildStatusBadge(letter.status, lang),
                           ],
                         ),
@@ -974,12 +1120,19 @@ class _LetterCard extends StatelessWidget {
                             const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF64748B)),
                             const SizedBox(width: 4),
                             Expanded(
-                              child: AppTranslatedText(
-                                letter.citizenName,
-                                targetLanguage: lang,
-                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              child: letter.citizenName == 'Citizen'
+                                  ? Text(
+                                      AppTranslations.pick(lang, en: 'Citizen', mr: 'नागरिक', hi: 'नागरिक'),
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                  : AppTranslatedText(
+                                      letter.citizenName,
+                                      isName: true,
+                                      targetLanguage: lang,
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                             ),
                           ],
                         ),
@@ -999,19 +1152,18 @@ class _LetterCard extends StatelessWidget {
                                     const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF94A3B8)),
                                     const SizedBox(width: 2),
                                     Flexible(
-                                      child: Text(
-                                        AppTranslations.getAreaName(letter.area!, lang),
-                                        maxLines: 1,
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                      child: _buildAreaText(letter.area!, lang),
                                     ),
                                     const SizedBox(width: 8),
                                   ],
                                   const Icon(Icons.calendar_today_outlined, size: 12, color: Color(0xFF94A3B8)),
                                   const SizedBox(width: 3),
                                   Text(
-                                    AppTranslations.formatDigits(DateFormat('MMM d').format(letter.receivedDate ?? letter.createdAt), lang),
+                                    AppTranslations.formatDate(
+                                      letter.receivedDate ?? letter.createdAt,
+                                      lang,
+                                      pattern: 'MMM d',
+                                    ),
                                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                   ),
                                 ],
@@ -1046,11 +1198,11 @@ class _LetterCard extends StatelessWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        lang == 'mr' ? 'तपशील' : (lang == 'hi' ? 'विवरण' : 'Details'),
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                                        AppTranslations.getDetails(lang),
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
                                       ),
-                                      SizedBox(width: 2),
-                                      Icon(Icons.chevron_right_rounded, size: 13, color: Color(0xFF0284C7)),
+                                      const SizedBox(width: 2),
+                                      const Icon(Icons.chevron_right_rounded, size: 13, color: Color(0xFF0284C7)),
                                     ],
                                   ),
                                 ),
@@ -1067,6 +1219,55 @@ class _LetterCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLetterTypeText(String? rawType, String lang, TextStyle style) {
+    if (rawType == null || rawType.trim().isEmpty) {
+      return Text(
+        AppTranslations.pick(lang, en: 'Official', mr: 'अधिकृत', hi: 'आधिकारिक'),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      );
+    }
+    final clean = rawType.trim();
+    for (final opt in kLetterTypeOptions) {
+      if (opt.key.toLowerCase() == clean.toLowerCase()) {
+        return Text(
+          opt.getLabel(lang),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        );
+      }
+    }
+    return AppTranslatedText(
+      clean,
+      targetLanguage: lang,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: style,
+    );
+  }
+
+  Widget _buildAreaText(String rawArea, String lang) {
+    final locArea = AppTranslations.getAreaName(rawArea, lang);
+    const areaStyle = TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500);
+    if (locArea != rawArea.trim()) {
+      return Text(
+        locArea,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: areaStyle,
+      );
+    }
+    return AppTranslatedText(
+      rawArea,
+      targetLanguage: lang,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: areaStyle,
     );
   }
 
@@ -1097,7 +1298,9 @@ class _LetterCard extends StatelessWidget {
         text = const Color(0xFF854D0E);
     }
 
-    final label = AppTranslations.getStatus(status, lang);
+    final label = status.toLowerCase() == 'received'
+        ? AppTranslations.pick(lang, en: 'Received', mr: 'प्राप्त', hi: 'प्राप्त')
+        : AppTranslations.getStatus(status, lang);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1118,14 +1321,12 @@ class _LetterCard extends StatelessWidget {
 class _LettersAreaPickerSheet extends StatefulWidget {
   final String initialArea;
   final List<MapEntry<String, int>> areas;
-  final bool isMr;
   final String lang;
   final ValueChanged<String?> onSelect;
 
   const _LettersAreaPickerSheet({
     required this.initialArea,
     required this.areas,
-    required this.isMr,
     this.lang = 'en',
     required this.onSelect,
   });
@@ -1151,12 +1352,21 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
   }
 
   void _filter(String query) {
-    final q = query.trim().toLowerCase();
+    final q = AppTranslations.normalizeAsciiDigits(query.trim()).toLowerCase();
     setState(() {
       if (q.isEmpty) {
         _filteredAreas = widget.areas;
       } else {
-        _filteredAreas = widget.areas.where((a) => a.key.toLowerCase().contains(q)).toList();
+        _filteredAreas = widget.areas.where((a) {
+          final raw = AppTranslations.normalizeAsciiDigits(a.key).toLowerCase();
+          final loc = AppTranslations.normalizeAsciiDigits(
+            AppTranslations.getAreaName(a.key, widget.lang),
+          ).toLowerCase();
+          final cached = AppTranslations.normalizeAsciiDigits(
+            DynamicTranslationService.getCachedTranslation(a.key, widget.lang) ?? '',
+          ).toLowerCase();
+          return raw.contains(q) || loc.contains(q) || (cached.isNotEmpty && cached.contains(q));
+        }).toList();
       }
     });
   }
@@ -1165,7 +1375,7 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final maxSheetHeight = mediaQuery.size.height * 0.75;
-    final isMr = widget.isMr;
+    final lang = widget.lang;
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxSheetHeight),
@@ -1220,7 +1430,12 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        isMr ? 'क्षेत्र निवडा' : 'Filter by Area',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Filter by Area',
+                          mr: 'क्षेत्र निवडा',
+                          hi: 'क्षेत्र के अनुसार फ़िल्टर करें',
+                        ),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -1229,7 +1444,7 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${widget.areas.length} ${isMr ? 'क्षेत्रे उपलब्ध' : 'areas available'}',
+                        '${AppTranslations.formatDigits(widget.areas.length, lang)} ${AppTranslations.pick(lang, en: 'areas available', mr: 'क्षेत्रे उपलब्ध', hi: 'क्षेत्र उपलब्ध')}',
                         style: const TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFF64748B),
@@ -1241,7 +1456,7 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                 IconButton(
                   icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                   onPressed: () => Navigator.pop(context),
-                  tooltip: 'Close',
+                  tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                 ),
               ],
             ),
@@ -1255,7 +1470,12 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
               onChanged: _filter,
               style: const TextStyle(fontSize: 13.5),
               decoration: InputDecoration(
-                hintText: isMr ? 'क्षेत्र शोधा...' : 'Search area...',
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search area...',
+                  mr: 'क्षेत्र शोधा...',
+                  hi: 'क्षेत्र खोजें...',
+                ),
                 hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                 prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
                 suffixIcon: _searchCtrl.text.isNotEmpty
@@ -1315,9 +1535,12 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              widget.lang == 'mr'
-                                  ? 'सर्व क्षेत्रे (फिल्टर काढा)'
-                                  : (widget.lang == 'hi' ? 'सभी क्षेत्र (फ़िल्टर हटाएं)' : 'All Areas (Clear Filter)'),
+                              AppTranslations.pick(
+                                lang,
+                                en: 'All Areas (Clear Filter)',
+                                mr: 'सर्व क्षेत्रे (फिल्टर काढा)',
+                                hi: 'सभी क्षेत्र (फ़िल्टर हटाएं)',
+                              ),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: widget.initialArea.isEmpty ? FontWeight.w700 : FontWeight.w500,
@@ -1340,7 +1563,12 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                     padding: const EdgeInsets.all(24),
                     child: Center(
                       child: Text(
-                        isMr ? AppStrings.noAreasFoundMr : AppStrings.noAreasFound,
+                        AppTranslations.pick(
+                          lang,
+                          en: 'No areas found',
+                          mr: 'कोणतेही क्षेत्र सापडले नाही',
+                          hi: 'कोई क्षेत्र नहीं मिला',
+                        ),
                         style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                       ),
                     ),
@@ -1348,6 +1576,12 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                 else
                   ..._filteredAreas.map((item) {
                     final isSelected = widget.initialArea == item.key;
+                    final locArea = AppTranslations.getAreaName(item.key, lang);
+                    final itemStyle = TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
+                    );
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: InkWell(
@@ -1370,14 +1604,13 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                               ),
                               const SizedBox(width: 10),
                               Expanded(
-                                child: Text(
-                                  AppTranslations.getAreaName(item.key, widget.lang),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                    color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF1E293B),
-                                  ),
-                                ),
+                                child: locArea != item.key.trim()
+                                    ? Text(locArea, style: itemStyle)
+                                    : AppTranslatedText(
+                                        item.key,
+                                        targetLanguage: lang,
+                                        style: itemStyle,
+                                      ),
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -1386,7 +1619,7 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  AppTranslations.formatDigits(item.value, widget.lang),
+                                  AppTranslations.formatDigits(item.value, lang),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -1417,7 +1650,6 @@ class _LettersAreaPickerSheetState extends State<_LettersAreaPickerSheet> {
 class _LettersDateFilterSheet extends StatefulWidget {
   final String initialDate;
   final List<MapEntry<String, int>> dates;
-  final bool isMr;
   final String lang;
   final VoidCallback onPickCalendar;
   final ValueChanged<String?> onSelect;
@@ -1425,7 +1657,6 @@ class _LettersDateFilterSheet extends StatefulWidget {
   const _LettersDateFilterSheet({
     required this.initialDate,
     required this.dates,
-    required this.isMr,
     this.lang = 'en',
     required this.onPickCalendar,
     required this.onSelect,
@@ -1451,13 +1682,39 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
     super.dispose();
   }
 
+  String _formatEntryDate(String key) {
+    final parsed = DateFormat('MMM d, yyyy').tryParse(key);
+    if (parsed != null) {
+      return AppTranslations.formatDate(parsed, widget.lang, pattern: 'MMM d, yyyy');
+    }
+    return AppTranslations.formatDigits(key, widget.lang);
+  }
+
   void _filter(String query) {
-    final q = query.trim().toLowerCase();
+    final q = AppTranslations.normalizeAsciiDigits(query.trim()).toLowerCase();
     setState(() {
       if (q.isEmpty) {
         _filteredDates = widget.dates;
       } else {
-        _filteredDates = widget.dates.where((d) => d.key.toLowerCase().contains(q)).toList();
+        _filteredDates = widget.dates.where((d) {
+          if (AppTranslations.normalizeAsciiDigits(d.key).toLowerCase().contains(q)) {
+            return true;
+          }
+          final parsed = DateFormat('MMM d, yyyy').tryParse(d.key);
+          if (parsed != null) {
+            final loc1 = AppTranslations.normalizeAsciiDigits(
+              AppTranslations.formatDate(parsed, widget.lang, pattern: 'MMM d, yyyy'),
+            ).toLowerCase();
+            final loc2 = AppTranslations.normalizeAsciiDigits(
+              AppTranslations.formatDate(parsed, widget.lang, pattern: 'dd MMM yyyy'),
+            ).toLowerCase();
+            final loc3 = AppTranslations.normalizeAsciiDigits(
+              AppTranslations.formatDate(parsed, widget.lang, pattern: 'dd/MM/yyyy'),
+            ).toLowerCase();
+            return loc1.contains(q) || loc2.contains(q) || loc3.contains(q);
+          }
+          return false;
+        }).toList();
       }
     });
   }
@@ -1466,7 +1723,7 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final maxSheetHeight = mediaQuery.size.height * 0.75;
-    final isMr = widget.isMr;
+    final lang = widget.lang;
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxSheetHeight),
@@ -1521,7 +1778,12 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        isMr ? 'तारीख निवडा' : 'Filter by Date',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Filter by Date',
+                          mr: 'तारीख निवडा',
+                          hi: 'तिथि के अनुसार फ़िल्टर करें',
+                        ),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -1530,7 +1792,7 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${widget.dates.length} ${isMr ? 'तारखा नोंदवलेल्या' : 'letter dates recorded'}',
+                        '${AppTranslations.formatDigits(widget.dates.length, lang)} ${AppTranslations.pick(lang, en: 'letter dates recorded', mr: 'तारखा नोंदवलेल्या', hi: 'पत्र तिथियां दर्ज')}',
                         style: const TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFF64748B),
@@ -1542,7 +1804,7 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                 IconButton(
                   icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                   onPressed: () => Navigator.pop(context),
-                  tooltip: 'Close',
+                  tooltip: AppTranslations.pick(lang, en: 'Close', mr: 'बंद करा', hi: 'बंद करें'),
                 ),
               ],
             ),
@@ -1567,7 +1829,12 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        isMr ? 'कॅलेंडरमधून तारीख निवडा (Custom Date)' : 'Pick any date from calendar',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Pick any date from calendar',
+                          mr: 'कॅलेंडरमधून तारीख निवडा',
+                          hi: 'कैलेंडर से कोई भी तिथि चुनें',
+                        ),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -1590,7 +1857,12 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
               onChanged: _filter,
               style: const TextStyle(fontSize: 13.5),
               decoration: InputDecoration(
-                hintText: isMr ? 'तारीख शोधा (उदा. Oct 2026)...' : 'Search date (e.g. Oct 2026)...',
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search date (e.g. Oct 2026)...',
+                  mr: 'तारीख शोधा (उदा. ऑक्टो २०२६)...',
+                  hi: 'तिथि खोजें (उदा. अक्टू २०२६)...',
+                ),
                 hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                 prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
                 suffixIcon: _searchCtrl.text.isNotEmpty
@@ -1650,9 +1922,12 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              widget.lang == 'mr'
-                                  ? 'सर्व तारखा (फिल्टर काढा)'
-                                  : (widget.lang == 'hi' ? 'सभी तिथियां (फ़िल्टर हटाएं)' : 'All Dates (Clear Date Filter)'),
+                              AppTranslations.pick(
+                                lang,
+                                en: 'All Dates (Clear Date Filter)',
+                                mr: 'सर्व तारखा (फिल्टर काढा)',
+                                hi: 'सभी तिथियां (फ़िल्टर हटाएं)',
+                              ),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: widget.initialDate.isEmpty ? FontWeight.w700 : FontWeight.w500,
@@ -1675,7 +1950,12 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                     padding: const EdgeInsets.all(24),
                     child: Center(
                       child: Text(
-                        isMr ? 'कोणतीही तारीख सापडली नाही' : 'No dates found',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'No dates found',
+                          mr: 'कोणतीही तारीख सापडली नाही',
+                          hi: 'कोई तिथि नहीं मिली',
+                        ),
                         style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                       ),
                     ),
@@ -1706,7 +1986,7 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  AppTranslations.formatDigits(item.key, widget.lang),
+                                  _formatEntryDate(item.key),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -1721,7 +2001,7 @@ class _LettersDateFilterSheetState extends State<_LettersDateFilterSheet> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  '${AppTranslations.formatDigits(item.value, widget.lang)} ${widget.lang == "mr" ? "पत्रे" : (widget.lang == "hi" ? "पत्र" : "letters")}',
+                                  '${AppTranslations.formatDigits(item.value, lang)} ${AppTranslations.pick(lang, en: 'letters', mr: 'पत्रे', hi: 'पत्र')}',
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,

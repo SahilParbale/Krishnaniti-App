@@ -5,7 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/ward_map_point_model.dart';
 import '../../../data/repositories/ward_map_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_pdf_button.dart';
 import 'ward_map_report_generator.dart';
@@ -31,12 +33,12 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
   WardMapPointModel? _selectedPoint;
 
   final List<Map<String, String>> _categories = [
-    {'id': 'All', 'labelEn': 'All Places', 'labelMr': 'सर्व ठिकाणे'},
-    {'id': 'Booth', 'labelEn': 'Polling Booths', 'labelMr': 'मतदान केंद्र'},
-    {'id': 'CivilWorks', 'labelEn': 'Civil Works', 'labelMr': 'विकासकामे'},
-    {'id': 'Amenity', 'labelEn': 'Civic Amenities', 'labelMr': 'नागरी सुविधा'},
-    {'id': 'ProblemSpot', 'labelEn': 'Problem Spots', 'labelMr': 'समस्या ठिकाणे'},
-    {'id': 'Office', 'labelEn': 'Ward Office', 'labelMr': 'कार्यालय'},
+    {'id': 'All', 'labelEn': 'All Places', 'labelMr': 'सर्व ठिकाणे', 'labelHi': 'सभी स्थान'},
+    {'id': 'Booth', 'labelEn': 'Polling Booths', 'labelMr': 'मतदान केंद्र', 'labelHi': 'मतदान केंद्र'},
+    {'id': 'CivilWorks', 'labelEn': 'Civil Works', 'labelMr': 'विकासकामे', 'labelHi': 'विकास कार्य'},
+    {'id': 'Amenity', 'labelEn': 'Civic Amenities', 'labelMr': 'नागरी सुविधा', 'labelHi': 'नागरिक सुविधाएं'},
+    {'id': 'ProblemSpot', 'labelEn': 'Problem Spots', 'labelMr': 'समस्या ठिकाणे', 'labelHi': 'समस्या स्थल'},
+    {'id': 'Office', 'labelEn': 'Ward Office', 'labelMr': 'कार्यालय', 'labelHi': 'वार्ड कार्यालय'},
   ];
 
   @override
@@ -68,7 +70,8 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
   }
 
   List<WardMapPointModel> get _filteredPoints {
-    final query = _searchCtrl.text.trim().toLowerCase();
+    final query = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim())
+        .toLowerCase();
 
     return _allPoints.where((p) {
       if (_activeCategory != 'All' && p.category.toLowerCase() != _activeCategory.toLowerCase()) {
@@ -88,11 +91,20 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
   }
 
   void _resetMapZoom() {
+    final lang = ref.read(appLanguageProvider);
     _transformCtrl.value = Matrix4.identity();
+    final wardNo = AppTranslations.formatDigits('12', lang);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Map centered to Ward No. 12'),
-        duration: Duration(milliseconds: 1000),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Map centered to Ward No. $wardNo',
+            mr: 'नकाशा प्रभाग क्र. $wardNo वर केंद्रित केला',
+            hi: 'मानचित्र वार्ड क्र. $wardNo पर केंद्रित किया गया',
+          ),
+        ),
+        duration: const Duration(milliseconds: 1000),
       ),
     );
   }
@@ -117,11 +129,19 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
   }
 
   void _copyAddress(WardMapPointModel point) {
+    final lang = ref.read(appLanguageProvider);
     Clipboard.setData(ClipboardData(text: '${point.title}\n${point.address}'));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Address copied to clipboard!'),
-        backgroundColor: Color(0xFF0284C7),
+      SnackBar(
+        content: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'Address copied to clipboard!',
+            mr: 'पत्ता क्लिपबोर्डवर कॉपी केला!',
+            hi: 'पता क्लिपबोर्ड पर कॉपी किया गया!',
+          ),
+        ),
+        backgroundColor: const Color(0xFF0284C7),
       ),
     );
   }
@@ -168,7 +188,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
 
   // Add custom geo-tag point modal
   void _showAddPointModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController();
     final addrCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -201,8 +221,18 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                   // 1. FIXED HEADER
                   AppModalHeader(
                     icon: Icons.pin_drop_rounded,
-                    title: isMr ? 'नवीन ठिकाण नोंदवा' : 'Tag New Ward Location',
-                    subtitle: isMr ? 'प्रभागातील ठिकाण, केंद्र किंवा काम टॅग करा' : 'Tag location, booth or civic spot',
+                    title: AppTranslations.pick(
+                      lang,
+                      en: 'Tag New Ward Location',
+                      mr: 'नवीन ठिकाण नोंदवा',
+                      hi: 'नया वार्ड स्थान जोड़ें',
+                    ),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Tag location, booth or civic spot',
+                      mr: 'प्रभागातील ठिकाण, केंद्र किंवा काम टॅग करा',
+                      hi: 'वार्ड में स्थान, मतदान केंद्र या कार्य टैग करें',
+                    ),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
 
@@ -221,11 +251,24 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _fieldLabel(isMr ? 'ठिकाणाचे नाव' : 'Location Title', isRequired: true),
+                                  _fieldLabel(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'Location Title',
+                                      mr: 'ठिकाणाचे नाव',
+                                      hi: 'स्थान का नाम',
+                                    ),
+                                    isRequired: true,
+                                  ),
                                   TextField(
                                     controller: titleCtrl,
                                     decoration: _inputDec(
-                                      hint: isMr ? 'उदा. समाज मंदिर, ईव्हीएम केंद्र...' : 'e.g. Community Hall, Booth...',
+                                      hint: AppTranslations.pick(
+                                        lang,
+                                        en: 'e.g. Community Hall, Booth...',
+                                        mr: 'उदा. समाज मंदिर, ईव्हीएम केंद्र...',
+                                        hi: 'उदा. समाज मंदिर, मतदान केंद्र...',
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -238,15 +281,20 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppDropdownFormField<String>(
-                                label: isMr ? 'वर्गवारी' : 'Category',
+                                label: AppTranslations.pick(
+                                  lang,
+                                  en: 'Category',
+                                  mr: 'वर्गवारी',
+                                  hi: 'श्रेणी',
+                                ),
                                 isRequired: true,
                                 value: cat,
                                     items: [
-                                      DropdownMenuItem(value: 'Booth', child: Text(isMr ? 'मतदान केंद्र' : 'Booth')),
-                                      DropdownMenuItem(value: 'CivilWorks', child: Text(isMr ? 'विकासकाम' : 'Civil Works')),
-                                      DropdownMenuItem(value: 'Amenity', child: Text(isMr ? 'सुविधा' : 'Amenity')),
-                                      DropdownMenuItem(value: 'ProblemSpot', child: Text(isMr ? 'समस्या ठिकाण' : 'Problem Spot')),
-                                      DropdownMenuItem(value: 'Office', child: Text(isMr ? 'कार्यालय' : 'Office')),
+                                      DropdownMenuItem(value: 'Booth', child: Text(AppTranslations.pick(lang, en: 'Booth', mr: 'मतदान केंद्र', hi: 'मतदान केंद्र'))),
+                                      DropdownMenuItem(value: 'CivilWorks', child: Text(AppTranslations.pick(lang, en: 'Civil Works', mr: 'विकासकाम', hi: 'नागरिक कार्य'))),
+                                      DropdownMenuItem(value: 'Amenity', child: Text(AppTranslations.pick(lang, en: 'Amenity', mr: 'सुविधा', hi: 'सुविधा'))),
+                                      DropdownMenuItem(value: 'ProblemSpot', child: Text(AppTranslations.pick(lang, en: 'Problem Spot', mr: 'समस्या ठिकाण', hi: 'समस्या स्थल'))),
+                                      DropdownMenuItem(value: 'Office', child: Text(AppTranslations.pick(lang, en: 'Office', mr: 'कार्यालय', hi: 'कार्यालय'))),
                                     ],
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => cat = val);
@@ -260,23 +308,48 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                         const SizedBox(height: 14),
 
                         // Address / Landmark
-                        _fieldLabel(isMr ? 'पत्ता / लँडमार्क' : 'Address / Landmark', isRequired: true),
+                        _fieldLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Address / Landmark',
+                            mr: 'पत्ता / लँडमार्क',
+                            hi: 'पता / लैंडमार्क',
+                          ),
+                          isRequired: true,
+                        ),
                         TextField(
                           controller: addrCtrl,
                           decoration: _inputDec(
-                            hint: isMr ? 'उदा. गणपती मंदिराशेजारी, गल्ली क्र. ४...' : 'e.g. Near Ganpati Mandir, Lane 4, Prabhag 12...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'e.g. Near Ganpati Mandir, Lane 4, Prabhag 12...',
+                              mr: 'उदा. गणपती मंदिराशेजारी, गल्ली क्र. ४...',
+                              hi: 'उदा. गणपति मंदिर के पास, गली क्र. ४...',
+                            ),
                             prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF64748B)),
                           ),
                         ),
                         const SizedBox(height: 14),
 
                         // Description / Scope
-                        _fieldLabel(isMr ? 'तपशील / व्याप्ती' : 'Description / Scope'),
+                        _fieldLabel(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Description / Scope',
+                            mr: 'तपशील / व्याप्ती',
+                            hi: 'विवरण / दायरा',
+                          ),
+                        ),
                         TextField(
                           controller: descCtrl,
                           maxLines: 3,
                           decoration: _inputDec(
-                            hint: isMr ? 'काबाचे स्वरूप, मतदार क्षमता किंवा इतर तपशील...' : 'Infrastructure scope, voter capacity, or details...',
+                            hint: AppTranslations.pick(
+                              lang,
+                              en: 'Infrastructure scope, voter capacity, or details...',
+                              mr: 'कामाचे स्वरूप, मतदार क्षमता किंवा इतर तपशील...',
+                              hi: 'कार्य का स्वरूप, मतदाता क्षमता या अन्य विवरण...',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 22),
@@ -294,13 +367,27 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                             ),
                             icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
                             label: Text(
-                              isMr ? 'ठिकाण सेव्ह करा' : 'Save Geo-Tag',
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Save Geo-Tag',
+                                mr: 'ठिकाण सेव्ह करा',
+                                hi: 'स्थान सहेजें',
+                              ),
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                             onPressed: () async {
                               if (titleCtrl.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(isMr ? 'कृपया ठिकाणाचे नाव प्रविष्ट करा' : 'Please enter location title')),
+                                  SnackBar(
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Please enter location title',
+                                        mr: 'कृपया ठिकाणाचे नाव प्रविष्ट करा',
+                                        hi: 'कृपया स्थान का नाम दर्ज करें',
+                                      ),
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
@@ -326,7 +413,14 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(isMr ? 'प्रभाग नकाशावर ठिकाण यशस्वीरित्या जोडले गेले!' : 'Location geo-tagged on Ward Map!'),
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Location geo-tagged on Ward Map!',
+                                        mr: 'प्रभाग नकाशावर ठिकाण यशस्वीरित्या जोडले गेले!',
+                                        hi: 'वार्ड मानचित्र पर स्थान सफलतापूर्वक जोड़ा गया!',
+                                      ),
+                                    ),
                                     backgroundColor: const Color(0xFF16A34A),
                                   ),
                                 );
@@ -349,7 +443,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final displayed = _filteredPoints;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -370,7 +464,12 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -381,12 +480,17 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Ward Map',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Ward Map',
+                  mr: 'प्रभाग नकाशा',
+                  hi: 'वार्ड मानचित्र',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -394,10 +498,15 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                 ),
               ),
               Text(
-                'Boundaries, booths & civil works',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Boundaries, booths & civil works',
+                  mr: 'प्रभाग सीमा, मतदान केंद्रे व विकासकामे',
+                  hi: 'वार्ड सीमाएं, मतदान केंद्र व नागरिक कार्य',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -438,7 +547,12 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                                         onChanged: (_) => setState(() {}),
                                         style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
                                         decoration: InputDecoration(
-                                          hintText: isMr ? 'केंद्र, विकासकाम किंवा पत्ता शोधा...' : 'Search booth, project, landmark...',
+                                          hintText: AppTranslations.pick(
+                                            lang,
+                                            en: 'Search booth, project, landmark...',
+                                            mr: 'केंद्र, विकासकाम किंवा पत्ता शोधा...',
+                                            hi: 'केंद्र, कार्य या पता खोजें...',
+                                          ),
                                           hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                                           border: InputBorder.none,
                                           isDense: true,
@@ -470,8 +584,8 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                               padding: const EdgeInsets.all(3),
                               child: Row(
                                 children: [
-                                  _buildViewModeBtn('map', Icons.map_rounded, isMr ? 'नकाशा' : 'Map'),
-                                  _buildViewModeBtn('list', Icons.format_list_bulleted_rounded, isMr ? 'यादी' : 'List'),
+                                  _buildViewModeBtn('map', Icons.map_rounded, AppTranslations.pick(lang, en: 'Map', mr: 'नकाशा', hi: 'मानचित्र')),
+                                  _buildViewModeBtn('list', Icons.format_list_bulleted_rounded, AppTranslations.pick(lang, en: 'List', mr: 'यादी', hi: 'सूची')),
                                 ],
                               ),
                             ),
@@ -492,11 +606,12 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                             ),
                             const SizedBox(width: 6),
                             AppPdfButton.icon(
-                              tooltip: isMr ? 'अहवाल डाउनलोड करा' : 'Download Report',
+                              tooltip: AppTranslations.getDownloadReport(lang),
                               onPressed: () {
                                 WardMapReportGenerator.generateAndPrintWardMapReport(
                                   points: displayed,
                                   categoryFilter: _activeCategory,
+                                  lang: lang,
                                 );
                               },
                             ),
@@ -516,7 +631,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                               final cat = _categories[idx];
                               final id = cat['id']!;
                               final isSel = _activeCategory == id;
-                              final label = isMr ? cat['labelMr']! : cat['labelEn']!;
+                              final label = lang == 'mr' ? cat['labelMr']! : (lang == 'hi' ? (cat['labelHi'] ?? cat['labelEn']!) : cat['labelEn']!);
 
                               return GestureDetector(
                                 onTap: () => setState(() => _activeCategory = id),
@@ -554,8 +669,8 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                   // 2) MAIN VIEW (Interactive Map or Structured List)
                   Expanded(
                     child: _viewMode == 'map'
-                        ? _buildInteractiveMapView(displayed, isMr)
-                        : _buildListView(displayed, isMr),
+                        ? _buildInteractiveMapView(displayed, lang)
+                        : _buildListView(displayed, lang),
                   ),
                 ],
               ),
@@ -566,7 +681,12 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
           onPressed: _showAddPointModal,
           icon: const Icon(Icons.add_location_alt_rounded, size: 20),
           label: Text(
-            isMr ? 'ठिकाण जोडा' : 'Tag Spot',
+            AppTranslations.pick(
+              lang,
+              en: 'Tag Spot',
+              mr: 'ठिकाण जोडा',
+              hi: 'स्थान जोड़ें',
+            ),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -606,7 +726,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
   // -------------------------------------------------------------
   // INTERACTIVE GIS MAP VIEW
   // -------------------------------------------------------------
-  Widget _buildInteractiveMapView(List<WardMapPointModel> displayed, bool isMr) {
+  Widget _buildInteractiveMapView(List<WardMapPointModel> displayed, String lang) {
     const mapW = 600.0;
     const mapH = 920.0;
 
@@ -653,18 +773,31 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Text(
-                            'Ward No. 12 (प्रभाग १२)',
-                            style: TextStyle(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Ward No. 12',
+                              mr: 'प्रभाग क्र. १२',
+                              hi: 'वार्ड क्र. १२',
+                            ),
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF0F172A),
                             ),
                           ),
                           Text(
-                            'Navi Peth - Parvati | 42,560 Voters',
-                            style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                            AppTranslations.formatDigits(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Navi Peth - Parvati | 42,560 Voters',
+                                mr: 'नवी पेठ - पर्वती | ४२,५६० मतदार',
+                                hi: 'नवी पेठ - पर्वती | ४२,५६० मतदाता',
+                              ),
+                              lang,
+                            ),
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),
@@ -718,8 +851,9 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                                   ),
                                 ],
                               ),
-                              child: Text(
+                              child: AppTranslatedText(
                                 pt.title.split('(').first.trim(),
+                                targetLanguage: lang,
                                 style: TextStyle(
                                   fontSize: isSel ? 9.5 : 8.5,
                                   fontWeight: FontWeight.bold,
@@ -747,25 +881,45 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
             children: [
               _buildFloatingIconBtn(
                 icon: _isSatelliteMode ? Icons.map_rounded : Icons.satellite_alt_rounded,
-                tooltip: 'Toggle Hybrid / Satellite',
+                tooltip: AppTranslations.pick(
+                  lang,
+                  en: 'Toggle Hybrid / Satellite',
+                  mr: 'उपग्रह / नकाशा बदला',
+                  hi: 'सैटेलाइट / मानचित्र बदलें',
+                ),
                 onTap: () => setState(() => _isSatelliteMode = !_isSatelliteMode),
               ),
               const SizedBox(height: 8),
               _buildFloatingIconBtn(
                 icon: Icons.add_rounded,
-                tooltip: 'Zoom In',
+                tooltip: AppTranslations.pick(
+                  lang,
+                  en: 'Zoom In',
+                  mr: 'मोठे करा',
+                  hi: 'ज़ूम इन',
+                ),
                 onTap: _zoomIn,
               ),
               const SizedBox(height: 8),
               _buildFloatingIconBtn(
                 icon: Icons.remove_rounded,
-                tooltip: 'Zoom Out',
+                tooltip: AppTranslations.pick(
+                  lang,
+                  en: 'Zoom Out',
+                  mr: 'लहान करा',
+                  hi: 'ज़ूम आउट',
+                ),
                 onTap: _zoomOut,
               ),
               const SizedBox(height: 8),
               _buildFloatingIconBtn(
                 icon: Icons.center_focus_strong_rounded,
-                tooltip: 'Reset Centering',
+                tooltip: AppTranslations.pick(
+                  lang,
+                  en: 'Reset Centering',
+                  mr: 'मध्यवर्ती करा',
+                  hi: 'केंद्र रीसेट करें',
+                ),
                 onTap: _resetMapZoom,
               ),
             ],
@@ -778,7 +932,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
             left: 14,
             right: 14,
             bottom: 14,
-            child: _buildGoogleMapsPlaceCard(_selectedPoint!, isMr),
+            child: _buildGoogleMapsPlaceCard(_selectedPoint!, lang),
           ),
       ],
     );
@@ -789,31 +943,34 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
     required String tooltip,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFCBD5E1), width: 1.1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, size: 20, color: const Color(0xFF334155)),
         ),
-        child: Icon(icon, size: 20, color: const Color(0xFF334155)),
       ),
     );
   }
 
   // Bottom Place Card UI matching lines 330-405 of WardMap.tsx
-  Widget _buildGoogleMapsPlaceCard(WardMapPointModel point, bool isMr) {
+  Widget _buildGoogleMapsPlaceCard(WardMapPointModel point, String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -858,7 +1015,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        point.categoryDisplay.split('/').first.trim().toUpperCase(),
+                        point.categoryDisplayFor(lang).toUpperCase(),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
@@ -867,8 +1024,9 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    AppTranslatedText(
                       point.title,
+                      targetLanguage: lang,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -897,8 +1055,9 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
               const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF0284C7)),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(
+                child: AppTranslatedText(
                   point.address,
+                  targetLanguage: lang,
                   style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
                 ),
               ),
@@ -908,8 +1067,9 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
           const SizedBox(height: 6),
 
           // Description snippet
-          Text(
+          AppTranslatedText(
             point.description,
+            targetLanguage: lang,
             style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.35),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -931,7 +1091,15 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                   ),
                   onPressed: () => _openDirections(point),
                   icon: const Icon(Icons.navigation_rounded, size: 16),
-                  label: Text(isMr ? 'दिशा / मार्ग' : 'Directions', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  label: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Directions',
+                      mr: 'दिशा / मार्ग',
+                      hi: 'दिशा / मार्ग',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -945,7 +1113,15 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                   ),
                   onPressed: () => _copyAddress(point),
                   icon: const Icon(Icons.share_outlined, size: 16),
-                  label: Text(isMr ? 'पत्ता शेअर करा' : 'Copy Address', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  label: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Copy Address',
+                      mr: 'पत्ता शेअर करा',
+                      hi: 'पता कॉपी करें',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -958,7 +1134,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
   // -------------------------------------------------------------
   // STRUCTURED LIST VIEW
   // -------------------------------------------------------------
-  Widget _buildListView(List<WardMapPointModel> displayed, bool isMr) {
+  Widget _buildListView(List<WardMapPointModel> displayed, String lang) {
     if (displayed.isEmpty) {
       return Center(
         child: Column(
@@ -967,7 +1143,12 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
             const Icon(Icons.map_outlined, size: 54, color: Color(0xFF94A3B8)),
             const SizedBox(height: 12),
             Text(
-              isMr ? 'कोणतेही ठिकाण आढळले नाही' : 'No ward locations match your filter',
+              AppTranslations.pick(
+                lang,
+                en: 'No ward locations match your filter',
+                mr: 'कोणतेही ठिकाण आढळले नाही',
+                hi: 'आपके फ़िल्टर से कोई स्थान मेल नहीं खाता',
+              ),
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
             ),
           ],
@@ -1023,13 +1204,14 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            pt.categoryDisplay,
+                            pt.categoryDisplayFor(lang),
                             style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: pt.color),
                           ),
                         ),
                         const SizedBox(height: 5),
-                        Text(
+                        AppTranslatedText(
                           pt.title,
+                          targetLanguage: lang,
                           style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                       ],
@@ -1044,16 +1226,18 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                   const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF0284C7)),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
+                    child: AppTranslatedText(
                       pt.address,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
-              Text(
+              AppTranslatedText(
                 pt.description,
+                targetLanguage: lang,
                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.35),
               ),
               const SizedBox(height: 12),
@@ -1063,7 +1247,7 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'GPS: ${pt.latitude.toStringAsFixed(4)}, ${pt.longitude.toStringAsFixed(4)}',
+                    'GPS: ${AppTranslations.formatDigits('${pt.latitude.toStringAsFixed(4)}, ${pt.longitude.toStringAsFixed(4)}', lang)}',
                     style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                   ),
                   Row(
@@ -1079,7 +1263,10 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                         ),
                         onPressed: () => _copyAddress(pt),
                         icon: const Icon(Icons.share_outlined, size: 14),
-                        label: Text(isMr ? 'कॉपी' : 'Copy', style: const TextStyle(fontSize: 12)),
+                        label: Text(
+                          AppTranslations.pick(lang, en: 'Copy', mr: 'कॉपी', hi: 'कॉपी'),
+                          style: const TextStyle(fontSize: 12),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
@@ -1094,7 +1281,10 @@ class _WardMapScreenState extends ConsumerState<WardMapScreen> {
                         ),
                         onPressed: () => _openDirections(pt),
                         icon: const Icon(Icons.navigation_rounded, size: 14),
-                        label: Text(isMr ? 'मार्ग' : 'Navigate', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        label: Text(
+                          AppTranslations.pick(lang, en: 'Navigate', mr: 'मार्ग', hi: 'मार्ग'),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),

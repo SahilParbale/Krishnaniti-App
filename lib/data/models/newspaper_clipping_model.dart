@@ -45,6 +45,27 @@ class NewspaperClippingModel {
   String get sentimentLabelEnglish =>
       isPositive ? 'Positive News' : 'Negative News';
 
+  String get sentimentLabelHindi =>
+      isPositive ? 'सकारात्मक समाचार' : 'नकारात्मक समाचार';
+
+  String sentimentLabel(String lang) {
+    if (lang == 'mr') return sentimentLabelMarathi;
+    if (lang == 'hi') return sentimentLabelHindi;
+    return sentimentLabelEnglish;
+  }
+
+  String titleFor(String lang) {
+    if (lang == 'mr' && titleMarathi.trim().isNotEmpty) return titleMarathi;
+    return title.trim().isNotEmpty ? title : titleMarathi;
+  }
+
+  String descriptionFor(String lang) {
+    if (lang == 'mr' && descriptionMarathi.trim().isNotEmpty) {
+      return descriptionMarathi;
+    }
+    return description.trim().isNotEmpty ? description : descriptionMarathi;
+  }
+
   Color get newspaperBrandColor {
     switch (newspaper.toLowerCase()) {
       case 'sakal':

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
 import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/data/models/complaint_model.dart';
@@ -84,7 +83,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   List<String> get _uniqueDates {
     final dates = <String>{};
     for (final c in _problems) {
-      dates.add(DateFormat('MMM d, yyyy').format(c.createdAt));
+      dates.add(AppTranslations.formatDate(c.createdAt, 'en', pattern: 'yyyy-MM-dd'));
     }
     final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
     return ['All', ...sorted];
@@ -101,16 +100,18 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
         if (!matches) return false;
       }
       if (_selectedDate != 'All') {
-        final formattedDate = DateFormat('MMM d, yyyy').format(c.createdAt);
-        if (!formattedDate.toLowerCase().contains(_selectedDate.toLowerCase())) {
+        final dateKey = AppTranslations.formatDate(c.createdAt, 'en', pattern: 'yyyy-MM-dd');
+        if (dateKey != _selectedDate) {
           return false;
         }
       }
       if (_searchQuery.trim().isNotEmpty) {
-        final q = _searchQuery.toLowerCase().trim();
-        final matchTitle = c.title.toLowerCase().contains(q);
-        final matchDesc = c.description.toLowerCase().contains(q);
-        if (!matchTitle && !matchDesc) return false;
+        final q = AppTranslations.normalizeAsciiDigits(_searchQuery).toLowerCase().trim();
+        final matchTitle = AppTranslations.normalizeAsciiDigits(c.title).toLowerCase().contains(q);
+        final matchDesc = AppTranslations.normalizeAsciiDigits(c.description).toLowerCase().contains(q);
+        final matchArea = AppTranslations.normalizeAsciiDigits(c.area ?? '').toLowerCase().contains(q);
+        final matchLoc = AppTranslations.normalizeAsciiDigits(c.location ?? '').toLowerCase().contains(q);
+        if (!matchTitle && !matchDesc && !matchArea && !matchLoc) return false;
       }
       return true;
     }).toList();
@@ -198,7 +199,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                 onLoadMore: () {
                   setState(() => _displayedLimit += 20);
                 },
-                label: lang == 'mr' ? 'समस्या' : (lang == 'hi' ? 'समस्याएं' : 'problems'),
+                label: AppTranslations.pick(
+                  lang,
+                  en: 'problems',
+                  mr: 'समस्या',
+                  hi: 'समस्याएं',
+                ),
                 isMarathi: isMr,
               ),
           ],
@@ -240,9 +246,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             ),
             const SizedBox(height: 4),
             Text(
-              lang == 'mr'
-                  ? 'प्रभागातील रस्ते, पाणी व स्थानिक नागरी समस्यांचे व्यवस्थापन'
-                  : (lang == 'hi' ? 'वार्ड की सड़क, पानी और स्थानीय नागरिक समस्याओं का प्रबंधन' : 'Track self-identified and ward-level civic problems'),
+              AppTranslations.pick(
+                lang,
+                en: 'Track self-identified and ward-level civic problems',
+                mr: 'प्रभागातील रस्ते, पाणी व स्थानिक नागरी समस्यांचे व्यवस्थापन',
+                hi: 'वार्ड की सड़क, पानी और स्थानीय नागरिक समस्याओं का प्रबंधन',
+              ),
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ],
@@ -256,6 +265,9 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                 WardProblemsReportGenerator.generateAndPrintReport(
                   context: context,
                   problems: _filteredProblems,
+                  areaFilter: _selectedArea,
+                  statusFilter: _filterStatus,
+                  lang: lang,
                 );
               },
               icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
@@ -287,7 +299,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                   const Icon(Icons.add, size: 16, color: Colors.white), // Plus w-4 h-4
                   const SizedBox(width: 8), // gap-2
                   Text(
-                    lang == 'mr' ? 'नवीन समस्या' : (lang == 'hi' ? 'नई समस्या' : 'New Problem'),
+                    AppTranslations.pick(
+                      lang,
+                      en: 'New Problem',
+                      mr: 'नवीन समस्या',
+                      hi: 'नई समस्या',
+                    ),
                     style: const TextStyle(
                       fontSize: 14, // text-sm
                       fontWeight: FontWeight.w600, // font-semibold
@@ -334,9 +351,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                     _displayedLimit = 20;
                   }),
                   decoration: InputDecoration(
-                    hintText: lang == 'mr'
-                        ? 'समस्या, वर्णन शोधा...'
-                        : (lang == 'hi' ? 'समस्या, विवरण खोजें...' : 'Search problems by title, description...'),
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Search problems by title, description...',
+                      mr: 'समस्या, वर्णन शोधा...',
+                      hi: 'समस्या, विवरण खोजें...',
+                    ),
                     prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -357,7 +377,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                       value: area,
                       child: Text(
                         area == 'All'
-                            ? (lang == 'mr' ? 'सर्व भाग' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
+                            ? AppTranslations.pick(lang, en: 'All Areas', mr: 'सर्व भाग', hi: 'सभी क्षेत्र')
                             : AppTranslations.getAreaName(area, lang),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -383,12 +403,13 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                   backgroundColor: const Color(0xFFF8FAFC),
                   borderColor: const Color(0xFFE2E8F0),
                   items: _uniqueDates.map((date) {
+                    final display = date == 'All'
+                        ? AppTranslations.pick(lang, en: 'All Dates', mr: 'सर्व तारखा', hi: 'सभी तिथियां')
+                        : AppTranslations.formatDate(DateTime.parse(date), lang, pattern: 'MMM d, yyyy');
                     return DropdownMenuItem(
                       value: date,
                       child: Text(
-                        date == 'All'
-                            ? (lang == 'mr' ? 'सर्व तारखा' : (lang == 'hi' ? 'सभी तिथियां' : 'All Dates'))
-                            : AppTranslations.formatDigits(date, lang),
+                        display,
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -434,14 +455,14 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                   children: [
                     _buildViewToggleButton(
                       icon: Icons.grid_view_rounded,
-                      label: lang == 'mr' ? 'ग्रिड' : (lang == 'hi' ? 'ग्रिड' : 'Grid'),
+                      label: AppTranslations.pick(lang, en: 'Grid', mr: 'ग्रिड', hi: 'ग्रिड'),
                       isActive: _viewMode == 'grid',
                       onTap: () => setState(() => _viewMode = 'grid'),
                     ),
                     const SizedBox(width: 4),
                     _buildViewToggleButton(
                       icon: Icons.table_rows_rounded,
-                      label: lang == 'mr' ? 'तक्ता' : (lang == 'hi' ? 'तालिका' : 'Table'),
+                      label: AppTranslations.pick(lang, en: 'Table', mr: 'तक्ता', hi: 'तालिका'),
                       isActive: _viewMode == 'table',
                       onTap: () => setState(() => _viewMode = 'table'),
                     ),
@@ -540,7 +561,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
   }
 
   Widget _buildProblemCard(ComplaintModel problem, String lang) {
-    final dateStr = DateFormat('MMM d, yyyy').format(problem.createdAt);
+    final dateStr = AppTranslations.formatDate(problem.createdAt, lang, pattern: 'MMM d, yyyy');
 
     return InkWell(
       onTap: () => _openDetail(problem),
@@ -594,9 +615,16 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                   children: [
                     const Icon(Icons.person_outline_rounded, size: 12, color: Color(0xFF0284C7)),
                     const SizedBox(width: 4),
-                    Text(
-                      '${lang == "mr" ? "नियुक्त:" : (lang == "hi" ? "नियुक्त:" : "Assigned:")} ${problem.assignedStaffName}',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
+                    Flexible(
+                      child: AppTranslatedText(
+                        problem.assignedStaffName!,
+                        isName: true,
+                        targetLanguage: lang,
+                        prefix: '${AppTranslations.pick(lang, en: 'Assigned:', mr: 'नियुक्त:', hi: 'नियुक्त:')} ',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
+                      ),
                     ),
                   ],
                 ),
@@ -606,6 +634,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
 
             AppTranslatedText(
               problem.title,
+              targetLanguage: lang,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
@@ -614,6 +643,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             Expanded(
               child: AppTranslatedText(
                 problem.description,
+                targetLanguage: lang,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.35),
@@ -632,7 +662,7 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                     children: [
                       const Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 4),
-                      Text(AppTranslations.formatDigits(dateStr, lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      Text(dateStr, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                     ],
                   ),
                   if (problem.area != null || problem.location != null)
@@ -642,10 +672,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
                         const SizedBox(width: 4),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 120),
-                          child: Text(
+                          child: AppTranslatedText(
                             AppTranslations.getAreaName(problem.area ?? problem.location ?? '', lang),
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            targetLanguage: lang,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                         ),
                       ],
@@ -697,17 +729,41 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
             DataColumn(label: Text(AppTranslations.getReportColumn('area', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('title', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
             DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
-            DataColumn(label: Text(lang == 'mr' ? 'नियुक्त कर्मचारी' : (lang == 'hi' ? 'नियुक्त कर्मचारी' : 'Assigned Staff'), style: const TextStyle(fontWeight: FontWeight.w700))),
+            DataColumn(
+              label: Text(
+                AppTranslations.pick(lang, en: 'Assigned Staff', mr: 'नियुक्त कर्मचारी', hi: 'नियुक्त कर्मचारी'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
             DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.w700))),
           ],
           rows: items.map((p) {
             return DataRow(
               cells: [
-                DataCell(Text(AppTranslations.getAreaName(p.area ?? p.location ?? '-', lang))),
-                DataCell(AppTranslatedText(p.title, style: const TextStyle(fontWeight: FontWeight.w600))),
+                DataCell(
+                  AppTranslatedText(
+                    AppTranslations.getAreaName(p.area ?? p.location ?? '-', lang),
+                    targetLanguage: lang,
+                  ),
+                ),
+                DataCell(
+                  AppTranslatedText(
+                    p.title,
+                    targetLanguage: lang,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
                 DataCell(_buildStatusBadge(p.status, lang)),
-                DataCell(Text(p.assignedStaffName ?? '-')),
-                DataCell(Text(AppTranslations.formatDigits(DateFormat('MMM d, yyyy').format(p.createdAt), lang))),
+                DataCell(
+                  p.assignedStaffName != null && p.assignedStaffName!.trim().isNotEmpty
+                      ? AppTranslatedText(
+                          p.assignedStaffName!,
+                          isName: true,
+                          targetLanguage: lang,
+                        )
+                      : const Text('-'),
+                ),
+                DataCell(Text(AppTranslations.formatDate(p.createdAt, lang, pattern: 'MMM d, yyyy'))),
               ],
             );
           }).toList(),
@@ -730,9 +786,12 @@ class _DesktopWardProblemsViewState extends ConsumerState<DesktopWardProblemsVie
           const Icon(Icons.inbox_outlined, size: 40, color: Color(0xFF94A3B8)),
           const SizedBox(height: 10),
           Text(
-            lang == 'mr'
-                ? 'कोणतीही प्रभागातील समस्या नोंदवलेली नाही'
-                : (lang == 'hi' ? 'कोई वार्ड समस्या अभी तक दर्ज नहीं की गई' : 'No ward problems recorded yet'),
+            AppTranslations.pick(
+              lang,
+              en: 'No ward problems recorded yet',
+              mr: 'कोणतीही प्रभागातील समस्या नोंदवलेली नाही',
+              hi: 'कोई वार्ड समस्या अभी तक दर्ज नहीं की गई',
+            ),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
           ),
         ],

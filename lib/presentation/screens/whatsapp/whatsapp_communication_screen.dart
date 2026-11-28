@@ -1,12 +1,14 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/whatsapp_broadcast_model.dart';
 import '../../../data/models/voter_model.dart';
 import '../../../data/repositories/whatsapp_repository.dart';
 import 'whatsapp_history_report_generator.dart';
 import '../../navigation/app_drawer.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pdf_button.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_load_more_footer.dart';
@@ -94,12 +96,12 @@ class _WhatsAppCommunicationScreenState
     final repo = ref.read(whatsAppRepoProvider);
     try {
       final list = await repo.getVotersWithMobile(
-        name: _nameController.text.trim(),
-        address: _addressController.text.trim(),
-        houseNo: _houseNoController.text.trim(),
+        name: AppTranslations.normalizeAsciiDigits(_nameController.text.trim()),
+        address: AppTranslations.normalizeAsciiDigits(_addressController.text.trim()),
+        houseNo: AppTranslations.normalizeAsciiDigits(_houseNoController.text.trim()),
         ageRange: _ageFilter,
         gender: _genderFilter,
-        caste: _casteController.text.trim(),
+        caste: AppTranslations.normalizeAsciiDigits(_casteController.text.trim()),
         booth: _boothFilter,
       );
       if (mounted) {
@@ -183,43 +185,79 @@ class _WhatsAppCommunicationScreenState
 
   Future<void> _openDirectWhatsApp(VoterModel voter) async {
     if (voter.mobile == null || voter.mobile!.isEmpty) return;
+    final lang = ref.read(appLanguageProvider);
     final repo = ref.read(whatsAppRepoProvider);
-    final greetText = 'Greetings ${voter.displayName}! Contacting you from Ward 12 Corporator Office.';
-    await repo.launchDirectWhatsApp(mobile: voter.mobile!, text: greetText);
+    final voterName = await DynamicTranslationService.translateOrRaw(
+      voter.displayNameFor(lang),
+      lang,
+      isName: true,
+    );
+    final greetText = AppTranslations.pick(
+      lang,
+      en: 'Greetings $voterName! Contacting you from Ward 12 Corporator Office.',
+      mr: 'नमस्कार $voterName! प्रभाग १२ नगरसेवक कार्यालयातून संपर्क साधत आहोत.',
+      hi: 'नमस्कार $voterName! वार्ड १२ नगरसेवक कार्यालय से संपर्क कर रहे हैं।',
+    );
+    await repo.launchDirectWhatsApp(
+      mobile: AppTranslations.normalizeAsciiDigits(voter.mobile!),
+      text: greetText,
+    );
   }
 
   void _showConfirmationDialog() {
+    final lang = ref.read(appLanguageProvider);
     if (_selectedVoterIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one voter.'),
-          backgroundColor: Color(0xFFDC2626),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please select at least one voter.',
+              mr: 'कृपया किमान एक मतदार निवडा.',
+              hi: 'कृपया कम से कम एक मतदाता चुनें।',
+            ),
+          ),
+          backgroundColor: const Color(0xFFDC2626),
         ),
       );
       return;
     }
     if (_messageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter message text.'),
-          backgroundColor: Color(0xFFDC2626),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Please enter message text.',
+              mr: 'कृपया संदेशाचा मजकूर प्रविष्ट करा.',
+              hi: 'कृपया संदेश लिखें।',
+            ),
+          ),
+          backgroundColor: const Color(0xFFDC2626),
         ),
       );
       return;
     }
+
+    final selectedCountStr = AppTranslations.formatDigits(_selectedVoterIds.length, lang);
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.send_rounded, color: _kWaGreen),
-            SizedBox(width: 8),
+          children: [
+            const Icon(Icons.send_rounded, color: _kWaGreen),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Confirm WhatsApp Broadcast',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                AppTranslations.pick(
+                  lang,
+                  en: 'Confirm WhatsApp Broadcast',
+                  mr: 'व्हॉट्सॲप प्रसारणाची खात्री करा',
+                  hi: 'व्हाट्सएप प्रसारण की पुष्टि करें',
+                ),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -228,9 +266,14 @@ class _WhatsAppCommunicationScreenState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'I confirm that I have reviewed the recipient list and message content and wish to send this official WhatsApp broadcast.',
-              style: TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'I confirm that I have reviewed the recipient list and message content and wish to send this official WhatsApp broadcast.',
+                mr: 'मी खात्री करतो की मी लाभार्थी यादी आणि संदेश तपासला आहे आणि हे अधिकृत व्हॉट्सॲप प्रसारण पाठवू इच्छितो.',
+                hi: 'मैं पुष्टि करता हूँ कि मैंने प्राप्तकर्ता सूची और संदेश सामग्री की समीक्षा कर ली है और यह आधिकारिक व्हाट्सएप प्रसारण भेजना चाहता हूँ।',
+              ),
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
             ),
             const SizedBox(height: 12),
             Container(
@@ -246,9 +289,22 @@ class _WhatsAppCommunicationScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Selected Voters:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                       Text(
-                        '${_selectedVoterIds.length} Voters',
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Selected Voters:',
+                          mr: 'निवडलेले मतदार:',
+                          hi: 'चयनित मतदाता:',
+                        ),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      ),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: '$selectedCountStr Voters',
+                          mr: '$selectedCountStr मतदार',
+                          hi: '$selectedCountStr मतदाता',
+                        ),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _kWaDark),
                       ),
                     ],
@@ -256,16 +312,32 @@ class _WhatsAppCommunicationScreenState
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text('Channel:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    children: [
                       Text(
-                        'Official WhatsApp (wa.me)',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+                        AppTranslations.pick(lang, en: 'Channel:', mr: 'माध्यम:', hi: 'माध्यम:'),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      ),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Official WhatsApp (wa.me)',
+                          mr: 'अधिकृत व्हॉट्सॲप (wa.me)',
+                          hi: 'आधिकारिक व्हाट्सएप (wa.me)',
+                        ),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
                       ),
                     ],
                   ),
                   const Divider(height: 14, color: Color(0xFFE2E8F0)),
-                  const Text('Message Preview:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Message Preview:',
+                      mr: 'संदेश पूर्वावलोकन:',
+                      hi: 'संदेश पूर्वावलोकन:',
+                    ),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                  ),
                   const SizedBox(height: 4),
                   Container(
                     width: double.infinity,
@@ -275,8 +347,9 @@ class _WhatsAppCommunicationScreenState
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: _kWaLightBorder),
                     ),
-                    child: Text(
+                    child: AppTranslatedText(
                       _messageController.text.trim(),
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF1E293B)),
                       maxLines: 5,
                       overflow: TextOverflow.ellipsis,
@@ -290,7 +363,10 @@ class _WhatsAppCommunicationScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
@@ -303,7 +379,15 @@ class _WhatsAppCommunicationScreenState
               _executeSendWhatsApp();
             },
             icon: const Icon(Icons.send_rounded, size: 16),
-            label: const Text('Confirm & Send', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Confirm & Send',
+                mr: 'खात्री करा व पाठवा',
+                hi: 'पुष्टि करें व भेजें',
+              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -312,14 +396,17 @@ class _WhatsAppCommunicationScreenState
 
   Future<void> _executeSendWhatsApp() async {
     setState(() => _isSending = true);
+    final lang = ref.read(appLanguageProvider);
     final repo = ref.read(whatsAppRepoProvider);
     final messenger = ScaffoldMessenger.of(context);
 
     try {
       final selectedVotersList = _voters.where((v) => _selectedVoterIds.contains(v.id)).toList();
+      final now = DateTime.now();
+      final timePart = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
       final title = _selectedTemplate != null
           ? _selectedTemplate!.title
-          : 'WhatsApp Broadcast ${DateFormat('dd MMM HH:mm').format(DateTime.now())}';
+          : 'WhatsApp Broadcast ${AppTranslations.formatDate(now, 'en', pattern: 'dd MMM')} $timePart';
 
       final broadcast = await repo.sendBulkWhatsApp(
         title: title,
@@ -339,9 +426,17 @@ class _WhatsAppCommunicationScreenState
           _broadcastHistory.insert(0, broadcast);
         });
 
+        final recStr = AppTranslations.formatDigits(broadcast.recipients, lang);
         messenger.showSnackBar(
           SnackBar(
-            content: Text('WhatsApp message queued for ${broadcast.recipients} voters! 🚀'),
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'WhatsApp message queued for $recStr voters! 🚀',
+                mr: '$recStr मतदारांसाठी व्हॉट्सॲप संदेश रांगेत पाठवला आहे! 🚀',
+                hi: '$recStr मतदाताओं के लिए व्हाट्सएप संदेश कतार में भेजा गया! 🚀',
+              ),
+            ),
             backgroundColor: _kWaDark,
             duration: const Duration(seconds: 3),
           ),
@@ -353,9 +448,16 @@ class _WhatsAppCommunicationScreenState
       if (mounted) {
         setState(() => _isSending = false);
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Error sending WhatsApp message. Please try again.'),
-            backgroundColor: Color(0xFFDC2626),
+          SnackBar(
+            content: Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Error sending WhatsApp message. Please try again.',
+                mr: 'व्हॉट्सॲप संदेश पाठवताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.',
+                hi: 'व्हाट्सएप संदेश भेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।',
+              ),
+            ),
+            backgroundColor: const Color(0xFFDC2626),
           ),
         );
       }
@@ -363,20 +465,35 @@ class _WhatsAppCommunicationScreenState
   }
 
   Future<void> _generatePdfReport() async {
+    final lang = ref.read(appLanguageProvider);
     if (_broadcastHistory.isEmpty) await _loadHistory();
-    await WhatsAppHistoryReportGenerator.generateAndPrintReport(broadcasts: _broadcastHistory);
+    await WhatsAppHistoryReportGenerator.generateAndPrintReport(
+      broadcasts: _broadcastHistory,
+      lang: lang,
+    );
   }
 
   void _showHelpTutorialDialog() {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.help_outline_rounded, color: _kWaDark),
-            SizedBox(width: 8),
-            Text('WhatsApp Communication Guide', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          children: [
+            const Icon(Icons.help_outline_rounded, color: _kWaDark),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'WhatsApp Communication Guide',
+                  mr: 'व्हॉट्सॲप जनसंवाद मार्गदर्शिका',
+                  hi: 'व्हाट्सएप संचार गाइड',
+                ),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
         content: SingleChildScrollView(
@@ -385,29 +502,79 @@ class _WhatsAppCommunicationScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTutorialStep(
-                step: '1',
-                title: 'Select Voters',
-                desc: 'Filter and select voters from your directory to prepare targeted WhatsApp communications.',
+                step: AppTranslations.formatDigits('1', lang),
+                title: AppTranslations.pick(
+                  lang,
+                  en: 'Select Voters',
+                  mr: 'मतदार निवडा',
+                  hi: 'मतदाता चुनें',
+                ),
+                desc: AppTranslations.pick(
+                  lang,
+                  en: 'Filter and select voters from your directory to prepare targeted WhatsApp communications.',
+                  mr: 'लक्ष्यित व्हॉट्सॲप संदेशासाठी आपल्या यादीतून मतदार शोधा व निवडा.',
+                  hi: 'लक्षित व्हाट्सएप संदेश भेजने के लिए अपनी सूची से मतदाताओं को फ़िल्टर करें और चुनें।',
+                ),
               ),
               _buildTutorialStep(
-                step: '2',
-                title: 'Filters & Voter Search',
-                desc: 'Search and filter voters by name, area, house no., age, gender, or community.',
+                step: AppTranslations.formatDigits('2', lang),
+                title: AppTranslations.pick(
+                  lang,
+                  en: 'Filters & Voter Search',
+                  mr: 'फिल्टर व मतदार शोध',
+                  hi: 'फ़िल्टर और मतदाता खोज',
+                ),
+                desc: AppTranslations.pick(
+                  lang,
+                  en: 'Search and filter voters by name, area, house no., age, gender, or community.',
+                  mr: 'नाव, परिसर, घर क्र., वय, लिंग किंवा समुदायानुसार मतदार शोधा व फिल्टर करा.',
+                  hi: 'नाम, क्षेत्र, मकान नं., आयु, लिंग या समुदाय के अनुसार मतदाताओं को खोजें और फ़िल्टर करें।',
+                ),
               ),
               _buildTutorialStep(
-                step: '3',
-                title: 'Quick Templates or Custom Text',
-                desc: 'Select pre-approved templates for water notices, govt schemes, or festivals in 1-tap, or type your own text.',
+                step: AppTranslations.formatDigits('3', lang),
+                title: AppTranslations.pick(
+                  lang,
+                  en: 'Quick Templates or Custom Text',
+                  mr: 'त्वरित टेम्प्लेट्स किंवा स्वतःचा मजकूर',
+                  hi: 'त्वरित टेम्पलेट्स या कस्टम संदेश',
+                ),
+                desc: AppTranslations.pick(
+                  lang,
+                  en: 'Select pre-approved templates for water notices, govt schemes, or festivals in 1-tap, or type your own text.',
+                  mr: 'पाणी सूचना, शासकीय योजना किंवा सणांसाठी पूर्व-मंजूर टेम्प्लेट्स १-टॅपमध्ये निवडा किंवा स्वतःचा संदेश टाइप करा.',
+                  hi: 'पानी की सूचना, सरकारी योजनाओं या त्योहारों के लिए पूर्व-अनुमोदित टेम्पलेट १-टैप में चुनें या अपना संदेश लिखें।',
+                ),
               ),
               _buildTutorialStep(
-                step: '4',
-                title: '1-Tap Personal WhatsApp',
-                desc: 'Tap the green WhatsApp icon on any voter card to open a direct 1-on-1 chat in the official WhatsApp app.',
+                step: AppTranslations.formatDigits('4', lang),
+                title: AppTranslations.pick(
+                  lang,
+                  en: '1-Tap Personal WhatsApp',
+                  mr: '१-टॅप वैयक्तिक व्हॉट्सॲप',
+                  hi: '१-टैप व्यक्तिगत व्हाट्सएप',
+                ),
+                desc: AppTranslations.pick(
+                  lang,
+                  en: 'Tap the green WhatsApp icon on any voter card to open a direct 1-on-1 chat in the official WhatsApp app.',
+                  mr: 'अधिकृत व्हॉट्सॲप ॲपमध्ये थेट संवादासाठी मतदार कार्डवरील हिरव्या व्हॉट्सॲप चिन्हावर टॅप करा.',
+                  hi: 'आधिकारिक व्हाट्सएप ऐप में सीधी चैट खोलने के लिए किसी भी मतदाता कार्ड पर हरे व्हाट्सएप आइकन पर टैप करें।',
+                ),
               ),
               _buildTutorialStep(
-                step: '5',
-                title: 'History & Official Reports',
-                desc: 'Track delivery metrics across all sent broadcasts and download landscape A4 PDF reports for official records.',
+                step: AppTranslations.formatDigits('5', lang),
+                title: AppTranslations.pick(
+                  lang,
+                  en: 'History & Official Reports',
+                  mr: 'इतिहास व अधिकृत अहवाल',
+                  hi: 'इतिहास एवं आधिकारिक रिपोर्ट',
+                ),
+                desc: AppTranslations.pick(
+                  lang,
+                  en: 'Track delivery metrics across all sent broadcasts and download landscape A4 PDF reports for official records.',
+                  mr: 'पाठवलेल्या सर्व प्रसारणांची आकडेवारी पहा आणि अधिकृत नोंदीसाठी A4 PDF अहवाल डाउनलोड करा.',
+                  hi: 'सभी भेजे गए प्रसारणों के आंकड़े ट्रैक करें और आधिकारिक रिकॉर्ड के लिए A4 PDF रिपोर्ट डाउनलोड करें।',
+                ),
               ),
             ],
           ),
@@ -420,7 +587,10 @@ class _WhatsAppCommunicationScreenState
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Got it', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Got it', mr: 'समजले', hi: 'समझ गया'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -464,6 +634,8 @@ class _WhatsAppCommunicationScreenState
   // ─────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       drawer: const NagarsevakAppDrawer(),
@@ -473,25 +645,35 @@ class _WhatsAppCommunicationScreenState
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
         leading: Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(ctx).openDrawer();
-              },
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+            tooltip: AppTranslations.pick(
+              lang,
+              en: 'Open Menu Drawer',
+              mr: 'मेनू उघडा',
+              hi: 'मेनू खोलें',
             ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Scaffold.of(ctx).openDrawer();
+            },
           ),
+        ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Text(
-              'WhatsApp Message',
+              AppTranslations.pick(
+                lang,
+                en: 'WhatsApp Message',
+                mr: 'व्हॉट्सॲप संदेश',
+                hi: 'व्हाट्सएप संदेश',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -499,10 +681,15 @@ class _WhatsAppCommunicationScreenState
               ),
             ),
             Text(
-              'WhatsApp broadcasts & campaign reports',
+              AppTranslations.pick(
+                lang,
+                en: 'WhatsApp broadcasts & campaign reports',
+                mr: 'व्हॉट्सॲप प्रसारण व मोहीम अहवाल',
+                hi: 'व्हाट्सएप प्रसारण एवं अभियान रिपोर्ट',
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFFE0F2FE),
@@ -513,11 +700,11 @@ class _WhatsAppCommunicationScreenState
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: Colors.white),
-            tooltip: 'Guide',
+            tooltip: AppTranslations.pick(lang, en: 'Guide', mr: 'मार्गदर्शिका', hi: 'गाइड'),
             onPressed: _showHelpTutorialDialog,
           ),
         ],
-        ),
+      ),
       body: Column(
         children: [
           Container(
@@ -543,17 +730,22 @@ class _WhatsAppCommunicationScreenState
                       labelStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                       labelPadding: const EdgeInsets.symmetric(horizontal: 2),
                       dividerColor: Colors.transparent,
-                      tabs: const [
+                      tabs: [
                         Tab(
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.send_rounded, size: 13),
-                              SizedBox(width: 4),
+                              const Icon(Icons.send_rounded, size: 13),
+                              const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  'Send Message',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Send Message',
+                                    mr: 'संदेश पाठवा',
+                                    hi: 'संदेश भेजें',
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
@@ -566,11 +758,16 @@ class _WhatsAppCommunicationScreenState
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.history_rounded, size: 13),
-                              SizedBox(width: 4),
+                              const Icon(Icons.history_rounded, size: 13),
+                              const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  'History',
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'History',
+                                    mr: 'इतिहास',
+                                    hi: 'इतिहास',
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
@@ -584,8 +781,8 @@ class _WhatsAppCommunicationScreenState
                 ),
                 const SizedBox(width: 8),
                 AppPdfButton.outlined(
-                  label: 'Reports',
-                  tooltip: 'Reports',
+                  label: AppTranslations.pick(lang, en: 'Reports', mr: 'अहवाल', hi: 'रिपोर्ट'),
+                  tooltip: AppTranslations.getDownloadReport(lang),
                   onPressed: _generatePdfReport,
                 ),
               ],
@@ -595,23 +792,26 @@ class _WhatsAppCommunicationScreenState
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildSendTab(),
-                _buildHistoryTab(),
+                _buildSendTab(lang),
+                _buildHistoryTab(lang),
               ],
             ),
           ),
         ],
       ),
       bottomNavigationBar:
-          _tabController.index == 0 && _selectedVoterIds.isNotEmpty ? _buildStickySendBar() : null,
+          _tabController.index == 0 && _selectedVoterIds.isNotEmpty ? _buildStickySendBar(lang) : null,
     );
   }
 
   // ─────────────────────────────────────────────────────────────
   // Tab 1: Send WhatsApp
   // ─────────────────────────────────────────────────────────────
-  Widget _buildSendTab() {
+  Widget _buildSendTab(String lang) {
     final templates = ref.read(whatsAppRepoProvider).getTemplates();
+    final charCountStr = AppTranslations.formatDigits(_messageController.text.length, lang);
+    final totalVotersStr = AppTranslations.formatDigits(_voters.length, lang);
+    final selectedCountStr = AppTranslations.formatDigits(_selectedVoterIds.length, lang);
 
     return RefreshIndicator(
       onRefresh: _loadVoters,
@@ -623,12 +823,17 @@ class _WhatsAppCommunicationScreenState
           children: [
             // 1. Quick Templates Strip
             Row(
-              children: const [
-                Icon(Icons.auto_awesome_rounded, size: 15, color: _kWaGreen),
-                SizedBox(width: 5),
+              children: [
+                const Icon(Icons.auto_awesome_rounded, size: 15, color: _kWaGreen),
+                const SizedBox(width: 5),
                 Text(
-                  'Quick WhatsApp Templates',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Quick WhatsApp Templates',
+                    mr: 'त्वरित व्हॉट्सॲप टेम्प्लेट्स',
+                    hi: 'त्वरित व्हाट्सएप टेम्पलेट्स',
+                  ),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
               ],
             ),
@@ -659,8 +864,9 @@ class _WhatsAppCommunicationScreenState
                         children: [
                           Text(t.emoji, style: const TextStyle(fontSize: 13)),
                           const SizedBox(width: 5),
-                          Text(
+                          AppTranslatedText(
                             t.title,
+                            targetLanguage: lang,
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -692,13 +898,18 @@ class _WhatsAppCommunicationScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.edit_rounded, size: 14, color: _kWaGreen),
-                          SizedBox(width: 5),
+                          const Icon(Icons.edit_rounded, size: 14, color: _kWaGreen),
+                          const SizedBox(width: 5),
                           Text(
-                            'Compose Message *',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Compose Message *',
+                              mr: 'संदेश लिहा *',
+                              hi: 'संदेश लिखें *',
+                            ),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                         ],
                       ),
@@ -710,8 +921,9 @@ class _WhatsAppCommunicationScreenState
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: _kWaLightBorder),
                           ),
-                          child: Text(
+                          child: AppTranslatedText(
                             _selectedTemplate!.category,
+                            targetLanguage: lang,
                             style: const TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.bold,
@@ -735,12 +947,17 @@ class _WhatsAppCommunicationScreenState
                       maxLines: 5,
                       style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
                       onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
-                        hintText: 'Type your WhatsApp message here...\n*bold* _italic_ ~strikethrough~',
-                        hintStyle: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                      decoration: InputDecoration(
+                        hintText: AppTranslations.pick(
+                          lang,
+                          en: 'Type your WhatsApp message here...\n*bold* _italic_ ~strikethrough~',
+                          mr: 'तुमचा व्हॉट्सॲप संदेश येथे लिहा...\n*ठळक* _तिरके_ ~खोडलेले~',
+                          hi: 'अपना व्हाट्सएप संदेश यहाँ लिखें...\n*बोल्ड* _इटैलिक_ ~स्ट्राइकथ्रू~',
+                        ),
+                        hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         filled: true,
                         fillColor: Colors.transparent,
-                        contentPadding: EdgeInsets.all(10),
+                        contentPadding: const EdgeInsets.all(10),
                         border: InputBorder.none,
                       ),
                     ),
@@ -750,18 +967,34 @@ class _WhatsAppCommunicationScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.info_outline, size: 12, color: Color(0xFF64748B)),
-                          SizedBox(width: 4),
-                          Text(
-                            '*bold* _italic_ ~strikethrough~ - WA Formatting',
-                            style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, size: 12, color: Color(0xFF64748B)),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: '*bold* _italic_ ~strikethrough~ - WA Formatting',
+                                  mr: '*ठळक* _तिरके_ ~खोडलेले~ - WA फॉरमॅटिंग',
+                                  hi: '*बोल्ड* _इटैलिक_ ~स्ट्राइकथ्रू~ - WA फॉर्मेटिंग',
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
-                        '${_messageController.text.length} characters',
+                        AppTranslations.pick(
+                          lang,
+                          en: '$charCountStr characters',
+                          mr: '$charCountStr अक्षरे',
+                          hi: '$charCountStr अक्षर',
+                        ),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _kWaGreen),
                       ),
                     ],
@@ -786,9 +1019,14 @@ class _WhatsAppCommunicationScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Voter Filters & Search',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Voter Filters & Search',
+                          mr: 'मतदार फिल्टर आणि शोध',
+                          hi: 'मतदाता फ़िल्टर और खोज',
+                        ),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                       TextButton(
                         style: TextButton.styleFrom(
@@ -808,7 +1046,10 @@ class _WhatsAppCommunicationScreenState
                           });
                           _loadVoters();
                         },
-                        child: const Text('Reset', style: TextStyle(fontSize: 11, color: Color(0xFF0284C7))),
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Reset', mr: 'रीसेट करा', hi: 'रीसेट करें'),
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7)),
+                        ),
                       ),
                     ],
                   ),
@@ -824,7 +1065,12 @@ class _WhatsAppCommunicationScreenState
                             controller: _nameController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'Search name...',
+                              hintText: AppTranslations.pick(
+                                lang,
+                                en: 'Search name...',
+                                mr: 'नाव शोधा...',
+                                hi: 'नाम खोजें...',
+                              ),
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -845,7 +1091,12 @@ class _WhatsAppCommunicationScreenState
                             controller: _addressController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'Address / Area...',
+                              hintText: AppTranslations.pick(
+                                lang,
+                                en: 'Address / Area...',
+                                mr: 'पत्ता / परिसर...',
+                                hi: 'पता / क्षेत्र...',
+                              ),
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -873,7 +1124,12 @@ class _WhatsAppCommunicationScreenState
                             controller: _houseNoController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'House No...',
+                              hintText: AppTranslations.pick(
+                                lang,
+                                en: 'House No...',
+                                mr: 'घर क्र...',
+                                hi: 'मकान नं...',
+                              ),
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.home_outlined, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -894,7 +1150,12 @@ class _WhatsAppCommunicationScreenState
                             controller: _casteController,
                             style: const TextStyle(fontSize: 12.5),
                             decoration: InputDecoration(
-                              hintText: 'Community / Group...',
+                              hintText: AppTranslations.pick(
+                                lang,
+                                en: 'Community / Group...',
+                                mr: 'समुदाय / गट...',
+                                hi: 'समुदाय / वर्ग...',
+                              ),
                               hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.people_outline, size: 16, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -918,14 +1179,34 @@ class _WhatsAppCommunicationScreenState
                       // Age
                       Expanded(
                         child: _buildDropdownFilter(
-                          title: 'Filter by Age',
+                          title: AppTranslations.pick(
+                            lang,
+                            en: 'Filter by Age',
+                            mr: 'वयानुसार निवडा',
+                            hi: 'आयु के अनुसार चुनें',
+                          ),
                           value: _ageFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All Ages')),
-                            DropdownMenuItem(value: '18-25', child: Text('Age 18-25')),
-                            DropdownMenuItem(value: '26-40', child: Text('Age 26-40')),
-                            DropdownMenuItem(value: '41-60', child: Text('Age 41-60')),
-                            DropdownMenuItem(value: '60+', child: Text('Age 60+')),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'All',
+                              child: Text(AppTranslations.pick(lang, en: 'All Ages', mr: 'सर्व वयोगट', hi: 'सभी आयु वर्ग')),
+                            ),
+                            DropdownMenuItem(
+                              value: '18-25',
+                              child: Text(AppTranslations.pick(lang, en: 'Age 18-25', mr: 'वय १८-२५', hi: 'आयु १८-२५')),
+                            ),
+                            DropdownMenuItem(
+                              value: '26-40',
+                              child: Text(AppTranslations.pick(lang, en: 'Age 26-40', mr: 'वय २६-४०', hi: 'आयु २६-४०')),
+                            ),
+                            DropdownMenuItem(
+                              value: '41-60',
+                              child: Text(AppTranslations.pick(lang, en: 'Age 41-60', mr: 'वय ४१-६०', hi: 'आयु ४१-६०')),
+                            ),
+                            DropdownMenuItem(
+                              value: '60+',
+                              child: Text(AppTranslations.pick(lang, en: 'Age 60+', mr: 'वय ६०+', hi: 'आयु ६०+')),
+                            ),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -939,12 +1220,26 @@ class _WhatsAppCommunicationScreenState
                       // Gender
                       Expanded(
                         child: _buildDropdownFilter(
-                          title: 'Filter by Gender',
+                          title: AppTranslations.pick(
+                            lang,
+                            en: 'Filter by Gender',
+                            mr: 'लिंगानुसार निवडा',
+                            hi: 'लिंग के अनुसार चुनें',
+                          ),
                           value: _genderFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All Genders')),
-                            DropdownMenuItem(value: 'M', child: Text('Male')),
-                            DropdownMenuItem(value: 'F', child: Text('Female')),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'All',
+                              child: Text(AppTranslations.pick(lang, en: 'All Genders', mr: 'सर्व लिंग', hi: 'सभी लिंग')),
+                            ),
+                            DropdownMenuItem(
+                              value: 'M',
+                              child: Text(AppTranslations.pick(lang, en: 'Male', mr: 'पुरुष', hi: 'पुरुष')),
+                            ),
+                            DropdownMenuItem(
+                              value: 'F',
+                              child: Text(AppTranslations.pick(lang, en: 'Female', mr: 'महिला', hi: 'महिला')),
+                            ),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -958,14 +1253,54 @@ class _WhatsAppCommunicationScreenState
                       // Booth
                       Expanded(
                         child: _buildDropdownFilter(
-                          title: 'Filter by Booth',
+                          title: AppTranslations.pick(
+                            lang,
+                            en: 'Filter by Booth',
+                            mr: 'बूथनुसार निवडा',
+                            hi: 'बूथ के अनुसार चुनें',
+                          ),
                           value: _boothFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All Booths')),
-                            DropdownMenuItem(value: '28', child: Text('Booth 28 (Shaniwar Peth)')),
-                            DropdownMenuItem(value: '29', child: Text('Booth 29 (Kasba Peth)')),
-                            DropdownMenuItem(value: '30', child: Text('Booth 30 (Raviwar Peth)')),
-                            DropdownMenuItem(value: '31', child: Text('Booth 31 (Somwar Peth)')),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'All',
+                              child: Text(AppTranslations.pick(lang, en: 'All Booths', mr: 'सर्व बूथ', hi: 'सभी बूथ')),
+                            ),
+                            DropdownMenuItem(
+                              value: '28',
+                              child: Text(AppTranslations.pick(
+                                lang,
+                                en: 'Booth 28 (Shaniwar Peth)',
+                                mr: 'बूथ २८ (शनिवार पेठ)',
+                                hi: 'बूथ २८ (शनिवार पेठ)',
+                              )),
+                            ),
+                            DropdownMenuItem(
+                              value: '29',
+                              child: Text(AppTranslations.pick(
+                                lang,
+                                en: 'Booth 29 (Kasba Peth)',
+                                mr: 'बूथ २९ (कसबा पेठ)',
+                                hi: 'बूथ २९ (कसबा पेठ)',
+                              )),
+                            ),
+                            DropdownMenuItem(
+                              value: '30',
+                              child: Text(AppTranslations.pick(
+                                lang,
+                                en: 'Booth 30 (Raviwar Peth)',
+                                mr: 'बूथ ३० (रविवार पेठ)',
+                                hi: 'बूथ ३० (रविवार पेठ)',
+                              )),
+                            ),
+                            DropdownMenuItem(
+                              value: '31',
+                              child: Text(AppTranslations.pick(
+                                lang,
+                                en: 'Booth 31 (Somwar Peth)',
+                                mr: 'बूथ ३१ (सोमवार पेठ)',
+                                hi: 'बूथ ३१ (सोमवार पेठ)',
+                              )),
+                            ),
                           ],
                           onChanged: (v) {
                             if (v != null) {
@@ -987,23 +1322,34 @@ class _WhatsAppCommunicationScreenState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                InkWell(
-                  onTap: _handleSelectAllVisible,
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isAllVisibleSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                        color: _isAllVisibleSelected ? _kWaGreen : const Color(0xFF94A3B8),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Select All (Visible) (${_voters.length} voters)',
-                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                      ),
-                    ],
+                Flexible(
+                  child: InkWell(
+                    onTap: _handleSelectAllVisible,
+                    child: Row(
+                      children: [
+                        Icon(
+                          _isAllVisibleSelected ? Icons.check_box : Icons.check_box_outline_blank,
+                          color: _isAllVisibleSelected ? _kWaGreen : const Color(0xFF94A3B8),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Select All (Visible) ($totalVotersStr voters)',
+                              mr: 'सर्व निवडा ($totalVotersStr मतदार)',
+                              hi: 'सभी चुनें ($totalVotersStr मतदाता)',
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 Row(
                   children: [
                     Container(
@@ -1014,7 +1360,12 @@ class _WhatsAppCommunicationScreenState
                         border: Border.all(color: _kWaLightBorder),
                       ),
                       child: Text(
-                        '${_selectedVoterIds.length} Selected',
+                        AppTranslations.pick(
+                          lang,
+                          en: '$selectedCountStr Selected',
+                          mr: '$selectedCountStr निवडले',
+                          hi: '$selectedCountStr चयनित',
+                        ),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _kWaDark),
                       ),
                     ),
@@ -1022,9 +1373,9 @@ class _WhatsAppCommunicationScreenState
                       const SizedBox(width: 6),
                       InkWell(
                         onTap: _clearSelection,
-                        child: const Text(
-                          'Clear',
-                          style: TextStyle(fontSize: 11.5, color: Color(0xFFEF4444), fontWeight: FontWeight.bold),
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Clear', mr: 'साफ करा', hi: 'हटाएं'),
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFFEF4444), fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -1039,7 +1390,7 @@ class _WhatsAppCommunicationScreenState
             if (_isLoadingVoters)
               const AppShimmerList(count: 6)
             else if (_voters.isEmpty)
-              _buildEmptyVotersState()
+              _buildEmptyVotersState(lang)
             else ...[
               ListView.separated(
                 shrinkWrap: true,
@@ -1049,6 +1400,7 @@ class _WhatsAppCommunicationScreenState
                 itemBuilder: (ctx, idx) {
                   final voter = _visibleVoters[idx];
                   final isSelected = _selectedVoterIds.contains(voter.id);
+                  final ageStr = AppTranslations.formatDigits(voter.age, lang);
 
                   return InkWell(
                     onTap: () => _toggleSelectVoter(voter.id),
@@ -1081,8 +1433,10 @@ class _WhatsAppCommunicationScreenState
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        voter.displayName,
+                                      child: AppTranslatedText(
+                                        voter.displayNameFor(lang),
+                                        isName: true,
+                                        targetLanguage: lang,
                                         style: const TextStyle(
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.bold,
@@ -1104,7 +1458,7 @@ class _WhatsAppCommunicationScreenState
                                           const Icon(Icons.phone, size: 10, color: _kWaDark),
                                           const SizedBox(width: 3),
                                           Text(
-                                            voter.mobile ?? '-',
+                                            AppTranslations.formatDigits(voter.mobile ?? '-', lang),
                                             style: const TextStyle(
                                               fontSize: 10.5,
                                               fontWeight: FontWeight.bold,
@@ -1120,22 +1474,33 @@ class _WhatsAppCommunicationScreenState
                                 Row(
                                   children: [
                                     Text(
-                                      '${voter.gender} · Age ${voter.age}',
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: '${voter.genderLabel(lang)} · Age $ageStr',
+                                        mr: '${voter.genderLabel(lang)} · वय $ageStr',
+                                        hi: '${voter.genderLabel(lang)} · आयु $ageStr',
+                                      ),
                                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                     ),
                                     if (voter.booth.isNotEmpty) ...[
                                       const Text(' · ', style: TextStyle(color: Color(0xFFCBD5E1))),
-                                      Text(
-                                        voter.booth,
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                                      Flexible(
+                                        child: AppTranslatedText(
+                                          voter.booth,
+                                          targetLanguage: lang,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                                        ),
                                       ),
                                     ],
                                   ],
                                 ),
                                 if (voter.address.isNotEmpty) ...[
                                   const SizedBox(height: 2),
-                                  Text(
+                                  AppTranslatedText(
                                     voter.address,
+                                    targetLanguage: lang,
                                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1174,8 +1539,8 @@ class _WhatsAppCommunicationScreenState
                 totalCount: _voters.length,
                 pageSize: 20,
                 onLoadMore: () => setState(() => _voterLimit += 20),
-                label: 'मतदार',
-                isMarathi: true,
+                label: AppTranslations.pick(lang, en: 'voters', mr: 'मतदार', hi: 'मतदाता'),
+                isMarathi: lang == 'mr',
               ),
             ],
           ],
@@ -1187,7 +1552,9 @@ class _WhatsAppCommunicationScreenState
   // ─────────────────────────────────────────────────────────────
   // Tab 2: History & Reports
   // ─────────────────────────────────────────────────────────────
-  Widget _buildHistoryTab() {
+  Widget _buildHistoryTab(String lang) {
+    final histCountStr = AppTranslations.formatDigits(_broadcastHistory.length, lang);
+
     return Column(
       children: [
         Expanded(
@@ -1197,7 +1564,7 @@ class _WhatsAppCommunicationScreenState
             child: _isLoadingHistory
                 ? const AppShimmerList(count: 6)
                 : _broadcastHistory.isEmpty
-                    ? _buildEmptyHistoryState()
+                    ? _buildEmptyHistoryState(lang)
                     : CustomScrollView(
                         slivers: [
                           // Stats summary header
@@ -1213,23 +1580,33 @@ class _WhatsAppCommunicationScreenState
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          const Text(
-                                            'History & Reports',
-                                            style: TextStyle(
+                                          Text(
+                                            AppTranslations.pick(
+                                              lang,
+                                              en: 'History & Reports',
+                                              mr: 'इतिहास व अहवाल',
+                                              hi: 'इतिहास और रिपोर्ट',
+                                            ),
+                                            style: const TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
                                               color: Color(0xFF0F172A),
                                             ),
                                           ),
                                           Text(
-                                            '${_broadcastHistory.length} WhatsApp broadcasts',
+                                            AppTranslations.pick(
+                                              lang,
+                                              en: '$histCountStr WhatsApp broadcasts',
+                                              mr: '$histCountStr व्हॉट्सॲप प्रसारण',
+                                              hi: '$histCountStr व्हाट्सएप प्रसारण',
+                                            ),
                                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                           ),
                                         ],
                                       ),
                                       AppPdfButton.outlined(
-                                        label: 'Reports',
-                                        tooltip: 'Reports',
+                                        label: AppTranslations.pick(lang, en: 'Reports', mr: 'अहवाल', hi: 'रिपोर्ट'),
+                                        tooltip: AppTranslations.getDownloadReport(lang),
                                         onPressed: _generatePdfReport,
                                       ),
                                     ],
@@ -1237,7 +1614,7 @@ class _WhatsAppCommunicationScreenState
                                   const SizedBox(height: 10),
 
                                   // KPI Summary Row
-                                  _buildKpiSummary(),
+                                  _buildKpiSummary(lang),
                                 ],
                               ),
                             ),
@@ -1255,13 +1632,18 @@ class _WhatsAppCommunicationScreenState
                                       totalCount: _broadcastHistory.length,
                                       pageSize: 10,
                                       onLoadMore: () => setState(() => _historyLimit += 10),
-                                      label: 'इतिहास',
-                                      isMarathi: true,
+                                      label: AppTranslations.pick(
+                                        lang,
+                                        en: 'records',
+                                        mr: 'इतिहास नोंदी',
+                                        hi: 'इतिहास रिकॉर्ड',
+                                      ),
+                                      isMarathi: lang == 'mr',
                                     );
                                   }
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 10),
-                                    child: _buildBroadcastHistoryCard(_visibleHistory[idx]),
+                                    child: _buildBroadcastHistoryCard(_visibleHistory[idx], lang),
                                   );
                                 },
                                 childCount: _visibleHistory.length + (_broadcastHistory.isNotEmpty ? 1 : 0),
@@ -1276,20 +1658,40 @@ class _WhatsAppCommunicationScreenState
     );
   }
 
-  Widget _buildKpiSummary() {
+  Widget _buildKpiSummary(String lang) {
     final totalRecipients = _broadcastHistory.fold<int>(0, (s, b) => s + b.recipients);
     final totalDelivered = _broadcastHistory.fold<int>(0, (s, b) => s + b.deliveredCount);
     final rate = totalRecipients > 0 ? ((totalDelivered / totalRecipients) * 100).toStringAsFixed(1) : '98.5';
 
     return Row(
       children: [
-        _buildKpiCard('Broadcasts', '${_broadcastHistory.length}', Icons.campaign_rounded, _kWaDark),
+        _buildKpiCard(
+          AppTranslations.pick(lang, en: 'Broadcasts', mr: 'प्रसारण', hi: 'प्रसारण'),
+          AppTranslations.formatDigits(_broadcastHistory.length, lang),
+          Icons.campaign_rounded,
+          _kWaDark,
+        ),
         const SizedBox(width: 8),
-        _buildKpiCard('Voters', '$totalRecipients', Icons.people_rounded, const Color(0xFF0369A1)),
+        _buildKpiCard(
+          AppTranslations.pick(lang, en: 'Voters', mr: 'मतदार', hi: 'मतदाता'),
+          AppTranslations.formatDigits(totalRecipients, lang),
+          Icons.people_rounded,
+          const Color(0xFF0369A1),
+        ),
         const SizedBox(width: 8),
-        _buildKpiCard('Delivered', '$totalDelivered', Icons.check_circle_rounded, const Color(0xFF047857)),
+        _buildKpiCard(
+          AppTranslations.pick(lang, en: 'Delivered', mr: 'वितरित', hi: 'वितरित'),
+          AppTranslations.formatDigits(totalDelivered, lang),
+          Icons.check_circle_rounded,
+          const Color(0xFF047857),
+        ),
         const SizedBox(width: 8),
-        _buildKpiCard('Delivery Rate', '$rate%', Icons.trending_up_rounded, _kWaGreen),
+        _buildKpiCard(
+          AppTranslations.pick(lang, en: 'Delivery Rate', mr: 'वितरण दर', hi: 'डिलीवरी दर'),
+          AppTranslations.formatDigits('$rate%', lang),
+          Icons.trending_up_rounded,
+          _kWaGreen,
+        ),
       ],
     );
   }
@@ -1332,7 +1734,22 @@ class _WhatsAppCommunicationScreenState
     );
   }
 
-  Widget _buildBroadcastHistoryCard(WhatsAppBroadcastModel broadcast) {
+  String _localizedBroadcastStatus(String status, String lang) {
+    switch (status.trim().toUpperCase()) {
+      case 'COMPLETED':
+        return AppTranslations.pick(lang, en: 'COMPLETED', mr: 'पूर्ण', hi: 'पूर्ण');
+      case 'SENDING':
+        return AppTranslations.pick(lang, en: 'SENDING', mr: 'पाठवत आहे', hi: 'भेज रहा है');
+      case 'QUEUED':
+        return AppTranslations.pick(lang, en: 'QUEUED', mr: 'रांगेत', hi: 'कतार में');
+      case 'FAILED':
+        return AppTranslations.pick(lang, en: 'FAILED', mr: 'अयशस्वी', hi: 'विफल');
+      default:
+        return AppTranslations.getStatus(status, lang);
+    }
+  }
+
+  Widget _buildBroadcastHistoryCard(WhatsAppBroadcastModel broadcast, String lang) {
     Color statusBg = _kWaLight;
     Color statusColor = _kWaDark;
     if (broadcast.isFailed) {
@@ -1370,22 +1787,24 @@ class _WhatsAppCommunicationScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppTranslatedText(
                       broadcast.title,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 2),
                     Row(
                       children: [
                         Text(
-                          broadcast.formattedDate,
+                          AppTranslations.formatDateTime(broadcast.sentAt, lang),
                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         ),
                         if (broadcast.targetCriteria != null) ...[
                           const Text(' · ', style: TextStyle(color: Color(0xFFCBD5E1))),
                           Expanded(
-                            child: Text(
+                            child: AppTranslatedText(
                               broadcast.targetCriteria!,
+                              targetLanguage: lang,
                               style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1402,7 +1821,7 @@ class _WhatsAppCommunicationScreenState
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(6)),
                 child: Text(
-                  broadcast.status,
+                  _localizedBroadcastStatus(broadcast.status, lang),
                   style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: statusColor),
                 ),
               ),
@@ -1423,8 +1842,9 @@ class _WhatsAppCommunicationScreenState
               ),
               border: Border.all(color: _kWaLightBorder),
             ),
-            child: Text(
+            child: AppTranslatedText(
               broadcast.message,
+              targetLanguage: lang,
               style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155)),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -1434,20 +1854,31 @@ class _WhatsAppCommunicationScreenState
           const SizedBox(height: 10),
 
           // Stats row
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _buildMiniStat('Recipients', '${broadcast.recipients}', const Color(0xFF0369A1)),
-              const SizedBox(width: 8),
-              _buildMiniStat('Sent', '${broadcast.sentCount}', _kWaGreen),
-              const SizedBox(width: 8),
-              _buildMiniStat('Delivered', '${broadcast.deliveredCount}', const Color(0xFF047857)),
-              const SizedBox(width: 8),
               _buildMiniStat(
-                'Failed',
-                '${broadcast.failedCount}',
+                AppTranslations.pick(lang, en: 'Recipients', mr: 'प्राप्तकर्ते', hi: 'प्राप्तकर्ता'),
+                AppTranslations.formatDigits(broadcast.recipients, lang),
+                const Color(0xFF0369A1),
+              ),
+              _buildMiniStat(
+                AppTranslations.pick(lang, en: 'Sent', mr: 'पाठवले', hi: 'भेजा गया'),
+                AppTranslations.formatDigits(broadcast.sentCount, lang),
+                _kWaGreen,
+              ),
+              _buildMiniStat(
+                AppTranslations.pick(lang, en: 'Delivered', mr: 'वितरित', hi: 'वितरित'),
+                AppTranslations.formatDigits(broadcast.deliveredCount, lang),
+                const Color(0xFF047857),
+              ),
+              _buildMiniStat(
+                AppTranslations.pick(lang, en: 'Failed', mr: 'अयशस्वी', hi: 'विफल'),
+                AppTranslations.formatDigits(broadcast.failedCount, lang),
                 broadcast.failedCount > 0 ? const Color(0xFFDC2626) : const Color(0xFF94A3B8),
               ),
-              const Spacer(),
               if (broadcast.category != null)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1456,8 +1887,9 @@ class _WhatsAppCommunicationScreenState
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: _kWaLightBorder),
                   ),
-                  child: Text(
+                  child: AppTranslatedText(
                     broadcast.category!,
+                    targetLanguage: lang,
                     style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _kWaDark),
                   ),
                 ),
@@ -1471,7 +1903,9 @@ class _WhatsAppCommunicationScreenState
   // ─────────────────────────────────────────────────────────────
   // Sticky Bottom Send Bar
   // ─────────────────────────────────────────────────────────────
-  Widget _buildStickySendBar() {
+  Widget _buildStickySendBar(String lang) {
+    final selectedStr = AppTranslations.formatDigits(_selectedVoterIds.length, lang);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -1482,21 +1916,35 @@ class _WhatsAppCommunicationScreenState
       child: SafeArea(
         child: Row(
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_selectedVoterIds.length} voters selected',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                const Text(
-                  'Dispatched via official WhatsApp',
-                  style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: '$selectedStr voters selected',
+                      mr: '$selectedStr मतदार निवडले',
+                      hi: '$selectedStr मतदाता चयनित',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Dispatched via official WhatsApp',
+                      mr: 'अधिकृत व्हॉट्सॲपद्वारे पाठवले जाईल',
+                      hi: 'आधिकारिक व्हाट्सएप द्वारा भेजा जाएगा',
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _kWaGreen,
@@ -1514,7 +1962,9 @@ class _WhatsAppCommunicationScreenState
                     )
                   : const Icon(Icons.send_rounded, size: 16),
               label: Text(
-                _isSending ? 'Sending...' : 'Send WhatsApp',
+                _isSending
+                    ? AppTranslations.pick(lang, en: 'Sending...', mr: 'पाठवत आहे...', hi: 'भेज रहे हैं...')
+                    : AppTranslations.pick(lang, en: 'Send WhatsApp', mr: 'व्हॉट्सॲप पाठवा', hi: 'व्हाट्सएप भेजें'),
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
               ),
             ),
@@ -1560,7 +2010,7 @@ class _WhatsAppCommunicationScreenState
     );
   }
 
-  Widget _buildEmptyVotersState() {
+  Widget _buildEmptyVotersState(String lang) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       alignment: Alignment.center,
@@ -1570,40 +2020,67 @@ class _WhatsAppCommunicationScreenState
         border: Border.all(color: const Color(0xFFCBD5E1)),
       ),
       child: Column(
-        children: const [
-          Icon(Icons.search_off_rounded, size: 44, color: Color(0xFF94A3B8)),
-          SizedBox(height: 8),
+        children: [
+          const Icon(Icons.search_off_rounded, size: 44, color: Color(0xFF94A3B8)),
+          const SizedBox(height: 8),
           Text(
-            'No voters found matching current filters.',
-            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+            AppTranslations.pick(
+              lang,
+              en: 'No voters found matching current filters.',
+              mr: 'सध्याच्या फिल्टरनुसार कोणतेही मतदार आढळले नाहीत.',
+              hi: 'वर्तमान फ़िल्टर से मेल खाने वाले कोई मतदाता नहीं मिले।',
+            ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'Only voters with registered mobile numbers are displayed.',
-            style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+            AppTranslations.pick(
+              lang,
+              en: 'Only voters with registered mobile numbers are displayed.',
+              mr: 'फक्त नोंदणीकृत मोबाईल क्रमांक असलेले मतदारच येथे दिसतील.',
+              hi: 'केवल पंजीकृत मोबाइल नंबर वाले मतदाता ही दिखाए जाते हैं।',
+            ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyHistoryState() {
+  Widget _buildEmptyHistoryState(String lang) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.chat_bubble_outline_rounded, size: 52, color: Color(0xFFCBD5E1)),
-          SizedBox(height: 10),
-          Text(
-            'No WhatsApp broadcasts sent yet.',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Switch to "Send WhatsApp" tab to dispatch your first broadcast!',
-            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.chat_bubble_outline_rounded, size: 52, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 10),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No WhatsApp broadcasts sent yet.',
+                mr: 'अद्याप कोणतेही व्हॉट्सॲप प्रसारण पाठवलेले नाही.',
+                hi: 'अभी तक कोई व्हाट्सएप प्रसारण नहीं भेजा गया है।',
+              ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Switch to "Send WhatsApp" tab to dispatch your first broadcast!',
+                mr: 'पहिले प्रसारण पाठवण्यासाठी "संदेश पाठवा" टॅबवर जा!',
+                hi: 'अपना पहला प्रसारण भेजने के लिए "संदेश भेजें" टैब पर जाएं!',
+              ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+            ),
+          ],
+        ),
       ),
     );
   }

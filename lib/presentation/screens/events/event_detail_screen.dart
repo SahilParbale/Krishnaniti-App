@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/event_model.dart';
 import '../../../data/repositories/events_repository.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_pagination_bar.dart';
 import 'event_invite_modal.dart';
 import 'event_report_generator.dart';
@@ -46,14 +49,44 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     }
   }
 
+  String _rawTitle(String lang) =>
+      lang == 'mr' && _event.titleMr.isNotEmpty ? _event.titleMr : _event.title;
+
+  String _rawLoc(String lang) =>
+      lang == 'mr' && _event.locationMr.isNotEmpty
+          ? _event.locationMr
+          : _event.location;
+
   Future<void> _handleShare() async {
+    final lang = ref.read(appLanguageProvider);
+    final rTitle = _rawTitle(lang);
+    final rLoc = _rawLoc(lang);
+    final titleText =
+        DynamicTranslationService.getCachedTranslation(rTitle, lang) ?? rTitle;
+    final locText =
+        DynamicTranslationService.getCachedTranslation(rLoc, lang) ?? rLoc;
+    final descText =
+        DynamicTranslationService.getCachedTranslation(_event.description, lang) ??
+            _event.description;
+    final dateLabel =
+        AppTranslations.pick(lang, en: 'Date', mr: 'तारीख', hi: 'दिनांक');
+    final timeLabel =
+        AppTranslations.pick(lang, en: 'Time', mr: 'वेळ', hi: 'समय');
+    final venueLabel =
+        AppTranslations.pick(lang, en: 'Venue', mr: 'ठिकाण', hi: 'स्थान');
+    final footer = AppTranslations.pick(
+      lang,
+      en: '— Nagarsevak Amit Chougale PR Office, Ward 12, PMC',
+      mr: '— नगरसेवक अमित चौगुले जनसंपर्क कार्यालय, प्रभाग १२, मनपा',
+      hi: '— नगरसेवक अमित चौगुले जनसंपर्क कार्यालय, वार्ड १२, मनपा',
+    );
     final text =
-        '📌 *${_event.titleMr}*\n\n'
-        '📅 Date: ${_event.formattedDate}\n'
-        '⏰ Time: ${_event.eventTime}\n'
-        '📍 Venue: ${_event.location}\n\n'
-        '${_event.description}\n\n'
-        '— Nagarsevak Amit Chougale PR Office, Ward 12, PMC';
+        '📌 *$titleText*\n\n'
+        '📅 $dateLabel: ${_event.formattedDateFor(lang)}\n'
+        '⏰ $timeLabel: ${AppTranslations.formatDigits(_event.eventTime, lang)}\n'
+        '📍 $venueLabel: $locText\n\n'
+        '$descText\n\n'
+        '$footer';
 
     final encoded = Uri.encodeComponent(text);
     final uri = Uri.parse('https://wa.me/?text=$encoded');
@@ -64,7 +97,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         Clipboard.setData(ClipboardData(text: text));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Event details copied to clipboard!')),
+            SnackBar(
+              content: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Event details copied to clipboard!',
+                  mr: 'कार्यक्रमाचा तपशील क्लिपबोर्डवर कॉपी केला!',
+                  hi: 'कार्यक्रम का विवरण क्लिपबोर्ड पर कॉपी किया गया!',
+                ),
+              ),
+            ),
           );
         }
       }
@@ -74,29 +116,43 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Future<void> _handleCall(String mobile) async {
-    final uri = Uri.parse('tel:$mobile');
+    final cleanMobile = AppTranslations.normalizeAsciiDigits(mobile);
+    final uri = Uri.parse('tel:$cleanMobile');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
   }
 
   Future<void> _handleWhatsApp(String mobile, String name) async {
-    final msg = Uri.encodeComponent(
-      'Hello $name,\n\n'
-      'You are cordially invited to the *${_event.title}* program.\n'
-      'Date: ${_event.formattedDate}, Time: ${_event.eventTime}.\n'
-      'Venue: ${_event.location}.\n'
-      'Will you be attending?\n\n'
-      '— Nagarsevak Amit Chougale Office',
-    );
-    final uri = Uri.parse('https://wa.me/91$mobile?text=$msg');
+    final lang = ref.read(appLanguageProvider);
+    final cleanMobile = AppTranslations.normalizeAsciiDigits(mobile);
+    final rTitle = _rawTitle(lang);
+    final rLoc = _rawLoc(lang);
+    final titleText =
+        DynamicTranslationService.getCachedTranslation(rTitle, lang) ?? rTitle;
+    final locText =
+        DynamicTranslationService.getCachedTranslation(rLoc, lang) ?? rLoc;
+    final voterName =
+        DynamicTranslationService.getCachedTranslation(name, lang, isName: true) ??
+            name;
+    final dateStr = _event.formattedDateFor(lang);
+    final timeStr = AppTranslations.formatDigits(_event.eventTime, lang);
+
+    final rawMsg = lang == 'mr'
+        ? 'नमस्कार $voterName,\n\nआपणास *$titleText* कार्यक्रमास सस्नेह निमंत्रित करण्यात येत आहे.\nतारीख: $dateStr, वेळ: $timeStr.\nठिकाण: $locText.\nआपण उपस्थित राहणार का?\n\n— नगरसेवक अमित चौगुले कार्यालय'
+        : (lang == 'hi'
+            ? 'नमस्ते $voterName,\n\nआपको *$titleText* कार्यक्रम में सादर आमंत्रित किया जाता है।\nदिनांक: $dateStr, समय: $timeStr.\nस्थान: $locText.\nक्या आप उपस्थित रहेंगे?\n\n— नगरसेवक अमित चौगुले कार्यालय'
+            : 'Hello $voterName,\n\nYou are cordially invited to the *$titleText* program.\nDate: $dateStr, Time: $timeStr.\nVenue: $locText.\nWill you be attending?\n\n— Nagarsevak Amit Chougale Office');
+    final msg = Uri.encodeComponent(rawMsg);
+    final uri = Uri.parse('https://wa.me/91$cleanMobile?text=$msg');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
   List<EventRsvpModel> get _filteredRsvps {
-    final q = _rsvpSearchCtrl.text.trim().toLowerCase();
+    final q = AppTranslations.normalizeAsciiDigits(_rsvpSearchCtrl.text.trim())
+        .toLowerCase();
     return _event.rsvps.where((r) {
       final matchesSearch = q.isEmpty ||
           r.voterName.toLowerCase().contains(q) ||
@@ -112,6 +168,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final filteredRsvps = _filteredRsvps;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -126,10 +183,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            tooltip: AppTranslations.pick(lang, en: 'Back', mr: 'मागे', hi: 'वापस'),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            _event.type.titleMr,
+            _event.type.title(lang),
             style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
@@ -141,14 +199,22 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: AppPdfButton.icon(
-                  tooltip: 'Download Report',
-                  onPressed: () => EventReportGenerator.generateAndPrintReport(events: [_event]),
+                  tooltip: AppTranslations.getDownloadReport(lang),
+                  onPressed: () => EventReportGenerator.generateAndPrintReport(
+                    events: [_event],
+                    lang: lang,
+                  ),
                 ),
               ),
             ),
             IconButton(
               icon: const Icon(Icons.share_rounded, color: Colors.white),
-              tooltip: 'Share',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Share',
+                mr: 'शेअर करा',
+                hi: 'साझा करें',
+              ),
               onPressed: _handleShare,
             ),
           ],
@@ -163,22 +229,22 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Event Hero Card
-                _buildHeroCard(),
+                _buildHeroCard(lang),
 
                 const SizedBox(height: 16),
 
                 // 3-way RSVP Response Strip
-                _buildRsvpStatsRow(),
+                _buildRsvpStatsRow(lang),
 
                 const SizedBox(height: 16),
 
                 // Description Card
-                _buildDescriptionCard(),
+                _buildDescriptionCard(lang),
 
                 const SizedBox(height: 16),
 
                 // RSVP Attendees Header & Search
-                _buildAttendeesSection(filteredRsvps),
+                _buildAttendeesSection(filteredRsvps, lang),
 
                 const SizedBox(height: 32),
               ],
@@ -206,9 +272,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     _refreshEvent();
                   },
                   icon: const Icon(Icons.send_rounded, size: 18),
-                  label: const Text(
-                    'Send Invites',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  label: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Send Invites',
+                      mr: 'निमंत्रण पाठवा',
+                      hi: 'निमंत्रण भेजें',
+                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF16A34A),
@@ -226,7 +297,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     );
   }
 
-  Widget _buildHeroCard() {
+  Widget _buildHeroCard(String lang) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -259,7 +330,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 child: Column(
                   children: [
                     Text(
-                      _event.monthShortMr,
+                      _event.monthShortFor(lang),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -268,7 +339,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _event.dayNum,
+                      _event.dayNumFor(lang),
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -285,7 +356,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -299,7 +372,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                               Icon(_event.type.icon, size: 12, color: _event.type.color),
                               const SizedBox(width: 4),
                               Text(
-                                _event.type.titleMr,
+                                _event.type.title(lang),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -309,7 +382,6 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                           decoration: BoxDecoration(
@@ -319,7 +391,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            _event.isCompleted ? 'Completed' : 'Upcoming',
+                            _event.isCompleted
+                                ? AppTranslations.getStatus('Completed', lang)
+                                : AppTranslations.pick(
+                                    lang,
+                                    en: 'Upcoming',
+                                    mr: 'आगामी',
+                                    hi: 'आगामी',
+                                  ),
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
@@ -332,8 +411,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _event.titleMr,
+                    AppTranslatedText(
+                      _rawTitle(lang),
+                      targetLanguage: lang,
                       style: const TextStyle(
                         fontSize: 16.5,
                         fontWeight: FontWeight.bold,
@@ -356,16 +436,18 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             children: [
               const Icon(Icons.access_time_rounded, size: 15, color: Color(0xFF64748B)),
               const SizedBox(width: 6),
-              Text(
-                _event.eventTime,
+              AppTranslatedText(
+                AppTranslations.formatDigits(_event.eventTime, lang),
+                targetLanguage: lang,
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
               ),
               const SizedBox(width: 16),
               const Icon(Icons.location_on_outlined, size: 15, color: Color(0xFF64748B)),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
-                  _event.locationMr.isNotEmpty ? _event.locationMr : _event.location,
+                child: AppTranslatedText(
+                  _rawLoc(lang),
+                  targetLanguage: lang,
                   style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -380,16 +462,33 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             children: [
               const Icon(Icons.flag_outlined, size: 14, color: Color(0xFF64748B)),
               const SizedBox(width: 6),
-              Text(
-                'Area: ${_event.area}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${AppTranslations.pick(lang, en: "Area", mr: "परिसर", hi: "क्षेत्र")}: ',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                    Flexible(
+                      child: AppTranslatedText(
+                        AppTranslations.getAreaName(_event.area, lang),
+                        targetLanguage: lang,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 14),
               const Icon(Icons.group_outlined, size: 14, color: Color(0xFF64748B)),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
-                  'Target Audience: ${_event.targetAudience}',
+                child: AppTranslatedText(
+                  '${AppTranslations.pick(lang, en: "Target Audience", mr: "लक्षित वर्ग", hi: "लक्षित वर्ग")}: ${AppTranslations.translateDirect(_event.targetAudience, lang: lang)}',
+                  targetLanguage: lang,
                   style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -402,31 +501,41 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     );
   }
 
-  Widget _buildRsvpStatsRow() {
+  Widget _buildRsvpStatsRow(String lang) {
     return Row(
       children: [
         _buildStatBox(
-          'Going',
-          '${_event.goingCount}',
-          '${_event.goingPercentage.toStringAsFixed(0)}% response',
+          RsvpStatus.going.title(lang),
+          AppTranslations.formatDigits(_event.goingCount, lang),
+          '${AppTranslations.formatDigits(_event.goingPercentage.toStringAsFixed(0), lang)}% ${AppTranslations.pick(lang, en: "response", mr: "प्रतिसाद", hi: "प्रतिक्रिया")}',
           const Color(0xFF16A34A),
           const Color(0xFFDCFCE7),
           Icons.check_circle_rounded,
         ),
         const SizedBox(width: 8),
         _buildStatBox(
-          'Maybe',
-          '${_event.maybeCount}',
-          'Expected Attendance',
+          RsvpStatus.maybe.title(lang),
+          AppTranslations.formatDigits(_event.maybeCount, lang),
+          AppTranslations.pick(
+            lang,
+            en: 'Expected Attendance',
+            mr: 'संभाव्य उपस्थिती',
+            hi: 'संभावित उपस्थिति',
+          ),
           const Color(0xFFD97706),
           const Color(0xFFFEF3C7),
           Icons.help_rounded,
         ),
         const SizedBox(width: 8),
         _buildStatBox(
-          'Not Going',
-          '${_event.notGoingCount}',
-          'Absent',
+          RsvpStatus.notGoing.title(lang),
+          AppTranslations.formatDigits(_event.notGoingCount, lang),
+          AppTranslations.pick(
+            lang,
+            en: 'Absent',
+            mr: 'अनुपस्थित',
+            hi: 'अनुपस्थित',
+          ),
           const Color(0xFFDC2626),
           const Color(0xFFFEE2E2),
           Icons.cancel_rounded,
@@ -495,7 +604,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     );
   }
 
-  Widget _buildDescriptionCard() {
+  Widget _buildDescriptionCard(String lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -508,12 +617,17 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.notes_rounded, size: 18, color: Color(0xFF0284C7)),
-              SizedBox(width: 6),
+            children: [
+              const Icon(Icons.notes_rounded, size: 18, color: Color(0xFF0284C7)),
+              const SizedBox(width: 6),
               Text(
-                'About Event',
-                style: TextStyle(
+                AppTranslations.pick(
+                  lang,
+                  en: 'About Event',
+                  mr: 'कार्यक्रमाविषयी',
+                  hi: 'कार्यक्रम के बारे में',
+                ),
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
@@ -522,8 +636,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
+          AppTranslatedText(
             _event.description,
+            targetLanguage: lang,
             style: const TextStyle(
               fontSize: 13.5,
               height: 1.5,
@@ -535,7 +650,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     );
   }
 
-  Widget _buildAttendeesSection(List<EventRsvpModel> filteredRsvps) {
+  Widget _buildAttendeesSection(List<EventRsvpModel> filteredRsvps, String lang) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -551,7 +666,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               const Icon(Icons.people_alt_rounded, size: 18, color: Color(0xFF0284C7)),
               const SizedBox(width: 6),
               Text(
-                'RSVP List (${_event.totalRsvps})',
+                '${AppTranslations.pick(lang, en: "RSVP List", mr: "उपस्थिती यादी (RSVP)", hi: "उपस्थिति सूची (RSVP)")} (${AppTranslations.formatDigits(_event.totalRsvps, lang)})',
                 style: const TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.bold,
@@ -566,7 +681,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           TextField(
             controller: _rsvpSearchCtrl,
             decoration: InputDecoration(
-              hintText: 'Search by name or mobile...',
+              hintText: AppTranslations.pick(
+                lang,
+                en: 'Search by name or mobile...',
+                mr: 'नाव किंवा मोबाइल क्रमांकाने शोधा...',
+                hi: 'नाम या मोबाइल नंबर से खोजें...',
+              ),
               hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
               prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
               suffixIcon: _rsvpSearchCtrl.text.isNotEmpty
@@ -600,13 +720,25 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildStatusFilterChip('All (${_event.totalRsvps})', 'all'),
+                _buildStatusFilterChip(
+                  '${AppTranslations.getAll(lang)} (${AppTranslations.formatDigits(_event.totalRsvps, lang)})',
+                  'all',
+                ),
                 const SizedBox(width: 6),
-                _buildStatusFilterChip('Going (${_event.goingCount})', 'Going'),
+                _buildStatusFilterChip(
+                  '${RsvpStatus.going.title(lang)} (${AppTranslations.formatDigits(_event.goingCount, lang)})',
+                  'Going',
+                ),
                 const SizedBox(width: 6),
-                _buildStatusFilterChip('Maybe (${_event.maybeCount})', 'Maybe'),
+                _buildStatusFilterChip(
+                  '${RsvpStatus.maybe.title(lang)} (${AppTranslations.formatDigits(_event.maybeCount, lang)})',
+                  'Maybe',
+                ),
                 const SizedBox(width: 6),
-                _buildStatusFilterChip('Not Going (${_event.notGoingCount})', 'Not Going'),
+                _buildStatusFilterChip(
+                  '${RsvpStatus.notGoing.title(lang)} (${AppTranslations.formatDigits(_event.notGoingCount, lang)})',
+                  'Not Going',
+                ),
               ],
             ),
           ),
@@ -621,8 +753,18 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               child: Center(
                 child: Text(
                   _event.rsvps.isEmpty
-                      ? 'No RSVPs received yet.\nUse the button below to send invitations.'
-                      : 'No matching responses found.',
+                      ? AppTranslations.pick(
+                          lang,
+                          en: 'No RSVPs received yet.\nUse the button below to send invitations.',
+                          mr: 'अद्याप कोणताही प्रतिसाद आलेला नाही.\nनिमंत्रण पाठवण्यासाठी खालील बटण वापरा.',
+                          hi: 'अभी तक कोई प्रतिक्रिया प्राप्त नहीं हुई है।\nनिमंत्रण भेजने के लिए नीचे दिए बटन का उपयोग करें।',
+                        )
+                      : AppTranslations.pick(
+                          lang,
+                          en: 'No matching responses found.',
+                          mr: 'जुळणारे प्रतिसाद आढळले नाहीत.',
+                          hi: 'कोई मेल खाने वाली प्रतिक्रिया नहीं मिली।',
+                        ),
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
                 ),
@@ -646,6 +788,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
                       itemBuilder: (ctx, idx) {
                         final rsvp = pagedRsvps[idx];
+                        final rsvpName =
+                            lang == 'mr' && rsvp.voterNameMr.isNotEmpty
+                                ? rsvp.voterNameMr
+                                : rsvp.voterName;
+                        final srcLabel =
+                            AppTranslations.translateDirect(rsvp.responseSource, lang: lang);
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           child: Row(
@@ -665,8 +813,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      rsvp.voterNameMr,
+                                    AppTranslatedText(
+                                      rsvpName,
+                                      isName: true,
+                                      targetLanguage: lang,
                                       style: const TextStyle(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.bold,
@@ -674,12 +824,28 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
-                                      '${rsvp.address} • ${rsvp.responseSource}',
-                                      style: const TextStyle(
-                                        fontSize: 11.5,
-                                        color: Color(0xFF64748B),
-                                      ),
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: AppTranslatedText(
+                                            rsvp.address,
+                                            targetLanguage: lang,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          ' • $srcLabel',
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -688,12 +854,22 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                               IconButton(
                                 icon: const Icon(Icons.call_outlined, size: 18, color: Color(0xFF0284C7)),
                                 onPressed: () => _handleCall(rsvp.mobile),
-                                tooltip: 'Call',
+                                tooltip: AppTranslations.pick(
+                                  lang,
+                                  en: 'Call',
+                                  mr: 'कॉल करा',
+                                  hi: 'कॉल करें',
+                                ),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Color(0xFF16A34A)),
-                                onPressed: () => _handleWhatsApp(rsvp.mobile, rsvp.voterNameMr),
-                                tooltip: 'WhatsApp Message',
+                                onPressed: () => _handleWhatsApp(rsvp.mobile, rsvpName),
+                                tooltip: AppTranslations.pick(
+                                  lang,
+                                  en: 'WhatsApp Message',
+                                  mr: 'WhatsApp संदेश',
+                                  hi: 'WhatsApp संदेश',
+                                ),
                               ),
                             ],
                           ),
@@ -705,7 +881,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       totalPages: totalRsvpPages,
                       totalItems: filteredRsvps.length,
                       pageSize: _rsvpPageSize,
-                      label: 'RSVPs',
+                      label: AppTranslations.pick(
+                        lang,
+                        en: 'RSVPs',
+                        mr: 'प्रतिसाद',
+                        hi: 'प्रतिक्रियाएं',
+                      ),
                       onPageChanged: (page) => setState(() => _rsvpPage = page),
                     ),
                   ],

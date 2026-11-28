@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../data/models/complaint_model.dart';
 import '../../../data/repositories/complaints_repository.dart';
+import '../../navigation/app_drawer.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
-import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
 import '../complaints/complaint_detail_screen.dart';
 import '../complaints/new_complaint_bottom_sheet.dart';
 import 'ward_problems_report_generator.dart';
@@ -96,16 +94,20 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
   // Unique Dates with counts matching WardWiseProblem.tsx lines 230-237
   List<Map<String, dynamic>> get _uniqueDates {
     final Map<String, int> counts = {};
-    final Map<String, String> displayMap = {};
+    final Map<String, DateTime> dateMap = {};
     for (final c in _complaints) {
-      final dateStr = DateFormat('yyyy-MM-dd').format(c.createdAt);
+      final dt = c.createdAt;
+      final dateStr =
+          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
       counts[dateStr] = (counts[dateStr] ?? 0) + 1;
-      displayMap[dateStr] = DateFormat('MMM d, yyyy').format(c.createdAt);
+      dateMap[dateStr] = dt;
     }
     final list = counts.entries.map((e) {
+      final dt = dateMap[e.key]!;
       return {
         'value': e.key,
-        'display': displayMap[e.key] ?? e.key,
+        'date': dt,
+        'display': AppTranslations.formatDate(dt, 'en', pattern: 'MMM d, yyyy'),
         'count': e.value,
       };
     }).toList();
@@ -116,20 +118,40 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
   // Filtered complaints matching WardWiseProblem.tsx lines 240-251
   List<ComplaintModel> get _filteredComplaints {
     final search = _searchCtrl.text.trim().toLowerCase();
+    final normSearch = AppTranslations.normalizeAsciiDigits(search);
     final areaSearch = _areaSearchCtrl.text.trim().toLowerCase();
+    final normAreaSearch = AppTranslations.normalizeAsciiDigits(areaSearch);
     final dateSearch = _dateSearchCtrl.text.trim().toLowerCase();
+    final normDateSearch = AppTranslations.normalizeAsciiDigits(dateSearch);
 
     return _complaints.where((c) {
       final matchesSearch = search.isEmpty ||
           c.title.toLowerCase().contains(search) ||
           c.description.toLowerCase().contains(search) ||
-          (c.citizenName?.toLowerCase().contains(search) ?? false);
+          (c.citizenName?.toLowerCase().contains(search) ?? false) ||
+          (c.citizenMobile != null &&
+              AppTranslations.normalizeAsciiDigits(c.citizenMobile!)
+                  .toLowerCase()
+                  .contains(normSearch));
 
+      final areaLower = c.area?.toLowerCase() ?? '';
       final matchesArea = areaSearch.isEmpty ||
-          (c.area != null && c.area!.toLowerCase().contains(areaSearch));
+          areaLower.contains(areaSearch) ||
+          AppTranslations.normalizeAsciiDigits(areaLower).contains(normAreaSearch);
 
-      final displayDate = DateFormat('MMM d, yyyy').format(c.createdAt).toLowerCase();
-      final matchesDate = dateSearch.isEmpty || displayDate.contains(dateSearch);
+      final dateEn =
+          AppTranslations.formatDate(c.createdAt, 'en', pattern: 'MMM d, yyyy')
+              .toLowerCase();
+      final dateMr = AppTranslations.normalizeAsciiDigits(
+        AppTranslations.formatDate(c.createdAt, 'mr', pattern: 'MMM d, yyyy'),
+      ).toLowerCase();
+      final dateHi = AppTranslations.normalizeAsciiDigits(
+        AppTranslations.formatDate(c.createdAt, 'hi', pattern: 'MMM d, yyyy'),
+      ).toLowerCase();
+      final matchesDate = dateSearch.isEmpty ||
+          dateEn.contains(normDateSearch) ||
+          dateMr.contains(normDateSearch) ||
+          dateHi.contains(normDateSearch);
 
       final statusMatch = _filterStatus == 'All' ||
           c.status.toLowerCase() == _filterStatus.toLowerCase();
@@ -189,20 +211,8 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
     }
   }
 
-  String _getStatusText(String status, bool isMr) {
-    switch (status.toLowerCase()) {
-      case 'inprogress':
-        return isMr ? 'सुरू' : 'In Progress';
-      case 'pending':
-        return isMr ? 'प्रलंबित' : 'Pending';
-      case 'assigned':
-        return isMr ? 'नेमलेले' : 'Assigned';
-      case 'resolved':
-        return isMr ? 'निकाली' : 'Resolved';
-      default:
-        return isMr ? 'बंद' : 'Closed';
-    }
-  }
+  String _getStatusText(String status, String lang) =>
+      AppTranslations.getStatus(status, lang);
 
   Color _getTypeBg(String type) {
     if (type == 'SelfIdentified') return const Color(0xFFFFF7ED);
@@ -234,7 +244,6 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final filtered = _filteredComplaints;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -255,7 +264,12 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+          lang,
+          en: 'Open Menu Drawer',
+          mr: 'मेनू उघडा',
+          hi: 'मेनू खोलें',
+        ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -335,7 +349,12 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                               onChanged: (_) => setState(() => _displayedLimit = 20),
                               style: const TextStyle(fontSize: 13),
                               decoration: InputDecoration(
-                                hintText: isMr ? 'समस्या किंवा नागरिक शोधा...' : 'Search by title, description or citizen...',
+                                hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Search by title, description or citizen...',
+                      mr: 'समस्या किंवा नागरिक शोधा...',
+                      hi: 'समस्या या नागरिक खोजें...',
+                    ),
                                 hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                 prefixIcon: const Icon(Icons.search, size: 19, color: Color(0xFF94A3B8)),
                                 suffixIcon: _searchCtrl.text.isNotEmpty
@@ -374,7 +393,12 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                                         onChanged: (_) => setState(() => _showAreaDropdown = true),
                                         style: const TextStyle(fontSize: 12.5),
                                         decoration: InputDecoration(
-                                          hintText: isMr ? 'परिसर शोधा...' : 'Search area...',
+                                          hintText: AppTranslations.pick(
+                                lang,
+                                en: 'Search area...',
+                                mr: 'परिसर शोधा...',
+                                hi: 'क्षेत्र खोजें...',
+                              ),
                                           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                           prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
                                           suffixIcon: _areaSearchCtrl.text.isNotEmpty
@@ -414,7 +438,12 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                                     onChanged: (_) => setState(() => _showDateDropdown = true),
                                     style: const TextStyle(fontSize: 12.5),
                                     decoration: InputDecoration(
-                                      hintText: isMr ? 'तारीख फिल्टर...' : 'Filter by date...',
+                                      hintText: AppTranslations.pick(
+                                lang,
+                                en: 'Filter by date...',
+                                mr: 'तारीख फिल्टर...',
+                                hi: 'तारीख फ़िल्टर...',
+                              ),
                                       hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                       prefixIcon: const Icon(Icons.calendar_today_outlined, size: 17, color: Color(0xFF94A3B8)),
                                       suffixIcon: _dateSearchCtrl.text.isNotEmpty
@@ -458,14 +487,24 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                               child: ListView(
                                 shrinkWrap: true,
                                 children: _uniqueAreas
-                                    .where((a) =>
-                                        _areaSearchCtrl.text.isEmpty ||
-                                        a['name'].toString().toLowerCase().contains(_areaSearchCtrl.text.toLowerCase()))
+                                    .where((a) {
+                                      if (_areaSearchCtrl.text.isEmpty) return true;
+                                      final q = _areaSearchCtrl.text.toLowerCase();
+                                      final normQ = AppTranslations.normalizeAsciiDigits(q);
+                                      final name = a['name'].toString().toLowerCase();
+                                      return name.contains(q) ||
+                                          AppTranslations.normalizeAsciiDigits(name)
+                                              .contains(normQ);
+                                    })
                                     .map((area) {
                                   return ListTile(
                                     dense: true,
                                     visualDensity: VisualDensity.compact,
-                                    title: Text(area['name'] as String, style: const TextStyle(fontSize: 12.5)),
+                                    title: AppTranslatedText(
+                                      area['name'] as String,
+                                      targetLanguage: lang,
+                                      style: const TextStyle(fontSize: 12.5),
+                                    ),
                                     trailing: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                       decoration: BoxDecoration(
@@ -473,7 +512,10 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        '${area['count']}',
+                                        AppTranslations.formatDigits(
+                                          '${area['count']}',
+                                          lang,
+                                        ),
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -510,34 +552,70 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                               child: ListView(
                                 shrinkWrap: true,
                                 children: _uniqueDates
-                                    .where((d) =>
-                                        _dateSearchCtrl.text.isEmpty ||
-                                        d['display'].toString().toLowerCase().contains(_dateSearchCtrl.text.toLowerCase()))
-                                    .map((d) {
-                                  return ListTile(
-                                    dense: true,
-                                    visualDensity: VisualDensity.compact,
-                                    title: Text(d['display'] as String, style: const TextStyle(fontSize: 12.5)),
-                                    trailing: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(10),
+                                    .where((d) {
+                                      return _dateSearchCtrl.text.isEmpty ||
+                                        d['display']
+                                            .toString()
+                                            .toLowerCase()
+                                            .contains(
+                                              AppTranslations.normalizeAsciiDigits(
+                                                _dateSearchCtrl.text,
+                                              ).toLowerCase(),
+                                            ) ||
+                                        AppTranslations.normalizeAsciiDigits(
+                                          AppTranslations.formatDate(
+                                            d['date'] as DateTime,
+                                            lang,
+                                            pattern: 'MMM d, yyyy',
+                                          ),
+                                        ).toLowerCase().contains(
+                                              AppTranslations.normalizeAsciiDigits(
+                                                _dateSearchCtrl.text,
+                                              ).toLowerCase(),
+                                            );
+                                  }).map((d) {
+                                    final formattedDate = AppTranslations.formatDate(
+                                      d['date'] as DateTime,
+                                      lang,
+                                      pattern: 'MMM d, yyyy',
+                                    );
+                                    return ListTile(
+                                      dense: true,
+                                      visualDensity: VisualDensity.compact,
+                                      title: Text(
+                                        formattedDate,
+                                        style: const TextStyle(fontSize: 12.5),
                                       ),
-                                      child: Text(
-                                        '${d['count']}',
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold),
+                                      trailing: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          AppTranslations.formatDigits(
+                                            '${d['count']}',
+                                            lang,
+                                          ),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF475569),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    onTap: () {
-                                      setState(() {
-                                        _dateSearchCtrl.text = d['display'] as String;
-                                        _showDateDropdown = false;
-                                        _displayedLimit = 20;
-                                      });
-                                    },
-                                  );
-                                }).toList(),
+                                      onTap: () {
+                                        setState(() {
+                                          _dateSearchCtrl.text = formattedDate;
+                                          _showDateDropdown = false;
+                                          _displayedLimit = 20;
+                                        });
+                                      },
+                                    );
+                                  }).toList(),
                               ),
                             ),
                           ],
@@ -576,7 +654,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                                 border: Border.all(color: const Color(0xFFBAE6FD)),
                               ),
                               child: Text(
-                                '${lang == "mr" ? "एकूण समस्या" : (lang == "hi" ? "कुल समस्याएं" : "Total Issues")}: ${filtered.length}',
+                                '${AppTranslations.pick(lang, en: "Total Issues", mr: "एकूण समस्या", hi: "कुल समस्याएं")}: ${AppTranslations.formatDigits(filtered.length, lang)}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -638,13 +716,14 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                               const SizedBox(width: 8),
                               // PDF Export Button (Themed Component)
                               AppPdfButton(
-                                label: isMr ? 'अहवाल' : 'Download Report',
+                                label: AppTranslations.getDownloadReport(lang),
                                 style: AppPdfButtonStyle.outlined,
                                 onPressed: () {
                                   WardProblemsReportGenerator.generateAndPrintReport(
                                     problems: filtered,
                                     areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
                                     statusFilter: _filterStatus,
+                                    lang: lang,
                                   );
                                 },
                               ),
@@ -656,17 +735,22 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
 
                     // Main Content: Report Table or Cards Grid
                     if (_viewMode == 'report') ...[
-                      _buildReportTableView(isMr, _visibleComplaints),
+                      _buildReportTableView(lang, _visibleComplaints),
                     ] else ...[
-                      _buildCardsGridView(isMr, _visibleComplaints, lang),
+                      _buildCardsGridView(_visibleComplaints, lang),
                     ],
                     AppLoadMoreFooter(
                       currentCount: _visibleComplaints.length,
                       totalCount: filtered.length,
                       pageSize: 20,
                       onLoadMore: () => setState(() => _displayedLimit += 20),
-                      label: isMr ? 'तक्रारी' : 'problems',
-                      isMarathi: isMr,
+                      label: AppTranslations.pick(
+                        lang,
+                        en: 'problems',
+                        mr: 'तक्रारी',
+                        hi: 'शिकायतें',
+                      ),
+                      isMarathi: lang == 'mr',
                     ),
 
                     const SizedBox(height: 80),
@@ -680,7 +764,12 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
           onPressed: _openNewWardProblemModal,
           icon: const Icon(Icons.add_rounded, size: 22),
           label: Text(
-            isMr ? 'नवीन तक्रार नोंदवा' : 'New Problem',
+            AppTranslations.pick(
+              lang,
+              en: 'New Problem',
+              mr: 'नवीन तक्रार नोंदवा',
+              hi: 'नई समस्या दर्ज करें',
+            ),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -721,7 +810,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
   }
 
   // Cards Grid View matching WardWiseProblem.tsx lines 559-634
-  Widget _buildCardsGridView(bool isMr, List<ComplaintModel> items, String lang) {
+  Widget _buildCardsGridView(List<ComplaintModel> items, String lang) {
     if (items.isEmpty) {
       return Container(
         margin: const EdgeInsets.all(16),
@@ -737,7 +826,12 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
             const Icon(Icons.inbox_outlined, size: 48, color: Color(0xFF94A3B8)),
             const SizedBox(height: 12),
             Text(
-              isMr ? 'कोणतीही समस्या आढळली नाही' : 'No requests found for this filter',
+              AppTranslations.pick(
+                lang,
+                en: 'No requests found for this filter',
+                mr: 'कोणतीही समस्या आढळली नाही',
+                hi: 'इस फ़िल्टर के लिए कोई समस्या नहीं मिली',
+              ),
               style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -749,7 +843,14 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               icon: const Icon(Icons.add, size: 16),
-              label: Text(isMr ? 'नवीन तक्रार नोंदवा' : 'New Request'),
+              label: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'New Request',
+                  mr: 'नवीन तक्रार नोंदवा',
+                  hi: 'नया अनुरोध दर्ज करें',
+                ),
+              ),
             ),
           ],
         ),
@@ -806,7 +907,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                           border: Border.all(color: _getStatusBorderColor(c.status)),
                         ),
                         child: Text(
-                          _getStatusText(c.status, isMr),
+                          _getStatusText(c.status, lang),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -821,16 +922,29 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: _getTypeBorderColor(c.category)),
                         ),
-                        child: Text(
-                          c.category == 'SelfIdentified'
-                              ? (isMr ? 'स्व-ओळखलेली' : 'SelfIdentified')
-                              : c.category,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: _getTypeTextColor(c.category),
-                          ),
-                        ),
+                        child: c.category == 'SelfIdentified'
+                            ? Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Self Identified',
+                                  mr: 'स्व-ओळखलेली',
+                                  hi: 'स्व-चिह्नित',
+                                ),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: _getTypeTextColor(c.category),
+                                ),
+                              )
+                            : AppTranslatedText(
+                                c.category,
+                                targetLanguage: lang,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: _getTypeTextColor(c.category),
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -851,14 +965,25 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                         children: [
                           const Icon(Icons.person_outline, size: 14, color: Color(0xFF1D4ED8)),
                           const SizedBox(width: 4),
+                          Text(
+                            '${AppTranslations.pick(lang, en: 'Assigned', mr: 'नियुक्त', hi: 'सौंपा गया')}: ',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
+                          ),
                           Flexible(
-                            child: Text(
-                              'Assigned: ${c.assignedStaffName}${c.assignedStaffMobile != null && c.assignedStaffMobile!.isNotEmpty ? " | ${c.assignedStaffMobile}" : ""}',
+                            child: AppTranslatedText(
+                              c.assignedStaffName!,
+                              targetLanguage: lang,
+                              isName: true,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
                             ),
                           ),
+                          if (c.assignedStaffMobile != null && c.assignedStaffMobile!.isNotEmpty)
+                            Text(
+                              AppTranslations.formatDigits(' | ${c.assignedStaffMobile}', lang),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8)),
+                            ),
                         ],
                       ),
                     ),
@@ -879,13 +1004,19 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                         children: [
                           const Icon(Icons.person_outline, size: 13, color: Color(0xFF475569)),
                           const SizedBox(width: 4),
-                          Text(
-                            c.citizenName!,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                          Flexible(
+                            child: AppTranslatedText(
+                              c.citizenName!,
+                              targetLanguage: lang,
+                              isName: true,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
                           ),
                           if (c.citizenMobile != null && c.citizenMobile!.isNotEmpty) ...[
                             Text(
-                              ' | ${c.citizenMobile}',
+                              AppTranslations.formatDigits(' | ${c.citizenMobile}', lang),
                               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                             ),
                           ],
@@ -933,7 +1064,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                           const Icon(Icons.calendar_today_outlined, size: 13, color: Color(0xFF64748B)),
                           const SizedBox(width: 4),
                           Text(
-                            DateFormat('MMM d, h:mm a').format(c.createdAt),
+                            '${AppTranslations.formatDate(c.createdAt, lang, pattern: 'MMM d')}, ${AppTranslations.formatTime(c.createdAt, lang)}',
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                           ),
                         ],
@@ -946,10 +1077,12 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                               const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF64748B)),
                               const SizedBox(width: 3),
                               Flexible(
-                                child: Text(
+                                child: AppTranslatedText(
                                   c.area != null && c.location != null && c.area!.isNotEmpty && c.location!.isNotEmpty
                                       ? '${c.area!}, ${c.location!}'
                                       : ((c.area != null && c.area!.isNotEmpty) ? c.area! : (c.location ?? '')),
+                                  targetLanguage: lang,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                                 ),
@@ -970,7 +1103,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
   }
 
   // Report Table View matching WardWiseProblem.tsx lines 475-557
-  Widget _buildReportTableView(bool isMr, List<ComplaintModel> items) {
+  Widget _buildReportTableView(String lang, List<ComplaintModel> items) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -994,7 +1127,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${isMr ? "अहवाल तक्ता" : "Report View"} (${items.length})',
+                  '${AppTranslations.pick(lang, en: "Report View", mr: "अहवाल तक्ता", hi: "रिपोर्ट तालिका")} (${AppTranslations.formatDigits('${items.length}', lang)})',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                 ),
                 ElevatedButton.icon(
@@ -1003,6 +1136,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                       problems: items,
                       areaFilter: _areaSearchCtrl.text.isNotEmpty ? _areaSearchCtrl.text : 'All Areas',
                       statusFilter: _filterStatus,
+                      lang: lang,
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -1015,7 +1149,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                   ),
                   icon: const Icon(Icons.download_rounded, size: 16),
                   label: Text(
-                    isMr ? 'अहवाल' : 'Download Report',
+                    AppTranslations.getDownloadReport(lang),
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -1031,12 +1165,12 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
               headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
               columnSpacing: 20,
               columns: [
-                DataColumn(label: Text(isMr ? 'क्र.' : 'Sr No', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'परिसर' : 'Area', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'शीर्षक व प्रकार' : 'Title & Type', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'स्थिती' : 'Status', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'नागरिक माहिती' : 'Citizen Info', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text(isMr ? 'तारीख' : 'Date', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Sr No', mr: 'क्र.', hi: 'क्र.'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Area', mr: 'परिसर', hi: 'क्षेत्र'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Title & Type', mr: 'शीर्षक व प्रकार', hi: 'शीर्षक व प्रकार'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Citizen Info', mr: 'नागरिक माहिती', hi: 'नागरिक जानकारी'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                DataColumn(label: Text(AppTranslations.pick(lang, en: 'Date', mr: 'तारीख', hi: 'तारीख'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
               ],
               rows: items.asMap().entries.map((entry) {
                 final idx = entry.key;
@@ -1053,12 +1187,13 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                     });
                   },
                   cells: [
-                    DataCell(Text('${idx + 1}', style: const TextStyle(fontSize: 12))),
+                    DataCell(Text(AppTranslations.formatDigits('${idx + 1}', lang), style: const TextStyle(fontSize: 12))),
                     DataCell(
                       SizedBox(
                         width: 130,
-                        child: Text(
-                          c.area ?? c.location ?? 'Ward 12',
+                        child: AppTranslatedText(
+                          c.area ?? c.location ?? AppTranslations.pick(lang, en: 'Ward 12', mr: 'प्रभाग १२', hi: 'वार्ड १२'),
+                          targetLanguage: lang,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -1072,14 +1207,16 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppTranslatedText(
                               c.title,
+                              targetLanguage: lang,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
-                            Text(
+                            AppTranslatedText(
                               c.description,
+                              targetLanguage: lang,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
@@ -1097,7 +1234,7 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                           border: Border.all(color: _getStatusBorderColor(c.status)),
                         ),
                         child: Text(
-                          _getStatusText(c.status, isMr),
+                          _getStatusText(c.status, lang),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -1113,21 +1250,23 @@ class _WardProblemsScreenState extends ConsumerState<WardProblemsScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppTranslatedText(
                               c.citizenName ?? '--',
+                              targetLanguage: lang,
+                              isName: true,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                             if (c.citizenMobile != null && c.citizenMobile!.isNotEmpty)
-                              Text(c.citizenMobile!, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              Text(AppTranslations.formatDigits(c.citizenMobile!, lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                           ],
                         ),
                       ),
                     ),
                     DataCell(
                       Text(
-                        DateFormat('MMM d, yyyy').format(c.createdAt),
+                        AppTranslations.formatDate(c.createdAt, lang, pattern: 'MMM d, yyyy'),
                         style: const TextStyle(fontSize: 12),
                       ),
                     ),

@@ -3,7 +3,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/localization/app_translations.dart';
 import '../../core/services/supabase_service.dart';
+import '../providers/language_provider.dart';
 import 'app_modal_sheet.dart';
 
 /// Standardized Image / Document Upload widget across all popups.
@@ -127,12 +129,16 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
         }
       } catch (_) {
         if (mounted) {
+          final lang = appLanguageValueNotifier.value;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                widget.isMarathi
-                    ? 'फाईल किंवा फोटो निवडताना त्रुटी आली'
-                    : 'Failed to pick file or document',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Failed to pick file or document',
+                  mr: 'फाईल किंवा फोटो निवडताना त्रुटी आली',
+                  hi: 'फ़ाइल या फ़ोटो चुनने में त्रुटि हुई',
+                ),
               ),
             ),
           );
@@ -157,218 +163,237 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = widget.isMarathi;
-    final hasImages = _files.isNotEmpty || (_existingUrl != null && _existingUrl!.isNotEmpty);
-    final isDesktopPlatform = kIsWeb || (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux));
-    final allowCamera = (widget.enableCamera ?? !isDesktopPlatform) && !isDesktopPlatform;
+    return ValueListenableBuilder<String>(
+      valueListenable: appLanguageValueNotifier,
+      builder: (context, activeLang, _) {
+        final lang = (activeLang == 'en' && widget.isMarathi) ? 'mr' : activeLang;
+        final hasImages = _files.isNotEmpty || (_existingUrl != null && _existingUrl!.isNotEmpty);
+        final isDesktopPlatform = kIsWeb || (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux));
+        final allowCamera = (widget.enableCamera ?? !isDesktopPlatform) && !isDesktopPlatform;
+        final sizeLimit = AppTranslations.formatDigits('50MB', lang);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (widget.label != null && widget.label!.isNotEmpty)
-          AppFieldLabel(
-            label: widget.label!,
-            isRequired: widget.isRequired,
-            optionalHint: isMr ? 'ऐच्छिक' : 'Optional',
-          ),
-
-        // Attachment Selector: Desktop Dropzone (No Camera on PC) vs Mobile Buttons
-        if (!allowCamera)
-          Material(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: () => _pick(ImageSource.gallery),
-              borderRadius: BorderRadius.circular(12),
-              hoverColor: const Color(0xFFEFF6FF),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.cloud_upload_outlined,
-                        size: 24,
-                        color: Color(0xFF0284C7),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isMr ? 'अपलोड करण्यासाठी क्लिक करा किंवा निवडा' : 'Click to upload or browse photos / files',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF334155),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.allowMultiple
-                          ? (isMr ? 'एकापेक्षा जास्त फोटो/कागदपत्रे निवडा (कमाल ५०MB)' : 'Select one or more photos or documents (Max 50MB)')
-                          : (isMr ? 'फोटो किंवा कागदपत्र निवडा (कमाल ५०MB)' : 'Select photo or document (Max 50MB)'),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.label != null && widget.label!.isNotEmpty)
+              AppFieldLabel(
+                label: widget.label!,
+                isRequired: widget.isRequired,
+                optionalHint: AppTranslations.pick(lang, en: 'Optional', mr: 'ऐच्छिक', hi: 'वैकल्पिक'),
               ),
-            ),
-          )
-        else
-          // Mobile: Two side-by-side action buttons: Camera & Phone Storage
-          Row(
-            children: [
-              // 1. Camera Button
-              Expanded(
-                child: Material(
-                  color: const Color(0xFFF8FAFC),
+
+            // Attachment Selector: Desktop Dropzone (No Camera on PC) vs Mobile Buttons
+            if (!allowCamera)
+              Material(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () => _pick(ImageSource.gallery),
                   borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: () => _pick(ImageSource.camera),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFEFF6FF),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt_outlined,
-                              size: 18,
-                              color: Color(0xFF0284C7),
-                            ),
+                  hoverColor: const Color(0xFFEFF6FF),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  isMr ? 'कॅमेरा' : 'Camera',
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  isMr ? 'फोटो काढा' : 'Take photo',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
+                          child: const Icon(
+                            Icons.cloud_upload_outlined,
+                            size: 24,
+                            color: Color(0xFF0284C7),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          AppTranslations.pick(
+                            lang,
+                            en: 'Click to upload or browse photos / files',
+                            mr: 'अपलोड करण्यासाठी क्लिक करा किंवा निवडा',
+                            hi: 'अपलोड करने के लिए क्लिक करें या फ़ाइल चुनें',
+                          ),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.allowMultiple
+                              ? AppTranslations.pick(
+                                  lang,
+                                  en: 'Select one or more photos or documents (Max $sizeLimit)',
+                                  mr: 'एकापेक्षा जास्त फोटो/कागदपत्रे निवडा (कमाल $sizeLimit)',
+                                  hi: 'एक या अधिक फ़ोटो या दस्तावेज़ चुनें (अधिकतम $sizeLimit)',
+                                )
+                              : AppTranslations.pick(
+                                  lang,
+                                  en: 'Select photo or document (Max $sizeLimit)',
+                                  mr: 'फोटो किंवा कागदपत्र निवडा (कमाल $sizeLimit)',
+                                  hi: 'फ़ोटो या दस्तावेज़ चुनें (अधिकतम $sizeLimit)',
+                                ),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-
-              // 2. Phone Storage / Gallery Button
-              Expanded(
-                child: Material(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: () => _pick(ImageSource.gallery),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                      decoration: BoxDecoration(
+              )
+            else
+              // Mobile: Two side-by-side action buttons: Camera & Phone Storage
+              Row(
+                children: [
+                  // 1. Camera Button
+                  Expanded(
+                    child: Material(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () => _pick(ImageSource.camera),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFECFDF5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.photo_library_outlined,
-                              size: 18,
-                              color: Color(0xFF059669),
-                            ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFCBD5E1)),
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  isMr ? 'फोन स्टोरेज' : 'Phone Storage',
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEFF6FF),
+                                  shape: BoxShape.circle,
                                 ),
-                                Text(
-                                  isMr ? 'गॅलरी निवडा' : 'From gallery',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                child: const Icon(
+                                  Icons.camera_alt_outlined,
+                                  size: 18,
+                                  color: Color(0xFF0284C7),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      AppTranslations.pick(lang, en: 'Camera', mr: 'कॅमेरा', hi: 'कैमरा'),
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      AppTranslations.pick(lang, en: 'Take photo', mr: 'फोटो काढा', hi: 'फ़ोटो लें'),
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+
+                  // 2. Phone Storage / Gallery Button
+                  Expanded(
+                    child: Material(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () => _pick(ImageSource.gallery),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFCBD5E1)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFECFDF5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.photo_library_outlined,
+                                  size: 18,
+                                  color: Color(0xFF059669),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      AppTranslations.pick(lang, en: 'Phone Storage', mr: 'फोन स्टोरेज', hi: 'फ़ोन स्टोरेज'),
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      AppTranslations.pick(lang, en: 'From gallery', mr: 'गॅलरी निवडा', hi: 'गैलरी से चुनें'),
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
 
         // Previews of selected images
         if (hasImages) ...[
@@ -506,6 +531,8 @@ class _AppImagePickerFieldState extends State<AppImagePickerField> {
           ),
         ],
       ],
+    );
+      },
     );
   }
 }

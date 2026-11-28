@@ -7,7 +7,6 @@ import '../../../core/services/translation_service.dart';
 import '../../../data/models/ward_budget_model.dart';
 import '../../../data/repositories/ward_budget_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
@@ -74,7 +73,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
   }
 
   List<WardBudgetModel> get _filteredBudgets {
-    final query = _searchCtrl.text.trim().toLowerCase();
+    final query = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim()).toLowerCase();
 
     return _allBudgets.where((b) {
       if (_selectedYear != 'All' && b.financialYear != _selectedYear) {
@@ -96,7 +95,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
   }
 
   void _showAddModal() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final catCtrl = TextEditingController();
     final areaCtrl = TextEditingController();
     final allocCtrl = TextEditingController();
@@ -132,8 +131,8 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
           builder: (stCtx, setModalState) {
             return Container(
               constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.88,
-        ),
+                maxHeight: MediaQuery.of(context).size.height * 0.88,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -151,10 +150,13 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                   // 1. FIXED HEADER
                   AppModalHeader(
                     icon: Icons.account_balance_wallet_outlined,
-                    title: isMr ? 'नवीन बजेट तरतूद' : 'New Budget Allocation',
-                    subtitle: isMr
-                        ? 'प्रभागासाठी मंजूर बजेट आणि खर्च नोंदवा'
-                        : 'Record sanctioned budget and expenditure allocations',
+                    title: AppTranslations.pick(lang, en: 'New Budget Allocation', mr: 'नवीन बजेट तरतूद', hi: 'नया बजट आवंटन'),
+                    subtitle: AppTranslations.pick(
+                      lang,
+                      en: 'Record sanctioned budget and expenditure allocations',
+                      mr: 'प्रभागासाठी मंजूर बजेट आणि खर्च नोंदवा',
+                      hi: 'वार्ड के लिए स्वीकृत बजट और व्यय दर्ज करें',
+                    ),
                     onClose: () => Navigator.pop(sheetCtx),
                   ),
 
@@ -179,14 +181,12 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppDropdownFormField<String>(
-                                label: isMr ? 'आर्थिक वर्ष' : 'Financial Year',
-                                isRequired: true,
-                                value: fy,
-                                    items: const [
-                                      DropdownMenuItem(value: '2024-2025', child: Text('2024-2025')),
-                                      DropdownMenuItem(value: '2023-2024', child: Text('2023-2024')),
-                                      DropdownMenuItem(value: '2022-2023', child: Text('2022-2023')),
-                                    ],
+                                    label: AppTranslations.pick(lang, en: 'Financial Year', mr: 'आर्थिक वर्ष', hi: 'वित्तीय वर्ष'),
+                                    isRequired: true,
+                                    value: fy,
+                                    items: ['2024-2025', '2023-2024', '2022-2023']
+                                        .map((y) => DropdownMenuItem(value: y, child: Text(AppTranslations.formatDigits(y, lang))))
+                                        .toList(),
                                     onChanged: (val) {
                                       if (val != null) setModalState(() => fy = val);
                                     },
@@ -201,12 +201,14 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'वर्गवारी / बजेट शीर्ष' : 'Category Head',
+                                    label: AppTranslations.pick(lang, en: 'Category Head', mr: 'वर्गवारी / बजेट शीर्ष', hi: 'श्रेणी / बजट शीर्ष'),
                                     isRequired: true,
                                   ),
                                   TextField(
                                     controller: catCtrl,
-                                    decoration: inputDec(hint: isMr ? 'उदा. रस्ते देखभाल' : 'e.g. Road Maintenance'),
+                                    decoration: inputDec(
+                                      hint: AppTranslations.pick(lang, en: 'e.g. Road Maintenance', mr: 'उदा. रस्ते देखभाल', hi: 'उदा. सड़क रखरखाव'),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -217,11 +219,13 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
 
                         // Area / Location
                         AppFieldLabel(
-                          label: isMr ? 'क्षेत्र / ठिकाण' : 'Area / Location',
+                          label: AppTranslations.pick(lang, en: 'Area / Location', mr: 'क्षेत्र / ठिकाण', hi: 'क्षेत्र / स्थान'),
                         ),
                         TextField(
                           controller: areaCtrl,
-                          decoration: inputDec(hint: isMr ? 'उदा. शिवाजी नगर' : 'e.g. Shivaji Nagar'),
+                          decoration: inputDec(
+                            hint: AppTranslations.pick(lang, en: 'e.g. Shivaji Nagar', mr: 'उदा. शिवाजी नगर', hi: 'उदा. शिवाजी नगर'),
+                          ),
                         ),
                         const SizedBox(height: 14),
 
@@ -234,13 +238,13 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'एकूण तरतूद रक्कम (₹)' : 'Total Allocation (₹)',
+                                    label: AppTranslations.pick(lang, en: 'Total Allocation (₹)', mr: 'एकूण तरतूद रक्कम (₹)', hi: 'कुल आवंटन राशि (₹)'),
                                     isRequired: true,
                                   ),
                                   TextField(
                                     controller: allocCtrl,
                                     keyboardType: TextInputType.number,
-                                    decoration: inputDec(hint: '0', prefixText: '₹ '),
+                                    decoration: inputDec(hint: AppTranslations.formatDigits('0', lang), prefixText: '₹ '),
                                   ),
                                 ],
                               ),
@@ -251,12 +255,12 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppFieldLabel(
-                                    label: isMr ? 'सुरुवातीचा खर्च निधी (₹)' : 'Initial Utilized (₹)',
+                                    label: AppTranslations.pick(lang, en: 'Initial Utilized (₹)', mr: 'सुरुवातीचा खर्च निधी (₹)', hi: 'प्रारंभिक व्यय राशि (₹)'),
                                   ),
                                   TextField(
                                     controller: utilCtrl,
                                     keyboardType: TextInputType.number,
-                                    decoration: inputDec(hint: '0', prefixText: '₹ '),
+                                    decoration: inputDec(hint: AppTranslations.formatDigits('0', lang), prefixText: '₹ '),
                                   ),
                                 ],
                               ),
@@ -280,21 +284,35 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                               if (catCtrl.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(isMr ? 'कृपया वर्गवारी / बजेट शीर्ष प्रविष्ट करा' : 'Please enter category head'),
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Please enter category head',
+                                        mr: 'कृपया वर्गवारी / बजेट शीर्ष प्रविष्ट करा',
+                                        hi: 'कृपया श्रेणी / बजट शीर्ष दर्ज करें',
+                                      ),
+                                    ),
                                   ),
                                 );
                                 return;
                               }
-                              final alloc = double.tryParse(allocCtrl.text.trim());
+                              final alloc = double.tryParse(AppTranslations.normalizeAsciiDigits(allocCtrl.text.trim()));
                               if (alloc == null || alloc <= 0) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(isMr ? 'कृपया वैध एकूण तरतूद रक्कम प्रविष्ट करा' : 'Please enter a valid total allocation amount'),
+                                    content: Text(
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Please enter a valid total allocation amount',
+                                        mr: 'कृपया वैध एकूण तरतूद रक्कम प्रविष्ट करा',
+                                        hi: 'कृपया मान्य कुल आवंटन राशि दर्ज करें',
+                                      ),
+                                    ),
                                   ),
                                 );
                                 return;
                               }
-                              final util = double.tryParse(utilCtrl.text.trim()) ?? 0.0;
+                              final util = double.tryParse(AppTranslations.normalizeAsciiDigits(utilCtrl.text.trim())) ?? 0.0;
 
                               final newBudget = WardBudgetModel(
                                 id: 'bdg-${DateTime.now().millisecondsSinceEpoch}',
@@ -317,7 +335,12 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      isMr ? 'बजेट तरतूद यशस्वीरित्या जोडली गेली!' : 'Budget allocation added successfully!',
+                                      AppTranslations.pick(
+                                        lang,
+                                        en: 'Budget allocation added successfully!',
+                                        mr: 'बजेट तरतूद यशस्वीरित्या जोडली गेली!',
+                                        hi: 'बजट आवंटन सफलतापूर्वक जोड़ा गया!',
+                                      ),
                                     ),
                                     backgroundColor: const Color(0xFF16A34A),
                                   ),
@@ -330,7 +353,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 const Icon(Icons.save_rounded, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
-                                  isMr ? 'तरतूद जतन करा' : 'Save Allocation',
+                                  AppTranslations.pick(lang, en: 'Save Allocation', mr: 'तरतूद जतन करा', hi: 'आवंटन सहेजें'),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
                               ],
@@ -351,9 +374,11 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
   }
 
   void _showQuickUpdateModal(WardBudgetModel item) {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final utilCtrl = TextEditingController(text: item.utilizedAmount.toInt().toString());
     final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ', decimalDigits: 0);
+    final subtitleCat = DynamicTranslationService.getCachedTranslation(item.category, lang) ??
+        AppTranslations.formatDigits(item.category, lang);
 
     InputDecoration inputDec({String? hint, String? prefixText}) {
       return InputDecoration(
@@ -398,8 +423,8 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
             children: [
               AppModalHeader(
                 icon: Icons.edit_note_rounded,
-                title: isMr ? 'खर्च अपडेट करा' : 'Update Expenditure',
-                subtitle: item.category,
+                title: AppTranslations.pick(lang, en: 'Update Expenditure', mr: 'खर्च अपडेट करा', hi: 'व्यय अपडेट करें'),
+                subtitle: subtitleCat,
                 onClose: () => Navigator.pop(sheetCtx),
               ),
               Padding(
@@ -424,14 +449,24 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          AppTranslatedText(
+                            item.category,
+                            targetLanguage: lang,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
                           const SizedBox(height: 4),
                           Text(
-                            '${isMr ? "सध्याचा खर्च झालेला निधी" : "Current Utilized Amount"}: ${numFormat.format(item.utilizedAmount)}',
+                            AppTranslations.formatDigits(
+                              '${AppTranslations.pick(lang, en: 'Current Utilized Amount', mr: 'सध्याचा खर्च झालेला निधी', hi: 'वर्तमान व्यय राशि')}: ${numFormat.format(item.utilizedAmount)}',
+                              lang,
+                            ),
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
                           ),
                           Text(
-                            '${isMr ? "एकूण मंजूर" : "Total Sanctioned"}: ${numFormat.format(item.totalAllocation)} | ${isMr ? "क्षेत्र" : "Area"}: ${item.area}',
+                            AppTranslations.formatDigits(
+                              '${AppTranslations.pick(lang, en: 'Total Sanctioned', mr: 'एकूण मंजूर', hi: 'कुल स्वीकृत')}: ${numFormat.format(item.totalAllocation)} | ${AppTranslations.pick(lang, en: 'Area', mr: 'क्षेत्र', hi: 'क्षेत्र')}: ${AppTranslations.getAreaName(item.area, lang)}',
+                              lang,
+                            ),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                         ],
@@ -440,7 +475,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                     const SizedBox(height: 14),
 
                     AppFieldLabel(
-                      label: isMr ? 'नवीन एकूण खर्च (₹)' : 'New Total Utilized Amount (₹)',
+                      label: AppTranslations.pick(lang, en: 'New Total Utilized Amount (₹)', mr: 'नवीन एकूण खर्च (₹)', hi: 'नई कुल व्यय राशि (₹)'),
                       isRequired: true,
                     ),
                     TextField(
@@ -462,61 +497,81 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: () async {
-                    final newUtil = double.tryParse(utilCtrl.text.trim());
-                    if (newUtil == null || newUtil < 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(isMr ? 'कृपया वैध रक्कम प्रविष्ट करा' : 'Please enter a valid amount')),
-                      );
-                      return;
-                    }
+                          final newUtil = double.tryParse(AppTranslations.normalizeAsciiDigits(utilCtrl.text.trim()));
+                          if (newUtil == null || newUtil < 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(AppTranslations.pick(lang, en: 'Please enter a valid amount', mr: 'कृपया वैध रक्कम प्रविष्ट करा', hi: 'कृपया मान्य राशि दर्ज करें')),
+                              ),
+                            );
+                            return;
+                          }
 
-                    final repo = ref.read(wardBudgetRepoProvider);
-                    await repo.updateUtilization(item.id, newUtil);
-                    await _loadData();
+                          final repo = ref.read(wardBudgetRepoProvider);
+                          await repo.updateUtilization(item.id, newUtil);
+                          await _loadData();
 
-                    if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(isMr ? 'खर्च यशस्वीरित्या अपडेट केला!' : 'Expenditure updated successfully!'),
-                          backgroundColor: const Color(0xFF16A34A),
+                          if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(AppTranslations.pick(lang, en: 'Expenditure updated successfully!', mr: 'खर्च यशस्वीरित्या अपडेट केला!', hi: 'व्यय सफलतापूर्वक अपडेट किया गया!')),
+                                backgroundColor: const Color(0xFF16A34A),
+                              ),
+                            );
+                          }
+                        },
+                        child: Text(
+                          AppTranslations.pick(lang, en: 'Update', mr: 'अपडेट करा', hi: 'अपडेट करें'),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                         ),
-                      );
-                    }
-                  },
-                  child: Text(isMr ? 'अपडेट करा' : 'Update', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    ),
-  );
+        );
       },
     );
   }
 
   void _showDeleteConfirmation(WardBudgetModel item) {
+    final lang = ref.read(appLanguageProvider);
+    final catTitle = DynamicTranslationService.getCachedTranslation(item.category, lang) ??
+        AppTranslations.formatDigits(item.category, lang);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Delete Budget Head'),
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.red),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                AppTranslations.pick(lang, en: 'Delete Budget Head', mr: 'बजेट खाते हटवायचे का?', hi: 'बजट शीर्ष हटाएँ?'),
+              ),
+            ),
           ],
         ),
         content: Text(
-          'Are you sure you want to delete "${item.category}"? This cannot be undone.',
+          AppTranslations.pick(
+            lang,
+            en: 'Are you sure you want to delete "$catTitle"? This cannot be undone.',
+            mr: 'तुम्हाला "$catTitle" हे बजेट खाते कायमचे हटवायचे आहे का? ही कृती पूर्ववत करता येणार नाही.',
+            hi: 'क्या आप वाकई "$catTitle" को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।',
+          ),
           style: const TextStyle(fontSize: 14, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(
+              AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -531,11 +586,14 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
               await _loadData();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Budget head deleted'), backgroundColor: Colors.red),
+                  SnackBar(
+                    content: Text(AppTranslations.pick(lang, en: 'Budget head deleted', mr: 'बजेट खाते हटवले', hi: 'बजट शीर्ष हटाया गया')),
+                    backgroundColor: Colors.red,
+                  ),
                 );
               }
             },
-            child: const Text('Delete'),
+            child: Text(AppTranslations.pick(lang, en: 'Delete', mr: 'हटवा', hi: 'हटाएँ')),
           ),
         ],
       ),
@@ -545,7 +603,6 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
-    final isMr = lang == 'mr';
     final displayed = _filteredBudgets;
     final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ', decimalDigits: 0);
 
@@ -572,7 +629,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(lang, en: 'Open Menu Drawer', mr: 'मेनू उघडा', hi: 'मेनू खोलें'),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -648,7 +705,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                   flex: isWide ? 1 : 0,
                                   child: _overviewCard(
                                     title: AppTranslations.t('budget.allocated', lang: lang),
-                                    amount: numFormat.format(totalAllocated),
+                                    amount: AppTranslations.formatDigits(numFormat.format(totalAllocated), lang),
                                     icon: Icons.account_balance_wallet_outlined,
                                     iconColor: const Color(0xFF0284C7),
                                     iconBgColor: const Color(0xFFEFF6FF),
@@ -657,7 +714,12 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                         const Icon(Icons.trending_up, size: 14, color: Color(0xFF64748B)),
                                         const SizedBox(width: 4),
                                         Text(
-                                          lang == 'mr' ? 'आर्थिक वर्ष $_selectedYear' : (lang == 'hi' ? 'वित्तीय वर्ष $_selectedYear' : 'Financial Year $_selectedYear'),
+                                          AppTranslations.formatDigits(
+                                            lang == 'mr'
+                                                ? 'आर्थिक वर्ष $_selectedYear'
+                                                : (lang == 'hi' ? 'वित्तीय वर्ष $_selectedYear' : 'Financial Year $_selectedYear'),
+                                            lang,
+                                          ),
                                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                         ),
                                       ],
@@ -671,7 +733,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                   flex: isWide ? 1 : 0,
                                   child: _overviewCard(
                                     title: AppTranslations.t('budget.utilized', lang: lang),
-                                    amount: numFormat.format(totalUtilized),
+                                    amount: AppTranslations.formatDigits(numFormat.format(totalUtilized), lang),
                                     icon: Icons.pie_chart_outline_rounded,
                                     iconColor: const Color(0xFF6366F1),
                                     iconBgColor: const Color(0xFFEEF2FF),
@@ -691,7 +753,12 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          lang == 'mr' ? '${utilizationPercentage.toStringAsFixed(1)}% वापरले' : (lang == 'hi' ? '${utilizationPercentage.toStringAsFixed(1)}% उपयोग हुआ' : '${utilizationPercentage.toStringAsFixed(1)}% utilized'),
+                                          AppTranslations.formatDigits(
+                                            lang == 'mr'
+                                                ? '${utilizationPercentage.toStringAsFixed(1)}% वापरले'
+                                                : (lang == 'hi' ? '${utilizationPercentage.toStringAsFixed(1)}% उपयोग हुआ' : '${utilizationPercentage.toStringAsFixed(1)}% utilized'),
+                                            lang,
+                                          ),
                                           style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                         ),
                                       ],
@@ -705,7 +772,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                   flex: isWide ? 1 : 0,
                                   child: _overviewCard(
                                     title: AppTranslations.t('budget.remaining', lang: lang),
-                                    amount: numFormat.format(totalRemaining),
+                                    amount: AppTranslations.formatDigits(numFormat.format(totalRemaining), lang),
                                     icon: Icons.savings_outlined,
                                     iconColor: const Color(0xFF16A34A),
                                     iconBgColor: const Color(0xFFF0FDF4),
@@ -769,13 +836,21 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 value: _areas.contains(_selectedArea) ? _selectedArea : 'All',
                                 height: 48,
                                 items: _areas.map((a) {
-                                  final label = a == 'All'
-                                      ? (lang == 'mr' ? 'सर्व परिसर' : (lang == 'hi' ? 'सभी क्षेत्र' : 'All Areas'))
-                                      : a;
+                                  if (a == 'All') {
+                                    return DropdownMenuItem(
+                                      value: a,
+                                      child: Text(
+                                        AppTranslations.pick(lang, en: 'All Areas', mr: 'सर्व परिसर', hi: 'सभी क्षेत्र'),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
+                                  }
                                   return DropdownMenuItem(
                                     value: a,
-                                    child: Text(
-                                      label,
+                                    child: AppTranslatedText(
+                                      a,
+                                      targetLanguage: lang,
+                                      maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   );
@@ -802,7 +877,12 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                                 return DropdownMenuItem(
                                   value: y,
                                   child: Text(
-                                    y == 'All' ? (lang == 'mr' ? 'सर्व वर्षे' : (lang == 'hi' ? 'सभी वर्ष' : 'All FY')) : 'FY $y',
+                                    y == 'All'
+                                        ? AppTranslations.pick(lang, en: 'All FY', mr: 'सर्व वर्षे', hi: 'सभी वर्ष')
+                                        : AppTranslations.formatDigits(
+                                            AppTranslations.pick(lang, en: 'FY $y', mr: 'आ.व. $y', hi: 'वि.व. $y'),
+                                            lang,
+                                          ),
                                     style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold, fontSize: 12),
                                   ),
                                 );
@@ -905,7 +985,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                           pageSize: 20,
                           onLoadMore: () => setState(() => _displayedLimit += 20),
                           label: lang == 'mr' ? 'बजेट नोंदी' : (lang == 'hi' ? 'बजट प्रविष्टियां' : 'budgets'),
-                          isMarathi: isMr,
+                          isMarathi: lang == 'mr',
                         ),
                       ],
                     ],
@@ -972,7 +1052,6 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
   }
 
   Widget _buildGridCardView(List<WardBudgetModel> items, String lang, NumberFormat numFormat) {
-    final isMr = lang == 'mr';
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -1019,7 +1098,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        item.financialYear,
+                        AppTranslations.formatDigits(item.financialYear, lang),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                       ),
                     ),
@@ -1050,7 +1129,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        item.status,
+                        AppTranslations.getStatus(item.status, lang),
                         style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: item.statusColor),
                       ),
                     ),
@@ -1080,9 +1159,9 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                   ),
                   child: Row(
                     children: [
-                      _miniAmountPill(AppTranslations.t('budget.allocated', lang: lang), numFormat.format(item.totalAllocation), const Color(0xFF0F172A)),
-                      _miniAmountPill(AppTranslations.t('budget.utilized', lang: lang), numFormat.format(item.utilizedAmount), const Color(0xFF0284C7)),
-                      _miniAmountPill(AppTranslations.t('budget.remaining', lang: lang), numFormat.format(item.remainingAmount), const Color(0xFF16A34A)),
+                      _miniAmountPill(AppTranslations.t('budget.allocated', lang: lang), AppTranslations.formatDigits(numFormat.format(item.totalAllocation), lang), const Color(0xFF0F172A)),
+                      _miniAmountPill(AppTranslations.t('budget.utilized', lang: lang), AppTranslations.formatDigits(numFormat.format(item.utilizedAmount), lang), const Color(0xFF0284C7)),
+                      _miniAmountPill(AppTranslations.t('budget.remaining', lang: lang), AppTranslations.formatDigits(numFormat.format(item.remainingAmount), lang), const Color(0xFF16A34A)),
                     ],
                   ),
                 ),
@@ -1093,11 +1172,17 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${percent.toStringAsFixed(0)}% ${lang == 'mr' ? 'वापरले' : (lang == 'hi' ? 'उपयोग' : 'utilized')}',
+                      AppTranslations.formatDigits(
+                        '${percent.toStringAsFixed(0)}% ${lang == 'mr' ? 'वापरले' : (lang == 'hi' ? 'उपयोग' : 'utilized')}',
+                        lang,
+                      ),
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: item.progressColor),
                     ),
                     Text(
-                      '${AppTranslations.t('budget.remaining', lang: lang)}: ${numFormat.format(item.remainingAmount)}',
+                      AppTranslations.formatDigits(
+                        '${AppTranslations.t('budget.remaining', lang: lang)}: ${numFormat.format(item.remainingAmount)}',
+                        lang,
+                      ),
                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -1222,7 +1307,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
 
               return DataRow(
                 cells: [
-                  DataCell(Text('$idx')),
+                  DataCell(Text(AppTranslations.formatDigits('$idx', lang))),
                   DataCell(
                     SizedBox(
                       width: 180,
@@ -1236,14 +1321,14 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          Text(item.financialYear, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                          Text(AppTranslations.formatDigits(item.financialYear, lang), style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
                         ],
                       ),
                     ),
                   ),
                   DataCell(AppTranslatedText(item.area, targetLanguage: lang, style: const TextStyle(fontSize: 12))),
-                  DataCell(Text(numFormat.format(item.totalAllocation), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
-                  DataCell(Text(numFormat.format(item.utilizedAmount), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)))),
+                  DataCell(Text(AppTranslations.formatDigits(numFormat.format(item.totalAllocation), lang), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+                  DataCell(Text(AppTranslations.formatDigits(numFormat.format(item.utilizedAmount), lang), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)))),
                   DataCell(
                     SizedBox(
                       width: 110,
@@ -1262,7 +1347,7 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            '${percent.toStringAsFixed(0)}%',
+                            AppTranslations.formatDigits('${percent.toStringAsFixed(0)}%', lang),
                             style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: item.progressColor),
                           ),
                         ],
@@ -1275,12 +1360,12 @@ class _WardBudgetScreenState extends ConsumerState<WardBudgetScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit_note_rounded, size: 20, color: Color(0xFF0284C7)),
-                          tooltip: 'Update Utilized',
+                          tooltip: AppTranslations.pick(lang, en: 'Update Utilized', mr: 'खर्च अपडेट करा', hi: 'व्यय अपडेट करें'),
                           onPressed: () => _showQuickUpdateModal(item),
                         ),
                         IconButton(
                           icon: const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF475569)),
-                          tooltip: 'View Details',
+                          tooltip: AppTranslations.pick(lang, en: 'View Details', mr: 'तपशील पहा', hi: 'विवरण देखें'),
                           onPressed: () async {
                             final res = await Navigator.push(
                               context,

@@ -5,6 +5,7 @@ import '../../../data/models/media_tracking_model.dart';
 import '../../../data/models/social_post_model.dart'; // for IntFormatting
 import '../../../data/repositories/media_tracking_repository.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../providers/language_provider.dart';
 import '../../navigation/app_drawer.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -63,14 +64,22 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
   }
 
   Future<void> _simulateScanning() async {
+    final lang = ref.read(appLanguageProvider);
     setState(() => _isScanning = true);
     await Future.delayed(const Duration(milliseconds: 900));
     if (mounted) {
       setState(() => _isScanning = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Media portals scan completed! Feeds updated.'),
-          backgroundColor: Color(0xFF0284C7),
+        SnackBar(
+          content: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'Media portals scan completed! Feeds updated.',
+              mr: 'मीडिया पोर्टल्स स्कॅन पूर्ण झाले! फीड अद्यतनित केले.',
+              hi: 'मीडिया पोर्टल स्कैन पूरा हुआ! फ़ीड अपडेट हो गए।',
+            ),
+          ),
+          backgroundColor: const Color(0xFF0284C7),
         ),
       );
     }
@@ -123,6 +132,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
   }
 
   void _showHelpGuide() {
+    final lang = ref.read(appLanguageProvider);
     showDialog(
       context: context,
       builder: (ctx) {
@@ -130,12 +140,19 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
-            children: const [
-              Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7)),
-              SizedBox(width: 8),
-              Text(
-                'Media Tracking Guide',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            children: [
+              const Icon(Icons.help_outline_rounded, color: Color(0xFF0284C7)),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Media Tracking Guide',
+                    mr: 'माध्यम ट्रॅकिंग मार्गदर्शक',
+                    hi: 'मीडिया ट्रैकिंग मार्गदर्शिका',
+                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -143,38 +160,79 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Text(
-                  'Media Tracking & Online Portal Monitoring Guide',
-                  style: TextStyle(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Media Tracking & Online Portal Monitoring Guide',
+                    mr: 'माध्यम ट्रॅकिंग आणि ऑनलाइन पोर्टल निरीक्षण मार्गदर्शक',
+                    hi: 'मीडिया ट्रैकिंग व ऑनलाइन पोर्टल निगरानी मार्गदर्शिका',
+                  ),
+                  style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                       color: Color(0xFF0284C7)),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 _GuideStep(
-                  number: '1',
-                  title: 'Search & Profiles',
-                  desc:
-                      'Track news mentions of the Nagarsevak, opposition leaders, or Prabhag 12 development works across regional portals.',
+                  number: AppTranslations.formatDigits('1', lang),
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Search & Profiles',
+                    mr: 'शोध आणि प्रोफाईल',
+                    hi: 'खोज व प्रोफाइल',
+                  ),
+                  desc: AppTranslations.pick(
+                    lang,
+                    en: 'Track news mentions of the Nagarsevak, opposition leaders, or Prabhag 12 development works across regional portals.',
+                    mr: 'नगरसेवक, विरोधी नेते किंवा प्रभाग १२ च्या विकासकामांचे प्रादेशिक पोर्टल्सवरील बातम्यांचे उल्लेख ट्रॅक करा.',
+                    hi: 'नगरसेवक, विपक्षी नेताओं या वार्ड १२ के विकास कार्यों के क्षेत्रीय पोर्टल समाचार उल्लेख ट्रैक करें।',
+                  ),
                 ),
                 _GuideStep(
-                  number: '2',
-                  title: 'Telemetry Logs',
-                  desc:
-                      'Tap the terminal icon to inspect real-time RSS crawlers scanning Sakal, ABP Majha, TV9, Lokmat, and Twitter.',
+                  number: AppTranslations.formatDigits('2', lang),
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Telemetry Logs',
+                    mr: 'टेलिमेट्री लॉग्स',
+                    hi: 'टेलीमेट्री लॉग',
+                  ),
+                  desc: AppTranslations.pick(
+                    lang,
+                    en: 'Tap the terminal icon to inspect real-time RSS crawlers scanning Sakal, ABP Majha, TV9, Lokmat, and Twitter.',
+                    mr: 'सकाळ, एबीपी माझा, टीव्ही९, लोकमत आणि ट्विटर स्कॅन करणारे रिअल-टाइम लॉग्स पाहण्यासाठी टर्मिनल आयकॉनवर टॅप करा.',
+                    hi: 'सकाल, एबीपी माझा, टीवी9, लोकमत व ट्विटर स्कैन करने वाले रीयल-टाइम लॉग देखने के लिए टर्मिनल आइकन टैप करें।',
+                  ),
                 ),
                 _GuideStep(
-                  number: '3',
-                  title: 'Save to Newspaper Clippings',
-                  desc:
-                      'One-click export allows any online digital story to be archived directly into your official Newspaper Clippings register.',
+                  number: AppTranslations.formatDigits('3', lang),
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Save to Newspaper Clippings',
+                    mr: 'वृत्तपत्र कात्रणांमध्ये जतन करा',
+                    hi: 'समाचार कतरन में सहेजें',
+                  ),
+                  desc: AppTranslations.pick(
+                    lang,
+                    en: 'One-click export allows any online digital story to be archived directly into your official Newspaper Clippings register.',
+                    mr: 'एका क्लिकमध्ये कोणतीही ऑनलाइन बातमी अधिकृत वृत्तपत्र कात्रण नोंदवहीत संग्रहित करा.',
+                    hi: 'एक क्लिक से किसी भी ऑनलाइन समाचार को सीधे अपने आधिकारिक समाचार पत्र कतरन रजिस्टर में सहेजें।',
+                  ),
                 ),
                 _GuideStep(
-                  number: '4',
-                  title: 'PDF Audit Reports',
-                  desc:
-                      'Download official landscape A4 reports summarizing sentiment share and estimated digital media reach.',
+                  number: AppTranslations.formatDigits('4', lang),
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'PDF Audit Reports',
+                    mr: 'पीडीएफ ऑडिट अहवाल',
+                    hi: 'पीडीएफ ऑडिट रिपोर्ट',
+                  ),
+                  desc: AppTranslations.pick(
+                    lang,
+                    en: 'Download official landscape A4 reports summarizing sentiment share and estimated digital media reach.',
+                    mr: 'भावनात्मक प्रमाण आणि अंदाजे डिजिटल पोहोच दर्शवणारे अधिकृत पीडीएफ अहवाल डाउनलोड करा.',
+                    hi: 'भावना अनुपात व अनुमानित डिजिटल मीडिया पहुंच दर्शाने वाली आधिकारिक पीडीएफ रिपोर्ट डाउनलोड करें।',
+                  ),
                 ),
               ],
             ),
@@ -188,7 +246,14 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                     borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Got it'),
+              child: Text(
+                AppTranslations.pick(
+                  lang,
+                  en: 'Got it',
+                  mr: 'समजले',
+                  hi: 'समझ गया',
+                ),
+              ),
             ),
           ],
         );
@@ -223,7 +288,12 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -276,11 +346,11 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                       horizontal: 14, vertical: 14),
                   children: [
                     // 1) SEARCH & SCANNER BAR
-                    _buildSearchBar(),
+                    _buildSearchBar(lang),
                     const SizedBox(height: 12),
 
                     // 2) QUICK PROFILES CHIPS
-                    _buildProfilesCarousel(),
+                    _buildProfilesCarousel(lang),
                     const SizedBox(height: 14),
 
                     // 3) 4 EXECUTIVE SUMMARY KPI CARDS
@@ -296,7 +366,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
 
                     // 4) TELEMETRY TERMINAL LOGS (Collapsible)
                     if (_showTelemetry) ...[
-                      _buildTelemetryTerminal(),
+                      _buildTelemetryTerminal(lang),
                       const SizedBox(height: 14),
                     ],
 
@@ -362,8 +432,18 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                                 size: 20,
                               ),
                               tooltip: _viewMode == 'stream'
-                                  ? 'Switch to Table'
-                                  : 'Switch to Stream',
+                                  ? AppTranslations.pick(
+                                      lang,
+                                      en: 'Switch to Table',
+                                      mr: 'तक्त्यात पहा',
+                                      hi: 'तालिका में देखें',
+                                    )
+                                  : AppTranslations.pick(
+                                      lang,
+                                      en: 'Switch to Stream',
+                                      mr: 'कार्ड स्वरूपात पहा',
+                                      hi: 'कार्ड रूप में देखें',
+                                    ),
                               onPressed: () {
                                 setState(() {
                                   _viewMode = _viewMode == 'stream' ? 'table' : 'stream';
@@ -376,18 +456,24 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                                 color: _showTelemetry ? const Color(0xFF16A34A) : const Color(0xFF0284C7),
                                 size: 20,
                               ),
-                              tooltip: 'Scanner Telemetry Logs',
+                              tooltip: AppTranslations.pick(
+                                lang,
+                                en: 'Scanner Telemetry Logs',
+                                mr: 'स्कॅनर टेलिमेट्री लॉग्स',
+                                hi: 'स्कैनर टेलीमेट्री लॉग',
+                              ),
                               onPressed: () {
                                 setState(() => _showTelemetry = !_showTelemetry);
                               },
                             ),
                             AppPdfButton.icon(
-                              tooltip: 'Download Report',
+                              tooltip: AppTranslations.getDownloadReport(lang),
                               onPressed: () {
                                 MediaTrackingReportGenerator.generateAndPrintReport(
                                   articles: filtered,
                                   profileFilter: _selectedProfileId,
                                   sentimentFilter: _activeSentiment,
+                                  lang: lang,
                                 );
                               },
                             ),
@@ -415,7 +501,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
   }
 
   // 1) Search Bar
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(String lang) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -438,18 +524,24 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             child: TextField(
               controller: _searchCtrl,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: 'Enter name or topic (e.g. Amit Chougale)...',
+              decoration: InputDecoration(
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Enter name or topic (e.g. Amit Chougale)...',
+                  mr: 'नाव किंवा विषय प्रविष्ट करा (उदा. अमित चौगुले)...',
+                  hi: 'नाम या विषय दर्ज करें (उदा. अमित चौगुले)...',
+                ),
                 hintStyle:
-                    TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                    const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
           if (_searchCtrl.text.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.clear, size: 18),
+              tooltip: AppTranslations.pick(lang, en: 'Clear', mr: 'साफ करा', hi: 'साफ़ करें'),
               onPressed: () {
                 _searchCtrl.clear();
                 setState(() {});
@@ -479,7 +571,9 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                     const Icon(Icons.radar_rounded, size: 16, color: Colors.white),
                   const SizedBox(width: 6),
                   Text(
-                    _isScanning ? 'Scanning...' : 'Scan',
+                    _isScanning
+                        ? AppTranslations.pick(lang, en: 'Scanning...', mr: 'स्कॅन सुरू...', hi: 'स्कैन हो रहा है...')
+                        : AppTranslations.pick(lang, en: 'Scan', mr: 'स्कॅन करा', hi: 'स्कैन करें'),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -496,23 +590,41 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
   }
 
   // 2) Quick Profiles Carousel
-  Widget _buildProfilesCarousel() {
+  Widget _buildProfilesCarousel(String lang) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: _profiles.map((prof) {
           final isSel = _selectedProfileId == prof.id;
+          final rawName = (lang == 'mr' && prof.nameMarathi.isNotEmpty)
+              ? prof.nameMarathi
+              : prof.name;
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text(
-                '${prof.name} (${prof.mentionsCount})',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                  color: isSel ? Colors.white : const Color(0xFF334155),
-                ),
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppTranslatedText(
+                    rawName,
+                    targetLanguage: lang,
+                    isName: true,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                      color: isSel ? Colors.white : const Color(0xFF334155),
+                    ),
+                  ),
+                  Text(
+                    ' (${AppTranslations.formatDigits(prof.mentionsCount, lang)})',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                      color: isSel ? Colors.white : const Color(0xFF334155),
+                    ),
+                  ),
+                ],
               ),
               selected: isSel,
               selectedColor: const Color(0xFF0284C7),
@@ -681,12 +793,16 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                 ),
               ),
               const Spacer(),
-              Text(
-                subtext,
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+              Flexible(
+                child: Text(
+                  subtext,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
               ),
             ],
@@ -697,7 +813,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
   }
 
   // 4) Telemetry Terminal Box
-  Widget _buildTelemetryTerminal() {
+  Widget _buildTelemetryTerminal(String lang) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -718,20 +834,31 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
-                  CircleAvatar(radius: 4, backgroundColor: Color(0xFF22C55E)),
-                  SizedBox(width: 6),
-                  Text(
-                    'TELEMETRY TERMINAL • RSS & WEB SCRAPING ENGINE',
-                    style: TextStyle(
-                      color: Color(0xFF86EFAC),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+              Expanded(
+                child: Row(
+                  children: [
+                    const CircleAvatar(radius: 4, backgroundColor: Color(0xFF22C55E)),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'TELEMETRY TERMINAL • RSS & WEB SCRAPING ENGINE',
+                          mr: 'टेलिमेट्री टर्मिनल • आरएसएस आणि वेब स्कॅनिंग इंजिन',
+                          hi: 'टेलीमेट्री टर्मिनल • आरएसएस व वेब स्कैनिंग इंजन',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF86EFAC),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               InkWell(
                 onTap: () => setState(() => _showTelemetry = false),
@@ -749,7 +876,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '[${log.timestamp}]',
+                    AppTranslations.formatDigits('[${log.timestamp}]', lang),
                     style: const TextStyle(
                       color: Color(0xFF64748B),
                       fontSize: 10,
@@ -757,8 +884,9 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  AppTranslatedText(
                     log.portal,
+                    targetLanguage: lang,
                     style: const TextStyle(
                       color: Color(0xFF38BDF8),
                       fontSize: 10,
@@ -768,8 +896,9 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                   ),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
+                    child: AppTranslatedText(
                       log.message,
+                      targetLanguage: lang,
                       style: const TextStyle(
                         color: Color(0xFFCBD5E1),
                         fontSize: 10,
@@ -936,8 +1065,9 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                             Icon(article.sourceIcon,
                                 color: Colors.white, size: 12),
                             const SizedBox(width: 4),
-                            Text(
+                            AppTranslatedText(
                               article.source,
+                              targetLanguage: lang,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10.5,
@@ -965,11 +1095,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                           color: article.sentimentColor, width: 0.8),
                     ),
                     child: Text(
-                      lang == 'mr'
-                          ? article.sentimentLabelMarathi
-                          : (lang == 'hi'
-                              ? (article.isPositive ? 'सकारात्मक' : 'नकारात्मक')
-                              : (article.isPositive ? 'Positive' : 'Critical')),
+                      article.sentimentLabel(lang),
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
@@ -989,12 +1115,18 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                   const Icon(Icons.person_pin_rounded,
                       size: 13, color: Color(0xFF0284C7)),
                   const SizedBox(width: 4),
-                  Text(
-                    article.personTracked,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0284C7),
+                  Expanded(
+                    child: AppTranslatedText(
+                      article.personTracked,
+                      targetLanguage: lang,
+                      isName: true,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0284C7),
+                      ),
                     ),
                   ),
                 ],
@@ -1005,8 +1137,9 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             // Headline
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Text(
-                article.titleMarathi,
+              child: AppTranslatedText(
+                article.titleFor(lang),
+                targetLanguage: lang,
                 style: const TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.bold,
@@ -1020,8 +1153,9 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
             // Summary
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Text(
-                article.summaryMarathi,
+              child: AppTranslatedText(
+                article.summaryFor(lang),
+                targetLanguage: lang,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -1179,8 +1313,9 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                       border: Border.all(
                           color: a.sourceBrandColor, width: 0.5),
                     ),
-                    child: Text(
+                    child: AppTranslatedText(
                       a.source,
+                      targetLanguage: lang,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -1189,12 +1324,19 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                     ),
                   ),
                 ),
-                DataCell(Text(a.personTracked)),
+                DataCell(
+                  AppTranslatedText(
+                    a.personTracked,
+                    targetLanguage: lang,
+                    isName: true,
+                  ),
+                ),
                 DataCell(
                   SizedBox(
                     width: 200,
-                    child: Text(
-                      a.titleMarathi,
+                    child: AppTranslatedText(
+                      a.titleFor(lang),
+                      targetLanguage: lang,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1211,11 +1353,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                           Border.all(color: a.sentimentColor, width: 0.5),
                     ),
                     child: Text(
-                      lang == 'mr'
-                          ? a.sentimentLabelMarathi
-                          : (lang == 'hi'
-                              ? (a.isPositive ? 'सकारात्मक' : 'नकारात्मक')
-                              : (a.isPositive ? 'Positive' : 'Critical')),
+                      a.sentimentLabel(lang),
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
@@ -1229,6 +1367,7 @@ class _MediaTrackingScreenState extends ConsumerState<MediaTrackingScreen> {
                   IconButton(
                     icon: const Icon(Icons.arrow_forward_rounded,
                         size: 16, color: Color(0xFF0284C7)),
+                    tooltip: AppTranslations.getDetails(lang),
                     onPressed: () {
                       Navigator.push(
                         context,

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import '../../../core/localization/app_translations.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../data/models/event_model.dart';
 import '../../../data/repositories/events_repository.dart';
 import '../../navigation/app_drawer.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/app_modal_sheet.dart';
 import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_pdf_button.dart';
@@ -62,7 +63,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   }
 
   List<EventModel> get _filteredEvents {
-    final q = _searchCtrl.text.trim().toLowerCase();
+    final q = AppTranslations.normalizeAsciiDigits(_searchCtrl.text.trim())
+        .toLowerCase();
     return _allEvents.where((e) {
       final matchesSearch = q.isEmpty ||
           e.title.toLowerCase().contains(q) ||
@@ -90,7 +92,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   }
 
   void _showCreateEventDialog() {
-    final isMr = ref.read(isMarathiProvider);
+    final lang = ref.read(appLanguageProvider);
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final locCtrl = TextEditingController();
@@ -148,10 +150,18 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 // 1. FIXED HEADER
                 AppModalHeader(
                   icon: Icons.event_available_rounded,
-                  title: isMr ? 'नवीन कार्यक्रम तयार करा' : 'Create New Event',
-                  subtitle: isMr
-                      ? 'नागरिक मेळावे, सभा, आरोग्य शिबिरे व इतर कार्यक्रम'
-                      : 'Organize ward events, citizen gatherings and health camps',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Create New Event',
+                    mr: 'नवीन कार्यक्रम तयार करा',
+                    hi: 'नया कार्यक्रम बनाएं',
+                  ),
+                  subtitle: AppTranslations.pick(
+                    lang,
+                    en: 'Organize ward events, citizen gatherings and health camps',
+                    mr: 'नागरिक मेळावे, सभा, आरोग्य शिबिरे व इतर कार्यक्रम',
+                    hi: 'वार्ड कार्यक्रम, नागरिक सभाएं, स्वास्थ्य शिविर और अन्य आयोजन',
+                  ),
                   onClose: () => Navigator.pop(ctx),
                 ),
 
@@ -166,313 +176,491 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     ),
                     children: [
                       // Title
-                      fieldLabel(isMr ? 'कार्यक्रमाचे नाव / शीर्षक' : 'Event Title', isRequired: true),
-                  TextField(
-                    controller: titleCtrl,
-                    decoration: inputDec(
-                      hint: isMr ? 'उदा. प्रभाग १२ नागरिक सभा' : 'e.g., Ward 12 Citizen Meeting',
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Description with AI Button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      fieldLabel(isMr ? 'तपशील / वर्णन' : 'Description', isRequired: true),
-                      InkWell(
-                        onTap: () {
-                          if (titleCtrl.text.isNotEmpty) {
-                            descCtrl.text = isMr
-                                ? 'प्रभाग १२ मधील नागरिकांसाठी आयोजित कार्यक्रमात सहभागी होण्यासाठी हे निमंत्रण. कृपया वेळेवर उपस्थित राहावे.'
-                                : 'You are cordially invited to attend the event organized for the citizens of Ward 12. Please join us on time.';
-                            setModalState(() {});
-                          }
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFF0284C7)),
-                            const SizedBox(width: 4),
-                            Text(
-                              isMr ? 'AI मसुदा सहाय्यक' : 'AI Draft Assistant',
-                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
-                            ),
-                          ],
+                      fieldLabel(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Event Title',
+                          mr: 'कार्यक्रमाचे नाव / शीर्षक',
+                          hi: 'कार्यक्रम का शीर्षक',
+                        ),
+                        isRequired: true,
+                      ),
+                      TextField(
+                        controller: titleCtrl,
+                        decoration: inputDec(
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'e.g., Ward 12 Citizen Meeting',
+                            mr: 'उदा. प्रभाग १२ नागरिक सभा',
+                            hi: 'उदा. वार्ड १२ नागरिक सभा',
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  TextField(
-                    controller: descCtrl,
-                    maxLines: 3,
-                    decoration: inputDec(
-                      hint: isMr ? 'कार्यक्रमाचा सविस्तर तपशील...' : 'Detailed event description...',
-                    ),
-                  ),
 
-                  const SizedBox(height: 14),
+                      const SizedBox(height: 14),
 
-                  // Side-by-side: Date & Time pickers
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'तारीख' : 'Date', isRequired: true),
-                            InkWell(
-                              onTap: () async {
-                                final picked = await showThemedDatePicker(
-                                  context: ctx,
-                                  initialDate: selectedDate,
-                                  firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                                  lastDate: DateTime.now().add(const Duration(days: 180)),
-                                );
-                                if (picked != null) {
-                                  setModalState(() => selectedDate = picked);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      DateFormat('dd/MM/yyyy').format(selectedDate),
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'वेळ' : 'Time', isRequired: true),
-                            InkWell(
-                              onTap: () async {
-                                final picked = await showTimePicker(
-                                  context: ctx,
-                                  initialTime: selectedTime,
-                                );
-                                if (picked != null) {
-                                  setModalState(() => selectedTime = picked);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF0284C7)),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      selectedTime.format(ctx),
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Side-by-side: Location & Area
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'स्थान / हॉल' : 'Location / Venue', isRequired: true),
-                            TextField(
-                              controller: locCtrl,
-                              decoration: inputDec(
-                                hint: isMr ? 'उदा. समाज मंदिर सभागृह' : 'e.g., Community Hall',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 5,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            fieldLabel(isMr ? 'परिसर / प्रभाग' : 'Area / Locality'),
-                            TextField(
-                              controller: areaCtrl,
-                              decoration: inputDec(
-                                hint: isMr ? 'उदा. शनिवार पेठ' : 'e.g., Shaniwar Peth',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Side-by-side: Event Type & Target Audience (matching EventManagement.tsx)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppDropdownFormField<EventType>(
-                                label: isMr ? 'कार्यक्रमाचा प्रकार' : 'Event Type',
-                                isRequired: true,
-                                value: selectedType,
-                              isExpanded: true,
-                              items: EventType.values.map((t) {
-                                return DropdownMenuItem(
-                                  value: t,
-                                  child: Row(
-                                    children: [
-                                      Icon(t.icon, size: 16, color: t.color),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          isMr ? t.titleMr : t.id,
-                                          style: const TextStyle(fontSize: 12.5),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) setModalState(() => selectedType = val);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppDropdownFormField<String>(
-                                label: isMr ? 'लक्षित वर्ग / समाज' : 'Target Audience',
-                                isRequired: true,
-                                value: targetAudience,
-                              isExpanded: true,
-                              items: [
-                                DropdownMenuItem(value: 'All', child: Text(isMr ? 'सर्व (All)' : 'All Citizens', style: const TextStyle(fontSize: 12.5))),
-                                const DropdownMenuItem(value: 'OPEN', child: Text('OPEN (खुला)', style: TextStyle(fontSize: 12.5))),
-                                const DropdownMenuItem(value: 'OBC', child: Text('OBC (इ.मा.व.)', style: TextStyle(fontSize: 12.5))),
-                                const DropdownMenuItem(value: 'SC', child: Text('SC (अनु. जाती)', style: TextStyle(fontSize: 12.5))),
-                                const DropdownMenuItem(value: 'ST', child: Text('ST (अनु. जमाती)', style: TextStyle(fontSize: 12.5))),
-                                const DropdownMenuItem(value: 'VJNT', child: Text('VJNT (वि.जा.भ.ज.)', style: TextStyle(fontSize: 12.5))),
-                                const DropdownMenuItem(value: 'SBC', child: Text('SBC (वि.मा.प्र.)', style: TextStyle(fontSize: 12.5))),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) setModalState(() => targetAudience = val);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Submit Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        if (titleCtrl.text.trim().isEmpty) return;
-                        final newEvent = EventModel(
-                          id: 'evt-${DateTime.now().millisecondsSinceEpoch}',
-                          title: titleCtrl.text.trim(),
-                          titleMr: titleCtrl.text.trim(),
-                          description: descCtrl.text.trim().isNotEmpty
-                              ? descCtrl.text.trim()
-                              : 'Event organized for Ward 12 citizens.',
-                          eventDate: selectedDate,
-                          eventTime: selectedTime.format(ctx),
-                          location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12 Office',
-                          locationMr: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12 Office',
-                          type: selectedType,
-                          status: 'Planned',
-                          area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Shaniwar Peth',
-                          targetAudience: targetAudience,
-                          createdAt: DateTime.now(),
-                        );
-
-                        final repo = ref.read(eventsRepoProvider);
-                        await repo.createEvent(newEvent);
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                        }
-                        if (mounted) {
-                          _loadEvents();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(isMr ? 'नवीन कार्यक्रम यशस्वीरित्या तयार केला!' : 'New event created successfully!'),
-                              backgroundColor: const Color(0xFF16A34A),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      // Description with AI Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.event_available_rounded, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            isMr ? 'कार्यक्रम तयार करा' : 'Create Event',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          fieldLabel(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Description',
+                              mr: 'तपशील / वर्णन',
+                              hi: 'विवरण',
+                            ),
+                            isRequired: true,
+                          ),
+                          InkWell(
+                            onTap: () {
+                              if (titleCtrl.text.isNotEmpty) {
+                                descCtrl.text = AppTranslations.pick(
+                                  lang,
+                                  en: 'You are cordially invited to attend the event organized for the citizens of Ward 12. Please join us on time.',
+                                  mr: 'प्रभाग १२ मधील नागरिकांसाठी आयोजित कार्यक्रमात सहभागी होण्यासाठी हे निमंत्रण. कृपया वेळेवर उपस्थित राहावे.',
+                                  hi: 'वार्ड १२ के नागरिकों के लिए आयोजित कार्यक्रम में शामिल होने के लिए आपका स्वागत है। कृपया समय पर पधारें।',
+                                );
+                                setModalState(() {});
+                              }
+                            },
+                            child: Row(
+                              children: [
+                                const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFF0284C7)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'AI Draft Assistant',
+                                    mr: 'AI मसुदा सहाय्यक',
+                                    hi: 'AI ड्राफ्ट सहायक',
+                                  ),
+                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
+                      TextField(
+                        controller: descCtrl,
+                        maxLines: 3,
+                        decoration: inputDec(
+                          hint: AppTranslations.pick(
+                            lang,
+                            en: 'Detailed event description...',
+                            mr: 'कार्यक्रमाचा सविस्तर तपशील...',
+                            hi: 'कार्यक्रम का विस्तृत विवरण...',
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Side-by-side: Date & Time pickers
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Date',
+                                    mr: 'तारीख',
+                                    hi: 'दिनांक',
+                                  ),
+                                  isRequired: true,
+                                ),
+                                InkWell(
+                                  onTap: () async {
+                                    final picked = await showThemedDatePicker(
+                                      context: ctx,
+                                      initialDate: selectedDate,
+                                      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                      lastDate: DateTime.now().add(const Duration(days: 180)),
+                                    );
+                                    if (picked != null) {
+                                      setModalState(() => selectedDate = picked);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF0284C7)),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          AppTranslations.formatDate(
+                                            selectedDate,
+                                            lang,
+                                            pattern: 'dd/MM/yyyy',
+                                          ),
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Time',
+                                    mr: 'वेळ',
+                                    hi: 'समय',
+                                  ),
+                                  isRequired: true,
+                                ),
+                                InkWell(
+                                  onTap: () async {
+                                    final picked = await showTimePicker(
+                                      context: ctx,
+                                      initialTime: selectedTime,
+                                    );
+                                    if (picked != null) {
+                                      setModalState(() => selectedTime = picked);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF0284C7)),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          AppTranslations.formatDigits(selectedTime.format(ctx), lang),
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Side-by-side: Location & Area
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Location / Venue',
+                                    mr: 'स्थान / हॉल',
+                                    hi: 'स्थान / स्थल',
+                                  ),
+                                  isRequired: true,
+                                ),
+                                TextField(
+                                  controller: locCtrl,
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g., Community Hall',
+                                      mr: 'उदा. समाज मंदिर सभागृह',
+                                      hi: 'उदा. सामुदायिक भवन',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                fieldLabel(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'Area / Locality',
+                                    mr: 'परिसर / प्रभाग',
+                                    hi: 'क्षेत्र / इलाका',
+                                  ),
+                                ),
+                                TextField(
+                                  controller: areaCtrl,
+                                  decoration: inputDec(
+                                    hint: AppTranslations.pick(
+                                      lang,
+                                      en: 'e.g., Shaniwar Peth',
+                                      mr: 'उदा. शनिवार पेठ',
+                                      hi: 'उदा. शनिवार पेठ',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Side-by-side: Event Type & Target Audience
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppDropdownFormField<EventType>(
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Event Type',
+                                    mr: 'कार्यक्रमाचा प्रकार',
+                                    hi: 'कार्यक्रम का प्रकार',
+                                  ),
+                                  isRequired: true,
+                                  value: selectedType,
+                                  isExpanded: true,
+                                  items: EventType.values.map((t) {
+                                    return DropdownMenuItem(
+                                      value: t,
+                                      child: Row(
+                                        children: [
+                                          Icon(t.icon, size: 16, color: t.color),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              t.title(lang),
+                                              style: const TextStyle(fontSize: 12.5),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => selectedType = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppDropdownFormField<String>(
+                                  label: AppTranslations.pick(
+                                    lang,
+                                    en: 'Target Audience',
+                                    mr: 'लक्षित वर्ग / समाज',
+                                    hi: 'लक्षित वर्ग',
+                                  ),
+                                  isRequired: true,
+                                  value: targetAudience,
+                                  isExpanded: true,
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: 'All',
+                                      child: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'All Citizens',
+                                          mr: 'सर्व नागरिक',
+                                          hi: 'सभी नागरिक',
+                                        ),
+                                        style: const TextStyle(fontSize: 12.5),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'OPEN',
+                                      child: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'OPEN',
+                                          mr: 'OPEN (खुला)',
+                                          hi: 'OPEN (सामान्य)',
+                                        ),
+                                        style: const TextStyle(fontSize: 12.5),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'OBC',
+                                      child: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'OBC',
+                                          mr: 'OBC (इ.मा.व.)',
+                                          hi: 'OBC (अन्य पिछड़ा वर्ग)',
+                                        ),
+                                        style: const TextStyle(fontSize: 12.5),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'SC',
+                                      child: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'SC',
+                                          mr: 'SC (अनु. जाती)',
+                                          hi: 'SC (अनु. जाति)',
+                                        ),
+                                        style: const TextStyle(fontSize: 12.5),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'ST',
+                                      child: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'ST',
+                                          mr: 'ST (अनु. जमाती)',
+                                          hi: 'ST (अनु. जनजाति)',
+                                        ),
+                                        style: const TextStyle(fontSize: 12.5),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'VJNT',
+                                      child: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'VJNT',
+                                          mr: 'VJNT (वि.जा.भ.ज.)',
+                                          hi: 'VJNT',
+                                        ),
+                                        style: const TextStyle(fontSize: 12.5),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'SBC',
+                                      child: Text(
+                                        AppTranslations.pick(
+                                          lang,
+                                          en: 'SBC',
+                                          mr: 'SBC (वि.मा.प्र.)',
+                                          hi: 'SBC',
+                                        ),
+                                        style: const TextStyle(fontSize: 12.5),
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setModalState(() => targetAudience = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Submit Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (titleCtrl.text.trim().isEmpty) return;
+                            final newEvent = EventModel(
+                              id: 'evt-${DateTime.now().millisecondsSinceEpoch}',
+                              title: titleCtrl.text.trim(),
+                              titleMr: titleCtrl.text.trim(),
+                              description: descCtrl.text.trim().isNotEmpty
+                                  ? descCtrl.text.trim()
+                                  : 'Event organized for Ward 12 citizens.',
+                              eventDate: selectedDate,
+                              eventTime: selectedTime.format(ctx),
+                              location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12 Office',
+                              locationMr: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : 'Ward 12 Office',
+                              type: selectedType,
+                              status: 'Planned',
+                              area: areaCtrl.text.trim().isNotEmpty ? areaCtrl.text.trim() : 'Shaniwar Peth',
+                              targetAudience: targetAudience,
+                              createdAt: DateTime.now(),
+                            );
+
+                            final repo = ref.read(eventsRepoProvider);
+                            await repo.createEvent(newEvent);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                            }
+                            if (mounted) {
+                              _loadEvents();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: 'New event created successfully!',
+                                      mr: 'नवीन कार्यक्रम यशस्वीरित्या तयार केला!',
+                                      hi: 'नया कार्यक्रम सफलतापूर्वक बनाया गया!',
+                                    ),
+                                  ),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.event_available_rounded, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppTranslations.pick(
+                                  lang,
+                                  en: 'Create Event',
+                                  mr: 'कार्यक्रम तयार करा',
+                                  hi: 'कार्यक्रम बनाएं',
+                                ),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
+          );
         },
       ),
     );
@@ -480,7 +668,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMr = ref.watch(isMarathiProvider);
+    final lang = ref.watch(appLanguageProvider);
     final filtered = _filteredEvents;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -498,7 +686,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           leading: Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
-              tooltip: 'Open Menu Drawer',
+              tooltip: AppTranslations.pick(
+                lang,
+                en: 'Open Menu Drawer',
+                mr: 'मेनू उघडा',
+                hi: 'मेनू खोलें',
+              ),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Scaffold.of(ctx).openDrawer();
@@ -509,12 +702,17 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
-                'Events & Invites',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Events & Invites',
+                  mr: 'कार्यक्रम व निमंत्रणे',
+                  hi: 'कार्यक्रम एवं निमंत्रण',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -522,10 +720,15 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 ),
               ),
               Text(
-                'Public programs, festival pandal visits and invitations',
+                AppTranslations.pick(
+                  lang,
+                  en: 'Public programs, festival pandal visits and invitations',
+                  mr: 'सार्वजनिक कार्यक्रम, उत्सव भेटी व निमंत्रण व्यवस्थापन',
+                  hi: 'सार्वजनिक कार्यक्रम, उत्सव भेंट और निमंत्रण प्रबंधन',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFFE0F2FE),
@@ -550,15 +753,15 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Search and Filters Card
-                      _buildSearchAndFiltersCard(filtered),
+                      _buildSearchAndFiltersCard(filtered, lang),
 
                       const SizedBox(height: 16),
 
                       // Events Content (Grid or Report Table)
                       if (_viewMode == 'grid')
-                        _buildGridCardsView(_visibleEvents)
+                        _buildGridCardsView(_visibleEvents, lang)
                       else
-                        _buildReportTableView(_visibleEvents),
+                        _buildReportTableView(_visibleEvents, lang),
 
                       if (!_isLoading && filtered.isNotEmpty)
                         AppLoadMoreFooter(
@@ -568,8 +771,13 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           onLoadMore: () {
                             setState(() => _displayedLimit += 20);
                           },
-                          label: isMr ? 'कार्यक्रम' : 'events',
-                          isMarathi: isMr,
+                          label: AppTranslations.pick(
+                            lang,
+                            en: 'events',
+                            mr: 'कार्यक्रम',
+                            hi: 'कार्यक्रम',
+                          ),
+                          isMarathi: lang == 'mr',
                         ),
 
                       const SizedBox(height: 20),
@@ -582,17 +790,21 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           backgroundColor: const Color(0xFF0284C7),
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add_rounded),
-          label: const Text(
-            'New Event',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          label: Text(
+            AppTranslations.pick(
+              lang,
+              en: 'New Event',
+              mr: 'नवीन कार्यक्रम',
+              hi: 'नया कार्यक्रम',
+            ),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSearchAndFiltersCard(List<EventModel> filtered) {
-    final isMr = ref.watch(isMarathiProvider);
+  Widget _buildSearchAndFiltersCard(List<EventModel> filtered, String lang) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -609,7 +821,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 child: TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
-                    hintText: 'Search by title, location or description...',
+                    hintText: AppTranslations.pick(
+                      lang,
+                      en: 'Search by title, location or description...',
+                      mr: 'शीर्षक, ठिकाण किंवा वर्णनाने शोधा...',
+                      hi: 'शीर्षक, स्थान या विवरण से खोजें...',
+                    ),
                     hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                     prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
                     suffixIcon: _searchCtrl.text.isNotEmpty
@@ -646,7 +863,19 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         color: const Color(0xFF0284C7),
                         size: 20,
                       ),
-                      tooltip: _viewMode == 'grid' ? 'Table View' : 'Grid View',
+                      tooltip: _viewMode == 'grid'
+                          ? AppTranslations.pick(
+                              lang,
+                              en: 'Table View',
+                              mr: 'तक्ता दृश्य',
+                              hi: 'तालिका दृश्य',
+                            )
+                          : AppTranslations.pick(
+                              lang,
+                              en: 'Grid View',
+                              mr: 'ग्रिड दृश्य',
+                              hi: 'ग्रिड दृश्य',
+                            ),
                       onPressed: () {
                         setState(() {
                           _viewMode = _viewMode == 'grid' ? 'report' : 'grid';
@@ -654,8 +883,11 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       },
                     ),
                     AppPdfButton.icon(
-                      tooltip: 'Download Report',
-                      onPressed: () => EventReportGenerator.generateAndPrintReport(events: filtered),
+                      tooltip: AppTranslations.getDownloadReport(lang),
+                      onPressed: () => EventReportGenerator.generateAndPrintReport(
+                        events: filtered,
+                        lang: lang,
+                      ),
                     ),
                   ],
                 ),
@@ -671,11 +903,31 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               // Area Dropdown
               Expanded(
                 child: AppDropdown<String>(
-                  title: isMr ? 'परिसर निवडा' : 'Filter by Area',
+                  title: AppTranslations.pick(
+                    lang,
+                    en: 'Filter by Area',
+                    mr: 'परिसर निवडा',
+                    hi: 'क्षेत्र चुनें',
+                  ),
                   value: _selectedArea,
                   items: [
-                    DropdownMenuItem(value: 'all', child: Text(isMr ? 'सर्व परिसर' : 'All Areas', style: const TextStyle(fontSize: 12))),
-                    ..._allAreas.map((a) => DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 12)))),
+                    DropdownMenuItem(
+                      value: 'all',
+                      child: Text(
+                        AppTranslations.getAllAreas(lang),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    ..._allAreas.map(
+                      (a) => DropdownMenuItem(
+                        value: a,
+                        child: AppTranslatedText(
+                          AppTranslations.getAreaName(a, lang),
+                          targetLanguage: lang,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val != null) {
@@ -697,19 +949,22 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildCategoryChip('All (${_allEvents.length})', 'all'),
+                _buildCategoryChip(
+                  '${AppTranslations.getAll(lang)} (${AppTranslations.formatDigits(_allEvents.length, lang)})',
+                  'all',
+                ),
                 const SizedBox(width: 6),
-                _buildCategoryChip('Public Meetings', 'Public Meeting'),
+                _buildCategoryChip(EventType.publicMeeting.title(lang), 'Public Meeting'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('Inaugurations', 'Inauguration'),
+                _buildCategoryChip(EventType.inauguration.title(lang), 'Inauguration'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('Health Camps', 'Health Camp'),
+                _buildCategoryChip(EventType.healthCamp.title(lang), 'Health Camp'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('Rallies', 'Rally'),
+                _buildCategoryChip(EventType.rally.title(lang), 'Rally'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('Door-to-Door Visits', 'Door-to-Door'),
+                _buildCategoryChip(EventType.doorToDoor.title(lang), 'Door-to-Door'),
                 const SizedBox(width: 6),
-                _buildCategoryChip('Cultural Programs', 'Cultural'),
+                _buildCategoryChip(EventType.cultural.title(lang), 'Cultural'),
               ],
             ),
           ),
@@ -743,7 +998,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   // ==========================================
   // VIEW MODE 1: GRID / STREAM CARDS
   // ==========================================
-  Widget _buildGridCardsView(List<EventModel> events) {
+  Widget _buildGridCardsView(List<EventModel> events, String lang) {
     if (events.isEmpty) {
       return Container(
         width: double.infinity,
@@ -753,9 +1008,14 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           children: [
             Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 10),
-            const Text(
-              'No events found.',
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No events found.',
+                mr: 'कोणतेही कार्यक्रम आढळले नाहीत.',
+                hi: 'कोई कार्यक्रम नहीं मिला।',
+              ),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -769,12 +1029,28 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (ctx, idx) {
         final event = events[idx];
-        return _buildEventCard(event);
+        return _buildEventCard(event, lang);
       },
     );
   }
 
-  Widget _buildEventCard(EventModel event) {
+  Widget _buildEventCard(EventModel event, String lang) {
+    final rawTitle =
+        lang == 'mr' && event.titleMr.isNotEmpty ? event.titleMr : event.title;
+    final rawLoc =
+        lang == 'mr' && event.locationMr.isNotEmpty ? event.locationMr : event.location;
+    final goingLabel = AppTranslations.pick(
+      lang,
+      en: 'Going',
+      mr: 'येणार',
+      hi: 'उपस्थित',
+    );
+    final responsesLabel = AppTranslations.pick(
+      lang,
+      en: 'Responses',
+      mr: 'प्रतिसाद',
+      hi: 'प्रतिक्रियाएं',
+    );
     return InkWell(
       onTap: () async {
         await Navigator.push(
@@ -817,7 +1093,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   child: Column(
                     children: [
                       Text(
-                        event.monthShortMr,
+                        event.monthShortFor(lang),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -826,7 +1102,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        event.dayNum,
+                        event.dayNumFor(lang),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -858,7 +1134,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                                 Icon(event.type.icon, size: 10, color: event.type.color),
                                 const SizedBox(width: 3),
                                 Text(
-                                  event.type.titleMr,
+                                  event.type.title(lang),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -869,20 +1145,32 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              event.area,
-                              style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: AppTranslatedText(
+                                AppTranslations.getAreaName(event.area, lang),
+                                targetLanguage: lang,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
+                              ),
                             ),
                           ),
                           const Spacer(),
                           Text(
-                            event.isCompleted ? 'Completed' : 'Upcoming',
+                            event.isCompleted
+                                ? AppTranslations.getStatus('Completed', lang)
+                                : AppTranslations.pick(
+                                    lang,
+                                    en: 'Upcoming',
+                                    mr: 'आगामी',
+                                    hi: 'आगामी',
+                                  ),
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
@@ -892,8 +1180,9 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        event.titleMr,
+                      AppTranslatedText(
+                        rawTitle,
+                        targetLanguage: lang,
                         style: const TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.bold,
@@ -916,16 +1205,18 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               children: [
                 const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
-                Text(
-                  event.eventTime,
+                AppTranslatedText(
+                  AppTranslations.formatDigits(event.eventTime, lang),
+                  targetLanguage: lang,
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
                 ),
                 const SizedBox(width: 12),
                 const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748B)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(
-                    event.locationMr.isNotEmpty ? event.locationMr : event.location,
+                  child: AppTranslatedText(
+                    rawLoc,
+                    targetLanguage: lang,
                     style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -937,8 +1228,9 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             const SizedBox(height: 6),
 
             // Description Snippet
-            Text(
+            AppTranslatedText(
               event.description,
+              targetLanguage: lang,
               style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.35),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -958,7 +1250,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '${event.goingCount} Going • ${event.totalRsvps} Responses',
+                    '${AppTranslations.formatDigits(event.goingCount, lang)} $goingLabel • ${AppTranslations.formatDigits(event.totalRsvps, lang)} $responsesLabel',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -974,7 +1266,15 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     _loadEvents();
                   },
                   icon: const Icon(Icons.send_rounded, size: 13),
-                  label: const Text('Send Invites', style: TextStyle(fontSize: 11.5)),
+                  label: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Send Invites',
+                      mr: 'निमंत्रण पाठवा',
+                      hi: 'निमंत्रण भेजें',
+                    ),
+                    style: const TextStyle(fontSize: 11.5),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF16A34A),
                     foregroundColor: Colors.white,
@@ -994,7 +1294,15 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     _loadEvents();
                   },
                   icon: const Icon(Icons.people_outline_rounded, size: 13),
-                  label: const Text('View RSVPs', style: TextStyle(fontSize: 11.5)),
+                  label: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'View RSVPs',
+                      mr: 'उपस्थिती पहा',
+                      hi: 'RSVP देखें',
+                    ),
+                    style: const TextStyle(fontSize: 11.5),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF0284C7),
                     side: const BorderSide(color: Color(0xFF0284C7)),
@@ -1013,9 +1321,18 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   // ==========================================
   // VIEW MODE 2: MULTI-COLUMN REPORT TABLE
   // ==========================================
-  Widget _buildReportTableView(List<EventModel> events) {
+  Widget _buildReportTableView(List<EventModel> events, String lang) {
     if (events.isEmpty) {
-      return const Center(child: Text('No events available.'));
+      return Center(
+        child: Text(
+          AppTranslations.pick(
+            lang,
+            en: 'No events available.',
+            mr: 'कोणतेही कार्यक्रम उपलब्ध नाहीत.',
+            hi: 'कोई कार्यक्रम उपलब्ध नहीं है।',
+          ),
+        ),
+      );
     }
 
     return Container(
@@ -1030,16 +1347,55 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
           horizontalMargin: 12,
           columnSpacing: 16,
-          columns: const [
-            DataColumn(label: Text('Date & Time', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('Event Title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('Area', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('Venue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('RSVP (Going/Total)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+          columns: [
+            DataColumn(
+              label: Text(
+                AppTranslations.pick(lang, en: 'Date & Time', mr: 'तारीख व वेळ', hi: 'दिनांक व समय'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                AppTranslations.pick(lang, en: 'Event Title', mr: 'कार्यक्रम शीर्षक', hi: 'कार्यक्रम शीर्षक'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                AppTranslations.pick(lang, en: 'Type', mr: 'प्रकार', hi: 'प्रकार'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                AppTranslations.pick(lang, en: 'Area', mr: 'परिसर', hi: 'क्षेत्र'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                AppTranslations.pick(lang, en: 'Venue', mr: 'ठिकाण', hi: 'स्थान'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                AppTranslations.pick(lang, en: 'RSVP (Going/Total)', mr: 'उपस्थिती (येणार/एकूण)', hi: 'RSVP (उपस्थित/कुल)'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                AppTranslations.pick(lang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
           ],
           rows: events.map((event) {
+            final rawTitle =
+                lang == 'mr' && event.titleMr.isNotEmpty ? event.titleMr : event.title;
+            final rawLoc =
+                lang == 'mr' && event.locationMr.isNotEmpty ? event.locationMr : event.location;
             return DataRow(
               onSelectChanged: (_) {
                 Navigator.push(
@@ -1048,12 +1404,18 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 );
               },
               cells: [
-                DataCell(Text('${event.formattedDateShort}\n${event.eventTime}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600))),
+                DataCell(
+                  Text(
+                    '${event.formattedDateShortFor(lang)}\n${AppTranslations.formatDigits(event.eventTime, lang)}',
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                  ),
+                ),
                 DataCell(
                   SizedBox(
                     width: 180,
-                    child: Text(
-                      event.titleMr,
+                    child: AppTranslatedText(
+                      rawTitle,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -1068,24 +1430,36 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      event.type.titleMr,
+                      event.type.title(lang),
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: event.type.color),
                     ),
                   ),
                 ),
-                DataCell(Text(event.area, style: const TextStyle(fontSize: 11.5))),
+                DataCell(
+                  AppTranslatedText(
+                    AppTranslations.getAreaName(event.area, lang),
+                    targetLanguage: lang,
+                    style: const TextStyle(fontSize: 11.5),
+                  ),
+                ),
                 DataCell(
                   SizedBox(
                     width: 140,
-                    child: Text(
-                      event.locationMr.isNotEmpty ? event.locationMr : event.location,
+                    child: AppTranslatedText(
+                      rawLoc,
+                      targetLanguage: lang,
                       style: const TextStyle(fontSize: 11),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                DataCell(Text('${event.goingCount} / ${event.totalRsvps}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)))),
+                DataCell(
+                  Text(
+                    '${AppTranslations.formatDigits(event.goingCount, lang)} / ${AppTranslations.formatDigits(event.totalRsvps, lang)}',
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                  ),
+                ),
                 DataCell(
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1094,7 +1468,14 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      event.isCompleted ? 'Completed' : 'Upcoming',
+                      event.isCompleted
+                          ? AppTranslations.getStatus('Completed', lang)
+                          : AppTranslations.pick(
+                              lang,
+                              en: 'Upcoming',
+                              mr: 'आगामी',
+                              hi: 'आगामी',
+                            ),
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,

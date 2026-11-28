@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../providers/language_provider.dart';
-import '../../../screens/analysis_strategy/analysis_strategy_screen.dart';
 import '../../../screens/analysis_strategy/analysis_strategy_report_generator.dart';
+import '../../../screens/analysis_strategy/analysis_strategy_screen.dart';
 import '../../../widgets/app_dropdown.dart';
 
 class DesktopAnalysisStrategyView extends ConsumerStatefulWidget {
@@ -19,7 +19,7 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
   String _selectedArea = 'Shaniwar Peth';
   String _selectedTone = 'Development'; // 'Development' | 'Grievance' | 'Campaign'
   bool _isGenerating = false;
-  String _aiBrief = '';
+  bool _hasCustomBrief = false;
 
   final List<String> _areas = [
     'Shaniwar Peth',
@@ -29,23 +29,100 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
     'Raviwar Peth',
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _generateDefaultBrief();
+  String _localizedArea(String area, String lang) {
+    if (area == 'Raviwar Peth') {
+      return AppTranslations.pick(
+        lang,
+        en: 'Raviwar Peth',
+        mr: 'रविवार पेठ',
+        hi: 'रविवार पेठ',
+      );
+    }
+    return AppTranslations.getAreaName(area, lang);
   }
 
-  void _generateDefaultBrief() {
-    setState(() {
-      _aiBrief = '''
-📌 **Ward 12 ($_selectedArea) - Strategic Campaign Intelligence Brief**:
+  String _localizedToneLabel(String tone, String lang) {
+    switch (tone) {
+      case 'Grievance':
+        return AppTranslations.pick(
+          lang,
+          en: 'Grievance',
+          mr: 'तक्रार निवारण',
+          hi: 'शिकायत निवारण',
+        );
+      case 'Campaign':
+        return AppTranslations.pick(
+          lang,
+          en: 'Campaign',
+          mr: 'निवडणूक प्रचार',
+          hi: 'चुनाव अभियान',
+        );
+      case 'Development':
+      default:
+        return AppTranslations.pick(
+          lang,
+          en: 'Development',
+          mr: 'विकास कामे',
+          hi: 'विकास कार्य',
+        );
+    }
+  }
+
+  String _buildBriefText(String lang) {
+    final areaName = _localizedArea(_selectedArea, lang);
+    final toneLabel = _localizedToneLabel(_selectedTone, lang);
+
+    if (!_hasCustomBrief) {
+      return AppTranslations.formatDigits(
+        AppTranslations.pick(
+          lang,
+          en: '''📌 **Ward 12 ($areaName) - Strategic Campaign Intelligence Brief**:
 
 1. **Water Supply & Infrastructure Repairs**: Citizen complaints regarding low water pressure constitute 28% of overall volume in this pocket. Prioritizing pipeline overhaul works will yield immediate voter goodwill.
 2. **Youth Voter Outreach (Age 18-35)**: Constitutes 42% of local electorate. Organizing career guidance workshops and inter-ward sports tournaments is strongly recommended.
 3. **Welfare Scheme Camps**: Over 500+ applications have been processed for central & state welfare benefits; scheduling a dedicated assistance desk in the community hall will consolidate support.
-4. **Cooperative Housing Society Meetings**: Direct liaison with management committees across 8 prominent apartment societies is recommended for upcoming weekend town halls.
-''';
-    });
+4. **Cooperative Housing Society Meetings**: Direct liaison with management committees across 8 prominent apartment societies is recommended for upcoming weekend town halls.''',
+          mr: '''📌 **प्रभाग 12 ($areaName) - रणनीतिक मोहीम विश्लेषण सारांश**:
+
+1. **पाणी पुरवठा व पायाभूत सुविधा दुरुस्ती**: या परिसरातील एकूण तक्रारींपैकी 28% तक्रारी कमी दाबाच्या पाणी पुरवठ्याशी संबंधित आहेत. जलवाहिनी दुरुस्तीस प्राधान्य दिल्यास मतदारांचा तात्काळ विश्वास वाढेल.
+2. **युवा मतदार संपर्क (वय 18-35)**: स्थानिक मतदारांपैकी 42% मतदार युवा वर्गातील आहेत. करिअर मार्गदर्शन शिबिरे व प्रभागस्तरीय क्रीडा स्पर्धा आयोजित करण्याची शिफारस आहे.
+3. **कल्याणकारी योजना शिबिरे**: केंद्र व राज्य शासनाच्या विविध योजनांसाठी 500+ हून अधिक अर्जांवर कार्यवाही झाली आहे; समाज मंदिरात विशेष मदत केंद्र सुरू केल्यास पाठिंबा अधिक दृढ होईल.
+4. **सहकारी गृहनिर्माण संस्था बैठका**: आगामी आठवड्याच्या शेवटी 8 प्रमुख अपार्टमेंट सोसायट्यांच्या कार्यकारी समित्यांशी थेट संवाद बैठकांचे आयोजन करण्याची शिफारस आहे.''',
+          hi: '''📌 **वार्ड 12 ($areaName) - रणनीतिक अभियान विश्लेषण सारांश**:
+
+1. **जल आपूर्ति एवं बुनियादी ढांचा सुधार**: इस क्षेत्र में कुल शिकायतों का 28% कम पानी के दबाव से संबंधित है। पाइपलाइन सुधार कार्यों को प्राथमिकता देने से तत्काल मतदाता सद्भावना प्राप्त होगी।
+2. **युवा मतदाता संपर्क (आयु 18-35)**: स्थानीय मतदाताओं में 42% युवा वर्ग से हैं। करियर मार्गदर्शन कार्यशालाओं और अंतर-वार्ड खेल प्रतियोगिताओं का आयोजन अत्यंत अनुशंसित है।
+3. **कल्याणकारी योजना शिविर**: केंद्र और राज्य सरकार की योजनाओं के तहत 500+ से अधिक आवेदनों का निपटारा किया जा चुका है; सामुदायिक भवन में समर्पित सहायता केंद्र लगाने से जनसमर्थन मजबूत होगा।
+4. **सहकारी हाउसिंग सोसायटी बैठकें**: आगामी सप्ताहांत टाउन हॉल बैठकों के लिए 8 प्रमुख अपार्टमेंट सोसायटियों की प्रबंधन समितियों के साथ सीधा संवाद अनुशंसित है।''',
+        ),
+        lang,
+      );
+    }
+
+    return AppTranslations.formatDigits(
+      AppTranslations.pick(
+        lang,
+        en: '''📌 **Ward 12 ($areaName) - Strategic Focus: $toneLabel**:
+
+• **Core Priority #1**: Accelerate visible development works and local civic infrastructure completion across $areaName.
+• **Grievance Resolution Velocity**: Current resolution rate stands at 84%; target an increase to 92% over the next 3 weeks before election announcements.
+• **Community Outreach**: Coordinate direct interactive sessions with local senior citizen clubs and commercial merchant associations next week.
+• **Digital Amplification**: Broadcast video reels of completed road concreting and LED street lighting upgrades across WhatsApp and Facebook networks.''',
+        mr: '''📌 **प्रभाग 12 ($areaName) - मुख्य रणनीतिक दिशा: $toneLabel**:
+
+• **मुख्य प्राधान्य #1**: $areaName परिसरात दृश्यमान विकास कामे व स्थानिक नागरी पायाभूत सुविधांची पूर्तता वेगाने पूर्ण करा.
+• **तक्रार निवारण वेग**: सध्याचे तक्रार निवारण प्रमाण 84% आहे; निवडणूक घोषणेपूर्वी पुढील 3 आठवड्यांत ते 92% पर्यंत नेण्याचे उद्दिष्ट ठेवा.
+• **लोकसंपर्क मोहीम**: पुढील आठवड्यात स्थानिक ज्येष्ठ नागरिक संघटना व व्यापारी महासंघांसोबत थेट संवादात्मक बैठकांचे आयोजन करा.
+• **डिजिटल प्रसार**: पूर्ण झालेल्या काँक्रीट रस्ते आणि LED पथदिव्यांच्या कामांचे व्हिडिओ रील्स व्हॉट्सॲप व फेसबुक नेटवर्कद्वारे प्रसारित करा.''',
+        hi: '''📌 **वार्ड 12 ($areaName) - रणनीतिक फोकस: $toneLabel**:
+
+• **मुख्य प्राथमिकता #1**: $areaName क्षेत्र में दृश्यमान विकास कार्यों और स्थानीय नागरिक बुनियादी ढांचे को तेजी से पूरा करें।
+• **शिकायत समाधान गति**: वर्तमान समाधान दर 84% है; चुनाव घोषणाओं से पहले अगले 3 सप्ताह में इसे 92% तक बढ़ाने का लक्ष्य रखें।
+• **सामुदायिक संपर्क**: अगले सप्ताह स्थानीय वरिष्ठ नागरिक क्लबों और व्यापारिक संघों के साथ सीधे संवादात्मक सत्र आयोजित करें।
+• **डिजिटल प्रचार**: पूर्ण हुए सड़क कंक्रीटीकरण और LED स्ट्रीट लाइट उन्नयन कार्यों के वीडियो रील व्हाट्सएप और फेसबुक नेटवर्क पर प्रसारित करें।''',
+      ),
+      lang,
+    );
   }
 
   Future<void> _triggerAiAnalysis() async {
@@ -54,14 +131,7 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
     if (mounted) {
       setState(() {
         _isGenerating = false;
-        _aiBrief = '''
-📌 **Ward 12 ($_selectedArea) - Strategic Focus: $_selectedTone**:
-
-• **Core Priority #1**: Accelerate visible development works and local civic infrastructure completion across $_selectedArea.
-• **Grievance Resolution Velocity**: Current resolution rate stands at 84%; target an increase to 92% over the next 3 weeks before election announcements.
-• **Community Outreach**: Coordinate direct interactive sessions with local senior citizen clubs and commercial merchant associations next week.
-• **Digital Amplification**: Broadcast video reels of completed road concreting and LED street lighting upgrades across WhatsApp and Facebook networks.
-''';
+        _hasCustomBrief = true;
       });
     }
   }
@@ -104,6 +174,9 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(desktopLanguageProvider);
+    final briefText = _buildBriefText(lang);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
@@ -115,33 +188,48 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.brandPrimary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandPrimary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.query_stats_rounded, color: AppColors.brandPrimary, size: 28),
                       ),
-                      child: const Icon(Icons.query_stats_rounded, color: AppColors.brandPrimary, size: 28),
-                    ),
-                    const SizedBox(width: 14),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Analysis Strategy',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Analysis Strategy',
+                                mr: 'विश्लेषण व रणनीती',
+                                hi: 'विश्लेषण और रणनीति',
+                              ),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'AI-assisted strategic ward insights, demographic breakdowns, and ground campaign roadmaps',
+                                mr: 'AI-आधारित प्रभाग रणनीती माहिती, लोकसंख्याशास्त्र विश्लेषण आणि प्रत्यक्ष मोहीम आराखडा',
+                                hi: 'एआई-सहायता प्राप्त रणनीतिक वार्ड अंतर्दृष्टि, जनसांख्यिकीय विश्लेषण और जमीनी अभियान रोडमैप',
+                              ),
+                              style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'AI-assisted strategic ward insights, demographic breakdowns, and ground campaign roadmaps',
-                          style: TextStyle(fontSize: 13, color: AppColors.slate500),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 16),
 
                 // Download Report matching AnalysisStrategy.tsx
                 OutlinedButton.icon(
@@ -149,12 +237,13 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                     AnalysisStrategyReportGenerator.generateAndPrintReport(
                       context: context,
                       reportData: _getMetricsForArea(_selectedArea),
-                      generatedBrief: _aiBrief,
+                      generatedBrief: briefText,
+                      lang: lang,
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
                   label: Text(
-                    AppTranslations.getDownloadReport(ref.watch(desktopLanguageProvider)),
+                    AppTranslations.getDownloadReport(lang),
                     style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -179,8 +268,26 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTabButton('strategy', 'Strategy Planner', Icons.track_changes_rounded),
-                  _buildTabButton('analytical', 'Analytical Dashboard', Icons.insights_rounded),
+                  _buildTabButton(
+                    'strategy',
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Strategy Planner',
+                      mr: 'रणनीती नियोजक',
+                      hi: 'रणनीति योजनाकार',
+                    ),
+                    Icons.track_changes_rounded,
+                  ),
+                  _buildTabButton(
+                    'analytical',
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Analytical Dashboard',
+                      mr: 'विश्लेषणात्मक डॅशबोर्ड',
+                      hi: 'विश्लेषणात्मक डैशबोर्ड',
+                    ),
+                    Icons.insights_rounded,
+                  ),
                 ],
               ),
             ),
@@ -196,9 +303,14 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
               ),
               child: Row(
                 children: [
-                  const Text(
-                    'Select Ward Area:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.slate700),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Select Ward Area:',
+                      mr: 'प्रभाग परिसर निवडा:',
+                      hi: 'वार्ड क्षेत्र चुनें:',
+                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.slate700),
                   ),
                   const SizedBox(width: 14),
                   AppDropdown<String>(
@@ -209,7 +321,7 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                     backgroundColor: Colors.white,
                     borderColor: const Color(0xFFE2E8F0),
                     items: _areas
-                        .map((a) => DropdownMenuItem(value: a, child: Text(a)))
+                        .map((a) => DropdownMenuItem(value: a, child: Text(_localizedArea(a, lang))))
                         .toList(),
                     onChanged: (v) {
                       if (v != null) {
@@ -226,13 +338,41 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
             // 4 Stat Cards
             Row(
               children: [
-                Expanded(child: _buildMetricCard('Total Voters', '14,820', Icons.how_to_reg_rounded, AppColors.brandPrimary)),
+                Expanded(
+                  child: _buildMetricCard(
+                    AppTranslations.pick(lang, en: 'Total Voters', mr: 'एकूण मतदार', hi: 'कुल मतदाता'),
+                    AppTranslations.formatDigits('14,820', lang),
+                    Icons.how_to_reg_rounded,
+                    AppColors.brandPrimary,
+                  ),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildMetricCard('Resolved Complaints', '88.4%', Icons.check_circle_rounded, Colors.green)),
+                Expanded(
+                  child: _buildMetricCard(
+                    AppTranslations.pick(lang, en: 'Resolved Complaints', mr: 'सोडवलेल्या तक्रारी', hi: 'सुलझाई गई शिकायतें'),
+                    AppTranslations.formatDigits('88.4%', lang),
+                    Icons.check_circle_rounded,
+                    Colors.green,
+                  ),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildMetricCard('Mobile Reach', '76.2%', Icons.phone_android_rounded, AppColors.brand500)),
+                Expanded(
+                  child: _buildMetricCard(
+                    AppTranslations.pick(lang, en: 'Mobile Reach', mr: 'मोबाईल संपर्क', hi: 'मोबाइल पहुंच'),
+                    AppTranslations.formatDigits('76.2%', lang),
+                    Icons.phone_android_rounded,
+                    AppColors.brand500,
+                  ),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildMetricCard('Winning Margin', '+2,480', Icons.trending_up_rounded, AppColors.brand700)),
+                Expanded(
+                  child: _buildMetricCard(
+                    AppTranslations.pick(lang, en: 'Winning Margin', mr: 'विजयी मताधिक्य', hi: 'जीत का अंतर'),
+                    AppTranslations.formatDigits('+2,480', lang),
+                    Icons.trending_up_rounded,
+                    AppColors.brand700,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -252,23 +392,42 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.auto_awesome_rounded, color: AppColors.brandPrimary, size: 22),
-                            SizedBox(width: 10),
-                            Text(
-                              'AI Strategic Intelligence & Campaign Brief',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
-                            ),
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.auto_awesome_rounded, color: AppColors.brandPrimary, size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  AppTranslations.pick(
+                                    lang,
+                                    en: 'AI Strategic Intelligence & Campaign Brief',
+                                    mr: 'AI रणनीतिक विश्लेषण व मोहीम सारांश',
+                                    hi: 'एआई रणनीतिक बुद्धिमत्ता एवं अभियान सारांश',
+                                  ),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 12),
                         Row(
                           children: [
                             SegmentedButton<String>(
-                              segments: const [
-                                ButtonSegment(value: 'Development', label: Text('Dev')),
-                                ButtonSegment(value: 'Grievance', label: Text('Grievance')),
-                                ButtonSegment(value: 'Campaign', label: Text('Campaign')),
+                              segments: [
+                                ButtonSegment(
+                                  value: 'Development',
+                                  label: Text(AppTranslations.pick(lang, en: 'Dev', mr: 'विकास', hi: 'विकास')),
+                                ),
+                                ButtonSegment(
+                                  value: 'Grievance',
+                                  label: Text(AppTranslations.pick(lang, en: 'Grievance', mr: 'तक्रार', hi: 'शिकायत')),
+                                ),
+                                ButtonSegment(
+                                  value: 'Campaign',
+                                  label: Text(AppTranslations.pick(lang, en: 'Campaign', mr: 'प्रचार', hi: 'अभियान')),
+                                ),
                               ],
                               selected: {_selectedTone},
                               onSelectionChanged: (s) {
@@ -288,7 +447,11 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                               icon: _isGenerating
                                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                   : const Icon(Icons.refresh_rounded, size: 16),
-                              label: const Text('Regenerate'),
+                              label: Text(
+                                _isGenerating
+                                    ? AppTranslations.pick(lang, en: 'Generating...', mr: 'तयार होत आहे...', hi: 'तैयार हो रहा है...')
+                                    : AppTranslations.pick(lang, en: 'Regenerate', mr: 'पुन्हा तयार करा', hi: 'पुनः तैयार करें'),
+                              ),
                             ),
                           ],
                         ),
@@ -304,7 +467,7 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                         border: Border.all(color: AppColors.slate200),
                       ),
                       child: Text(
-                        _aiBrief,
+                        briefText,
                         style: const TextStyle(fontSize: 14, height: 1.6, color: AppColors.slate800),
                       ),
                     ),
@@ -328,16 +491,21 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Voter Gender Demographics',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
+                          Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Voter Gender Demographics',
+                              mr: 'मतदार लिंगनिहाय वर्गवारी',
+                              hi: 'मतदाता लिंग जनसांख्यिकी',
+                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                           ),
                           const SizedBox(height: 18),
-                          _buildDemographicBar('Male', 52, AppColors.brand600),
+                          _buildDemographicBar(AppTranslations.getGender('Male', lang), 52, AppColors.brand600, lang),
                           const SizedBox(height: 14),
-                          _buildDemographicBar('Female', 47, const Color(0xFFEC4899)),
+                          _buildDemographicBar(AppTranslations.getGender('Female', lang), 47, const Color(0xFFEC4899), lang),
                           const SizedBox(height: 14),
-                          _buildDemographicBar('Other', 1, AppColors.brand800),
+                          _buildDemographicBar(AppTranslations.getGender('Other', lang), 1, AppColors.brand800, lang),
                         ],
                       ),
                     ),
@@ -356,18 +524,43 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Key Ward Grievances Distribution',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
+                          Text(
+                            AppTranslations.pick(
+                              lang,
+                              en: 'Key Ward Grievances Distribution',
+                              mr: 'प्रभागातील प्रमुख तक्रारींचे वर्गीकरण',
+                              hi: 'प्रमुख वार्ड शिकायतों का वितरण',
+                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
                           ),
                           const SizedBox(height: 18),
-                          _buildDemographicBar('Water Supply', 34, Colors.cyan),
+                          _buildDemographicBar(
+                            AppTranslations.pick(lang, en: 'Water Supply', mr: 'पाणी पुरवठा', hi: 'जल आपूर्ति'),
+                            34,
+                            Colors.cyan,
+                            lang,
+                          ),
                           const SizedBox(height: 14),
-                          _buildDemographicBar('Roads & Pavements', 28, Colors.amber.shade700),
+                          _buildDemographicBar(
+                            AppTranslations.pick(lang, en: 'Roads & Pavements', mr: 'रस्ते व पदपथ', hi: 'सड़कें और फुटपाथ'),
+                            28,
+                            Colors.amber.shade700,
+                            lang,
+                          ),
                           const SizedBox(height: 14),
-                          _buildDemographicBar('Sanitation & Garbage', 22, Colors.green),
+                          _buildDemographicBar(
+                            AppTranslations.pick(lang, en: 'Sanitation & Garbage', mr: 'स्वच्छता व कचरा', hi: 'स्वच्छता और कचरा'),
+                            22,
+                            Colors.green,
+                            lang,
+                          ),
                           const SizedBox(height: 14),
-                          _buildDemographicBar('Streetlights', 16, Colors.deepOrange),
+                          _buildDemographicBar(
+                            AppTranslations.pick(lang, en: 'Streetlights', mr: 'पथदिवे', hi: 'स्ट्रीट लाइट'),
+                            16,
+                            Colors.deepOrange,
+                            lang,
+                          ),
                         ],
                       ),
                     ),
@@ -400,20 +593,32 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: AppColors.slate500, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: AppColors.slate500, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.slate900),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDemographicBar(String label, int percentage, Color color) {
+  Widget _buildDemographicBar(String label, int percentage, Color color, String lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -421,7 +626,10 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.slate700)),
-            Text('$percentage%', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
+            Text(
+              AppTranslations.formatDigits('$percentage%', lang),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+            ),
           ],
         ),
         const SizedBox(height: 6),
