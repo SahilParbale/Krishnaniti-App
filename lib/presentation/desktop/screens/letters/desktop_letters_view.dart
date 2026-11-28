@@ -209,12 +209,14 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
 
   // --- Header Row ---
   Widget _buildHeader(String lang, int foundCount) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 12,
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
+    return SizedBox(
+      width: double.infinity,
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 12,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -356,6 +358,7 @@ class _DesktopLettersViewState extends ConsumerState<DesktopLettersView> {
           ],
         ),
       ],
+      ),
     );
   }
 
