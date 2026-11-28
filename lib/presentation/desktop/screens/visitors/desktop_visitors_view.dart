@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../common/desktop_responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/data/models/visitor_model.dart';
@@ -363,7 +364,7 @@ class _DesktopVisitorsViewState extends ConsumerState<DesktopVisitorsView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+        padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

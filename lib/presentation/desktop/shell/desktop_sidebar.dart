@@ -65,7 +65,7 @@ class DesktopSidebar extends ConsumerStatefulWidget {
 
 class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
   final Map<String, bool> _openGroups = {
-    'daily_work': true,
+    'daily_work': false,
     'ward_info': false,
     'municipal': false,
     'media': false,
@@ -259,6 +259,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                     label: AppTranslations.getNavTitle('gov_office', currentLang),
                     icon: Icons.account_balance_rounded,
                     isActive: activeKey == 'gov_office',
+                    isTopLevel: true,
                   ),
                   const SizedBox(height: 4),
                 ],
@@ -286,6 +287,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                     label: AppTranslations.getNavTitle('analysis_strategy', currentLang),
                     icon: Icons.query_stats_rounded,
                     isActive: activeKey == 'analysis_strategy',
+                    isTopLevel: true,
                   ),
                 ],
               ],
@@ -439,6 +441,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     required IconData icon,
     required bool isActive,
     bool isNested = false,
+    bool isTopLevel = false,
   }) {
     final content = InkWell(
       onTap: () => ref.read(activeScreenProvider.notifier).setScreen(key),
@@ -478,7 +481,9 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                   label,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: isActive
+                        ? FontWeight.w700
+                        : (isTopLevel ? FontWeight.w600 : FontWeight.w500),
                     color: isActive ? Colors.white : AppColors.slate700,
                     letterSpacing: -0.1,
                   ),

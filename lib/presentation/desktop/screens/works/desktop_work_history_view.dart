@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/services/translation_service.dart';
@@ -1406,3 +1407,1412 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
     );
   }
 }
+=======
+import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_responsive.dart';
+import '../../../../core/localization/app_translations.dart';
+import '../../../../core/services/translation_service.dart';
+import '../../../providers/language_provider.dart';
+import '../../common/desktop_modal_dialog.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../../../../data/models/work_history_model.dart';
+import '../../../../data/repositories/work_history_repository.dart';
+import '../../../screens/works/work_detail_screen.dart';
+import '../../../screens/works/work_report_generator.dart';
+import '../../../screens/works/ahwal_report_generator.dart';
+import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_load_more_footer.dart';
+
+class DesktopWorkHistoryView extends ConsumerStatefulWidget {
+  const DesktopWorkHistoryView({super.key});
+
+  @override
+  ConsumerState<DesktopWorkHistoryView> createState() => _DesktopWorkHistoryViewState();
+}
+
+class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView> {
+  bool _loading = true;
+  List<WorkHistoryModel> _items = [];
+  String _searchTerm = '';
+  String _areaSearch = '';
+  String _dateSearch = '';
+  String _viewMode = 'grid'; // 'grid' | 'table'
+  int _displayedLimit = 20;
+
+  List<WorkHistoryModel> get _visibleItems =>
+      _filteredItems.take(_displayedLimit).toList();
+
+  // Ahwal Selection mode
+  bool _selectionMode = false;
+  final Set<String> _selectedWorkIds = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
+    try {
+      final repo = ref.read(workHistoryRepoProvider);
+      final works = await repo.getWorks();
+      if (mounted) {
+        setState(() {
+          _items = works;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _items = [];
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  List<WorkHistoryModel> get _filteredItems {
+    final q = AppTranslations.normalizeAsciiDigits(_searchTerm).toLowerCase().trim();
+    return _items.where((item) {
+      final matchesSearch = q.isEmpty ||
+          AppTranslations.normalizeAsciiDigits(item.title).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.description).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.location).toLowerCase().contains(q) ||
+          AppTranslations.normalizeAsciiDigits(item.area).toLowerCase().contains(q);
+
+      final matchesArea = _areaSearch.isEmpty ||
+          item.area.toLowerCase().contains(_areaSearch.toLowerCase());
+
+      final matchesDate = _dateSearch.isEmpty ||
+          _canonicalDateKey(item.date) == _dateSearch;
+
+      return matchesSearch && matchesArea && matchesDate;
+    }).toList();
+  }
+
+  String _canonicalDateKey(String raw) {
+    if (raw.isEmpty) return '';
+    final dt = DateTime.tryParse(raw);
+    if (dt != null) {
+      return AppTranslations.formatDate(dt, 'en', pattern: 'yyyy-MM-dd');
+    }
+    return raw;
+  }
+
+  String _formatDate(String raw, String lang) {
+    if (raw.isEmpty) return '';
+    final dt = DateTime.tryParse(raw);
+    if (dt != null) {
+      return AppTranslations.formatDate(dt, lang, pattern: 'MMM d, yyyy');
+    }
+    return AppTranslations.formatDigits(raw, lang);
+  }
+
+  Map<String, int> get _areaSuggestions {
+    final map = <String, int>{};
+    for (final item in _items) {
+      if (item.area.isNotEmpty) {
+        map[item.area] = (map[item.area] ?? 0) + 1;
+      }
+    }
+    return map;
+  }
+
+  Map<String, int> get _dateSuggestions {
+    final map = <String, int>{};
+    for (final item in _items) {
+      final key = _canonicalDateKey(item.date);
+      if (key.isNotEmpty) {
+        map[key] = (map[key] ?? 0) + 1;
+      }
+    }
+    return map;
+  }
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _selectionMode = !_selectionMode;
+      _selectedWorkIds.clear();
+    });
+  }
+
+  void _handleCardClick(WorkHistoryModel item) {
+    if (_selectionMode) {
+      setState(() {
+        if (_selectedWorkIds.contains(item.id)) {
+          _selectedWorkIds.remove(item.id);
+        } else {
+          _selectedWorkIds.add(item.id);
+        }
+      });
+      return;
+    }
+
+    Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => WorkDetailScreen(work: item),
+      ),
+    ).then((res) {
+      if (res == true) _fetchData(showLoading: false);
+    });
+  }
+
+  void _showAddWorkModal() {
+    final titleController = TextEditingController();
+    final descController = TextEditingController();
+    final locationController = TextEditingController();
+    final areaController = TextEditingController(text: 'Ward 12');
+    final peopleController = TextEditingController();
+    final amountController = TextEditingController();
+    String selectedStatus = 'Planned';
+    String completionDate = DateTime.now().toIso8601String().split('T')[0];
+    bool isGeneratingAI = false;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => ValueListenableBuilder<String>(
+        valueListenable: appLanguageValueNotifier,
+        builder: (ctx, lang, _) => StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return DesktopModalDialog(
+              title: AppTranslations.pick(
+                lang,
+                en: 'Add New Work',
+                mr: 'नवीन काम जोडा',
+                hi: 'नया कार्य जोड़ें',
+              ),
+              subtitle: AppTranslations.pick(
+                lang,
+                en: 'Record completed, in-progress, and planned ward development works',
+                mr: 'पूर्ण, चालू आणि नियोजित प्रभाग विकास कामांची नोंद करा',
+                hi: 'पूर्ण, प्रगतिशील और नियोजित वार्ड विकास कार्यों को दर्ज करें',
+              ),
+              icon: Icons.construction_rounded,
+              width: 600,
+              onClose: () => Navigator.pop(ctx),
+              actions: [
+                DesktopModalDialog.cancelButton(ctx),
+                const SizedBox(width: 12),
+                DesktopModalDialog.primaryButton(
+                  text: AppTranslations.pick(
+                    lang,
+                    en: 'Add Work',
+                    mr: 'काम जोडा',
+                    hi: 'कार्य जोड़ें',
+                  ),
+                  onPressed: () async {
+                    if (titleController.text.trim().isEmpty) return;
+                    final parsedAmount = double.tryParse(
+                      AppTranslations.normalizeAsciiDigits(amountController.text.trim()),
+                    );
+                    final parsedPeople = int.tryParse(
+                      AppTranslations.normalizeAsciiDigits(peopleController.text.trim()),
+                    );
+                    final newWork = WorkHistoryModel(
+                      id: 'work-${DateTime.now().millisecondsSinceEpoch}',
+                      source: 'Manual',
+                      title: titleController.text.trim(),
+                      description: descController.text.trim(),
+                      location: locationController.text.trim().isEmpty ? 'Ward 12' : locationController.text.trim(),
+                      area: areaController.text.trim().isEmpty ? 'Ward 12' : areaController.text.trim(),
+                      status: selectedStatus,
+                      date: completionDate,
+                      amount: parsedAmount,
+                      peopleBenefited: parsedPeople,
+                    );
+
+                    final repo = ref.read(workHistoryRepoProvider);
+                    await repo.addWork(newWork);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    _fetchData();
+                  },
+                ),
+              ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Project Title *',
+                      mr: 'प्रकल्पाचे शीर्षक *',
+                      hi: 'परियोजना शीर्षक *',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'e.g. Main road asphalting...',
+                        mr: 'उदा. मुख्य रस्ता डांबरीकरण...',
+                        hi: 'उदा. मुख्य सड़क डामरीकरण...',
+                      ),
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Description + AI Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Description *',
+                          mr: 'वर्णन *',
+                          hi: 'विवरण *',
+                        ),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                      ),
+                      TextButton.icon(
+                        onPressed: isGeneratingAI || titleController.text.trim().isEmpty
+                            ? null
+                            : () async {
+                                setModalState(() => isGeneratingAI = true);
+                                await Future.delayed(const Duration(milliseconds: 600));
+                                final titleText = titleController.text.trim();
+                                descController.text = AppTranslations.pick(
+                                  lang,
+                                  en: 'Under $titleText, development work will be completed on schedule using high-quality materials for citizens.',
+                                  mr: '$titleText अंतर्गत नागरिकांसाठी दर्जेदार साहित्याचा वापर करून विकास काम वेळेत पूर्ण केले जाईल.',
+                                  hi: '$titleText के अंतर्गत नागरिकों के लिए उच्च गुणवत्ता वाली सामग्री का उपयोग करके विकास कार्य समय पर पूरा किया जाएगा।',
+                                );
+                                setModalState(() => isGeneratingAI = false);
+                              },
+                        icon: isGeneratingAI
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF0284C7)),
+                        label: Text(
+                          isGeneratingAI
+                              ? AppTranslations.pick(lang, en: 'Generating...', mr: 'तयार होत आहे...', hi: 'तैयार हो रहा है...')
+                              : AppTranslations.pick(lang, en: 'Auto-Generate (AI)', mr: 'AI द्वारे तयार करा', hi: 'AI से स्वचालित बनाएं'),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0284C7)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: descController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'Describe the work details...',
+                        mr: 'कामाचा सविस्तर तपशील लिहा...',
+                        hi: 'कार्य का विस्तृत विवरण लिखें...',
+                      ),
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Location & Area
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Location *',
+                                mr: 'ठिकाण *',
+                                hi: 'स्थान *',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: locationController,
+                              decoration: InputDecoration(
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. Shivaji Chowk',
+                                  mr: 'उदा. शिवाजी चौक',
+                                  hi: 'उदा. शिवाजी चौक',
+                                ),
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Ward / Area',
+                                mr: 'प्रभाग / परिसर',
+                                hi: 'वार्ड / क्षेत्र',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: areaController,
+                              decoration: InputDecoration(
+                                hintText: AppTranslations.pick(
+                                  lang,
+                                  en: 'e.g. Ward 12',
+                                  mr: 'उदा. प्रभाग १२',
+                                  hi: 'उदा. वार्ड १२',
+                                ),
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Status & Amount
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Status',
+                                mr: 'स्थिती',
+                                hi: 'स्थिति',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            AppDropdown<String>(
+                              value: selectedStatus,
+                              height: 44,
+                              backgroundColor: const Color(0xFFF8FAFC),
+                              borderColor: const Color(0xFFE2E8F0),
+                              items: [
+                                DropdownMenuItem(
+                                  value: 'Planned',
+                                  child: Text(AppTranslations.getStatus('planned', lang)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'InProgress',
+                                  child: Text(AppTranslations.getStatus('in_progress', lang)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Completed',
+                                  child: Text(AppTranslations.getStatus('completed', lang)),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) setModalState(() => selectedStatus = val);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Amount (₹)',
+                                mr: 'रक्कम (₹)',
+                                hi: 'राशि (₹)',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: amountController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                prefixText: '₹ ',
+                                hintText: AppTranslations.formatDigits('50000', lang),
+                                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                                focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                                fillColor: const Color(0xFFF8FAFC),
+                                filled: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // People Benefited
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'People Benefited',
+                      mr: 'लाभार्थी नागरिक',
+                      hi: 'लाभान्वित नागरिक',
+                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: peopleController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.pick(
+                        lang,
+                        en: 'e.g. 1200',
+                        mr: 'उदा. १२००',
+                        hi: 'उदा. १२००',
+                      ),
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.slate200)),
+                      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide(color: AppColors.brand600, width: 1.5)),
+                      fillColor: const Color(0xFFF8FAFC),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _localizeSource(String source, String lang) {
+    switch (source.trim().toLowerCase()) {
+      case 'manual':
+        return AppTranslations.pick(lang, en: 'Manual', mr: 'मॅन्युअल', hi: 'मैनुअल');
+      case 'complaint':
+        return AppTranslations.pick(lang, en: 'Complaint', mr: 'तक्रार', hi: 'शिकायत');
+      case 'help':
+        return AppTranslations.pick(lang, en: 'Help', mr: 'मदत', hi: 'सहायता');
+      default:
+        return source;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = ref.watch(desktopLanguageProvider);
+    final filtered = _filteredItems;
+    final visible = _visibleItems;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sticky Top Section
+          _buildHeader(filtered.length, lang),
+          const SizedBox(height: 16),
+
+          // Selection Mode Bar
+          if (_selectionMode) ...[
+            _buildSelectionBar(lang),
+            const SizedBox(height: 16),
+          ],
+
+          // Filter Row
+          _buildFilterRow(lang),
+          const SizedBox(height: 24),
+
+          // Content
+          if (_loading)
+            _buildLoadingGrid()
+          else if (_viewMode == 'table')
+            _buildReportTable(visible, lang)
+          else
+            _buildCardGrid(visible, lang),
+
+          if (!_loading && filtered.isNotEmpty)
+            AppLoadMoreFooter(
+              currentCount: visible.length,
+              totalCount: filtered.length,
+              pageSize: 20,
+              onLoadMore: () {
+                setState(() => _displayedLimit += 20);
+              },
+              label: AppTranslations.pick(
+                lang,
+                en: 'works',
+                mr: 'कामे',
+                hi: 'कार्य',
+              ),
+              isMarathi: lang == 'mr',
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(int count, String lang) {
+    final locCount = AppTranslations.formatDigits(count, lang);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Title & Badge
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  AppTranslations.getNavTitle('work_history', lang),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F9FF),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(color: const Color(0xFFBAE6FD)),
+                  ),
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Total: $locCount',
+                      mr: 'एकूण: $locCount',
+                      hi: 'कुल: $locCount',
+                    ),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0369A1),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'Recorded development and maintenance civil works',
+                mr: 'प्रभागातील विकास कामे व अहवाल व्यवस्थापन',
+                hi: 'वार्ड में विकास कार्य और अहवाल प्रबंधन',
+              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+
+        // Action Buttons: Download Report + Add Work
+        Row(
+          children: [
+            if (!_selectionMode) ...[
+              // Download Report
+              OutlinedButton.icon(
+                onPressed: () {
+                  WorkReportGenerator.generateAndPrintWorkReport(
+                    context: context,
+                    works: _filteredItems,
+                    areaFilter: _areaSearch.isEmpty ? null : _areaSearch,
+                    lang: lang,
+                  );
+                },
+                icon: const Icon(Icons.download_rounded, size: 16, color: Color(0xFF0284C7)),
+                label: Text(
+                  AppTranslations.getDownloadReport(lang),
+                  style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF0F9FF),
+                  side: const BorderSide(color: Color(0xFFBAE6FD)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              // Generate Ahwal
+              OutlinedButton.icon(
+                onPressed: _toggleSelectionMode,
+                icon: const Icon(Icons.description_outlined, size: 16, color: Color(0xFF334155)),
+                label: Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Generate Ahwal',
+                    mr: 'अहवाल तयार करा',
+                    hi: 'अहवाल बनाएं',
+                  ),
+                  style: const TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+
+            // Add Work Button
+            ElevatedButton(
+              onPressed: _showAddWorkModal,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Add Work',
+                      mr: 'नवीन काम जोडा',
+                      hi: 'नया कार्य जोड़ें',
+                    ),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildViewToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF0369A1) : const Color(0xFF64748B))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionBar(String lang) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F9FF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFBAE6FD)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(color: Color(0xFFE0F2FE), shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: Text(
+                  AppTranslations.formatDigits(_selectedWorkIds.length, lang),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Works Selected',
+                      mr: 'कामे निवडली',
+                      hi: 'कार्य चयनित',
+                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Select works to include in the Ahwal report.',
+                      mr: 'अहवालात समाविष्ट करण्यासाठी कामे निवडा.',
+                      hi: 'अहवाल में शामिल करने के लिए कार्य चुनें।',
+                    ),
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              OutlinedButton(
+                onPressed: _toggleSelectionMode,
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text(
+                  AppTranslations.pick(lang, en: 'Cancel', mr: 'रद्द करा', hi: 'रद्द करें'),
+                  style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton.icon(
+                onPressed: _selectedWorkIds.isEmpty
+                    ? null
+                    : () {
+                        final selectedWorks = _items.where((w) => _selectedWorkIds.contains(w.id)).toList();
+                        AhwalReportGenerator.generateAndPrintAhwal(
+                          context: context,
+                          selectedWorks: selectedWorks,
+                          lang: lang,
+                        );
+                      },
+                icon: const Icon(Icons.description, size: 16, color: Colors.white),
+                label: Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Preview Ahwal Report',
+                    mr: 'अहवाल पूर्वावलोकन',
+                    hi: 'अहवाल पूर्वावलोकन',
+                  ),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  disabledBackgroundColor: const Color(0xFF7DD3FC),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  elevation: 0,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterRow(String lang) {
+    return Row(
+      children: [
+        // Main Search (Col 6)
+        Expanded(
+          flex: 6,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: TextField(
+              onChanged: (val) => setState(() {
+                _searchTerm = val;
+                _displayedLimit = 20;
+              }),
+              decoration: InputDecoration(
+                hintText: AppTranslations.pick(
+                  lang,
+                  en: 'Search work by title, location...',
+                  mr: 'शीर्षक किंवा पत्त्याने शोधा...',
+                  hi: 'शीर्षक या स्थान से खोजें...',
+                ),
+                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+
+        // Area Filter (Col 3)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _areaSearch.isEmpty ? 'All' : _areaSearch,
+            height: 44,
+            prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: ['All', ..._areaSuggestions.keys].map((area) {
+              final count = area == 'All' ? _items.length : (_areaSuggestions[area] ?? 0);
+              final locCount = AppTranslations.formatDigits(count, lang);
+              final areaLabel = area == 'All'
+                  ? AppTranslations.pick(lang, en: 'All Areas', mr: 'सर्व परिसर', hi: 'सभी क्षेत्र')
+                  : AppTranslations.getAreaName(area, lang);
+              return DropdownMenuItem(
+                value: area,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: area == 'All'
+                          ? Text(areaLabel, overflow: TextOverflow.ellipsis)
+                          : AppTranslatedText(
+                              areaLabel,
+                              targetLanguage: lang,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('($locCount)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (val) {
+              setState(() {
+                _areaSearch = (val == null || val == 'All') ? '' : val;
+                _displayedLimit = 20;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 14),
+
+        // Date Filter (Col 3)
+        Expanded(
+          flex: 3,
+          child: AppDropdown<String>(
+            value: _dateSearch.isEmpty ? 'All' : _dateSearch,
+            height: 44,
+            prefixIcon: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF94A3B8)),
+            backgroundColor: Colors.white,
+            borderColor: const Color(0xFFE2E8F0),
+            items: ['All', ..._dateSuggestions.keys].map((date) {
+              final count = date == 'All' ? _items.length : (_dateSuggestions[date] ?? 0);
+              final locCount = AppTranslations.formatDigits(count, lang);
+              final dateLabel = date == 'All'
+                  ? AppTranslations.pick(lang, en: 'All Dates', mr: 'सर्व तारखा', hi: 'सभी तिथियां')
+                  : _formatDate(date, lang);
+              return DropdownMenuItem(
+                value: date,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(dateLabel, overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('($locCount)', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (val) {
+              setState(() {
+                _dateSearch = (val == null || val == 'All') ? '' : val;
+                _displayedLimit = 20;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 14),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              _buildViewToggleButton(
+                icon: Icons.grid_view_rounded,
+                label: AppTranslations.pick(lang, en: 'Grid', mr: 'ग्रिड', hi: 'ग्रिड'),
+                isActive: _viewMode == 'grid',
+                onTap: () => setState(() => _viewMode = 'grid'),
+              ),
+              const SizedBox(width: 4),
+              _buildViewToggleButton(
+                icon: Icons.table_rows_rounded,
+                label: AppTranslations.pick(lang, en: 'Table', mr: 'तक्ता', hi: 'तालिका'),
+                isActive: _viewMode == 'table',
+                onTap: () => setState(() => _viewMode = 'table'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCardGrid(List<WorkHistoryModel> items, String lang) {
+    if (items.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(48),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.assignment_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'No records found',
+                mr: 'कोणत्याही नोंदी आढळल्या नाहीत',
+                hi: 'कोई रिकॉर्ड नहीं मिला',
+              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            mainAxisExtent: 310,
+          ),
+          itemBuilder: (context, index) {
+            final item = items[index];
+            final isSelected = _selectedWorkIds.contains(item.id);
+
+            Color borderColor;
+            Color bgColor;
+            if (item.status == 'Completed') {
+              borderColor = const Color(0xFFBBF7D0);
+              bgColor = const Color(0xFFF0FDF4);
+            } else if (item.status == 'InProgress') {
+              borderColor = const Color(0xFFFEF08A);
+              bgColor = const Color(0xFFFEFCE8);
+            } else {
+              borderColor = const Color(0xFFE2E8F0);
+              bgColor = Colors.white;
+            }
+
+            final fbCount = AppTranslations.formatDigits(item.feedbackCount, lang);
+            final fbRating = AppTranslations.formatDigits(item.feedbackRating, lang);
+
+            return InkWell(
+              onTap: () => _handleCardClick(item),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _selectionMode && isSelected ? const Color(0xFF0284C7) : borderColor,
+                    width: _selectionMode && isSelected ? 2 : 1,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x04000000), blurRadius: 4, offset: Offset(0, 1)),
+                  ],
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top row: Status Badge + Source pill
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildStatusBadge(item.status, lang),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.build_outlined, size: 12, color: Color(0xFF0EA5E9)),
+                                  const SizedBox(width: 4),
+                                  AppTranslatedText(
+                                    _localizeSource(item.source, lang),
+                                    targetLanguage: lang,
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_selectionMode) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+                                  border: Border.all(color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFCBD5E1)),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: isSelected
+                                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                    : null,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Title
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: AppTranslatedText(item.title,
+                            targetLanguage: lang,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, size: 18, color: Color(0xFFCBD5E1)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Description
+                    Expanded(
+                      child: AppTranslatedText(item.description,
+                        targetLanguage: lang,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+
+                    // Bottom info block
+                    Container(
+                      padding: const EdgeInsets.only(top: 10),
+                      decoration: const BoxDecoration(
+                        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+                      ),
+                      child: Column(
+                        children: [
+                          if (item.source == 'Manual' && item.feedbackCount > 0) ...[
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0F9FF),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFE0F2FE)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    AppTranslations.pick(
+                                      lang,
+                                      en: '$fbCount Feedback',
+                                      mr: '$fbCount अभिप्राय',
+                                      hi: '$fbCount प्रतिक्रिया',
+                                    ),
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
+                                  ),
+                                  Text(
+                                    '$fbRating ★',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 12, color: Color(0xFF94A3B8)),
+                              const SizedBox(width: 4),
+                              Text(_formatDate(item.date, lang), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              const Spacer(),
+                              if (item.amount != null && item.amount! > 0)
+                                Text(
+                                  AppTranslations.formatCurrency(NumberFormat('#,##,###').format(item.amount), lang),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: AppTranslatedText(
+                                  '${item.location}${item.area.isNotEmpty ? ' (${item.area})' : ''}',
+                                  targetLanguage: lang,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusBadge(String status, String lang) {
+    if (status == 'Completed') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDCFCE7),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, size: 12, color: Color(0xFF16A34A)),
+            const SizedBox(width: 4),
+            Text(AppTranslations.getStatus('completed', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+          ],
+        ),
+      );
+    } else if (status == 'InProgress') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0F2FE),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.handyman, size: 12, color: Color(0xFF0284C7)),
+            const SizedBox(width: 4),
+            Text(AppTranslations.getStatus('in_progress', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.schedule, size: 12, color: Color(0xFF64748B)),
+            const SizedBox(width: 4),
+            Text(AppTranslations.getStatus('planned', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildReportTable(List<WorkHistoryModel> items, String lang) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 4, offset: Offset(0, 1))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: DataTable(
+          headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+          columnSpacing: 24,
+          horizontalMargin: 20,
+          columns: [
+            DataColumn(label: Text(AppTranslations.getReportColumn('sr_no', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('work_title', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('location', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('status', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('date', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+            DataColumn(label: Text(AppTranslations.getReportColumn('amount', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF475569)))),
+          ],
+          rows: List.generate(items.length, (index) {
+            final item = items[index];
+            return DataRow(
+              cells: [
+                DataCell(
+                  _selectionMode
+                      ? Checkbox(
+                          value: _selectedWorkIds.contains(item.id),
+                          onChanged: (_) => _handleCardClick(item),
+                        )
+                      : Text(
+                          AppTranslations.formatDigits(index + 1, lang),
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                ),
+                DataCell(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AppTranslatedText(item.title,
+                        targetLanguage: lang,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                      ),
+                      AppTranslatedText(item.description,
+                        targetLanguage: lang,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                  onTap: () => _handleCardClick(item),
+                ),
+                DataCell(
+                  AppTranslatedText(
+                    '${item.location}${item.area.isNotEmpty ? ' (${item.area})' : ''}',
+                    targetLanguage: lang,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
+                  ),
+                ),
+                DataCell(_buildStatusBadge(item.status, lang)),
+                DataCell(Text(_formatDate(item.date, lang), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+                DataCell(
+                  Text(
+                    item.amount != null
+                        ? AppTranslations.formatCurrency(NumberFormat('#,##,###').format(item.amount), lang)
+                        : '--',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 6,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            mainAxisExtent: 260,
+          ),
+          itemBuilder: (_, _) => Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+>>>>>>> 17bec4832fa7973ec0a7a95e6bdb86fded9bbc1c

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../common/desktop_responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../providers/language_provider.dart';
@@ -11,7 +12,7 @@ class DesktopMediaTrackingView extends ConsumerWidget {
     final lang = ref.watch(desktopLanguageProvider);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+      padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
       child: Center(
         child: Container(
           width: 680,
