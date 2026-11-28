@@ -44,7 +44,7 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
       'type': 'Social Media Caption',
       'tone': 'Professional',
       'language': 'Marathi',
-      'content': '🚧 #InfrastructureDevelopment | Commenced cement concretization work on the primary arterial road in Ward 12 today. High quality roads and uninterrupted civic mobility remain our top priority! #Ward12 #CivicDevelopment',
+      'content': '#InfrastructureDevelopment | Commenced cement concretization work on the primary arterial road in Ward 12 today. High quality roads and uninterrupted civic mobility remain our top priority! #Ward12 #CivicDevelopment',
       'date': '2026-01-18',
     },
     {
@@ -145,14 +145,14 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
     } else if (_contentType == 'Social Media Caption') {
       result = AppTranslations.pick(
         outLangCode,
-        en: '📢 #DevelopmentUpdate | $topic\n\n'
-            'Another positive step towards the welfare and progress of Ward 12! Our dedicated efforts for civic excellence continue unabated.\n\n'
+        en: '#DevelopmentUpdate | $topic\n\n'
+            'Another positive step towards the welfare and progress of Ward 12. Our dedicated efforts for civic excellence continue unabated.\n\n'
             '#Ward12 #CivicExcellence #Development',
-        mr: '📢 #विकासपर्व | $topic\n\n'
-            'प्रभाग १२ मधील नागरिकांच्या कल्याणासाठी आणि प्रगतीसाठी आणखी एक सकारात्मक पाऊल! दर्जेदार नागरी सुविधांसाठी आमचे प्रयत्न अखंड सुरू आहेत.\n\n'
+        mr: '#विकासपर्व | $topic\n\n'
+            'प्रभाग १२ मधील नागरिकांच्या कल्याणासाठी आणि प्रगतीसाठी आणखी एक सकारात्मक पाऊल. दर्जेदार नागरी सुविधांसाठी आमचे प्रयत्न अखंड सुरू आहेत.\n\n'
             '#प्रभाग१२ #नागरीविकास #लोकसेवा',
-        hi: '📢 #विकासअपडेट | $topic\n\n'
-            'वार्ड १२ के नागरिकों के कल्याण और प्रगति की दिशा में एक और सकारात्मक कदम! उत्कृष्ट नागरिक सुविधाओं के लिए हमारे प्रयास निरंतर जारी हैं।\n\n'
+        hi: '#विकासअपडेट | $topic\n\n'
+            'वार्ड १२ के नागरिकों के कल्याण और प्रगति की दिशा में एक और सकारात्मक कदम. उत्कृष्ट नागरिक सुविधाओं के लिए हमारे प्रयास निरंतर जारी हैं।\n\n'
             '#वार्ड१२ #नागरिकविकास #जनसेवा',
       );
     } else if (_contentType == 'Press Release') {
@@ -294,9 +294,15 @@ class _DesktopAiContentViewState extends ConsumerState<DesktopAiContentView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      AppTranslations.getNavTitle('ai_content', lang),
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFF0369A1)),
+                        const SizedBox(width: 10),
+                        Text(
+                          AppTranslations.getNavTitle('ai_content', lang),
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(

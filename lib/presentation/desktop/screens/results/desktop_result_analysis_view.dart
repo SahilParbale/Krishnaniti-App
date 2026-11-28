@@ -126,14 +126,20 @@ class _DesktopResultAnalysisViewState extends ConsumerState<DesktopResultAnalysi
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                AppTranslations.pick(
-                  lang,
-                  en: 'Result Analysis',
-                  mr: 'निकाल विश्लेषण',
-                  hi: 'चुनाव परिणाम विश्लेषण',
-                ),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+              Row(
+                children: [
+                  const Icon(Icons.bar_chart_rounded, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Result Analysis',
+                      mr: 'निकाल विश्लेषण',
+                      hi: 'चुनाव परिणाम विश्लेषण',
+                    ),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Row(

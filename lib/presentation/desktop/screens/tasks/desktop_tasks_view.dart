@@ -341,6 +341,8 @@ class _DesktopTasksViewState extends ConsumerState<DesktopTasksView> {
           children: [
             Row(
               children: [
+                const Icon(Icons.check_box_outlined, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
                 Text(
                   title,
                   style: const TextStyle(

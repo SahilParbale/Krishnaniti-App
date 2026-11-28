@@ -546,6 +546,8 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
             children: [
               Row(
                 children: [
+                  const Icon(Icons.visibility_outlined, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
                   Text(
                     AppTranslations.pick(
                       lang,

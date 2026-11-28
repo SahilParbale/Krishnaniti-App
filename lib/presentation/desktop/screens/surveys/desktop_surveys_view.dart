@@ -424,6 +424,8 @@ class _DesktopSurveysViewState extends ConsumerState<DesktopSurveysView> {
           children: [
             Row(
               children: [
+                const Icon(Icons.ballot_outlined, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
                 Text(
                   AppTranslations.getNavTitle('surveys', lang),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),

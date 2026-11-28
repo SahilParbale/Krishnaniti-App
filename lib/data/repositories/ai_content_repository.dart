@@ -180,19 +180,19 @@ class AiContentRepository {
               '- आपला नम्र सेवक, नगरसेवक जनसंपर्क कार्यालय';
 
         case AiContentType.socialMediaCaption:
-          return '📢 **प्रभाग १२ विकास वार्ता : $cleanTopic** 🌟\n\n'
-              'प्रभाग १२ मधील नागरिकांच्या सुविधेसाठी आणि समस्यांच्या कायमस्वरूपी निराकरणासाठी \'$cleanTopic\' संदर्भात तातडीने कार्यवाही सुरू करण्यात आली आहे. विकासाचे हे पर्व अखंडपणे सुरू राहील. 💪✨\n\n'
+          return '**प्रभाग १२ विकास वार्ता : $cleanTopic**\n\n'
+              'प्रभाग १२ मधील नागरिकांच्या सुविधेसाठी आणि समस्यांच्या कायमस्वरूपी निराकरणासाठी \'$cleanTopic\' संदर्भात तातडीने कार्यवाही सुरू करण्यात आली आहे. विकासाचे हे पर्व अखंडपणे सुरू राहील.\n\n'
               'आपल्या सूचना आणि सहकार्य सदैव मोलाचे आहे!\n\n'
               '#Ward12 #PrabhagVikas #PuneDevelopment #NagarSevak #CitizenFirst #SmartWard';
 
         case AiContentType.pressRelease:
-          return '📰 **प्रेस नोट : \'$cleanTopic\' बाबत महत्त्वाची घोषणा**\n\n'
+          return '**प्रेस नोट : \'$cleanTopic\' बाबत महत्त्वाची घोषणा**\n\n'
               'पुणे, विशेष प्रतिनिधी:\n'
               'प्रभाग १२ मधील जनहिताच्या दृष्टिकोनातून \'$cleanTopic\' या महत्त्वपूर्ण कामाला गती देण्यात आली असल्याची माहिती स्थानिक नगरसेवक जनसंपर्क कार्यालयामार्फत देण्यात आली.\n\n'
               'या कामामुळे स्थानिक परिसरातील हजारो नागरिकांना थेट लाभ होणार असून प्रशासकीय पातळीवर सर्व परवानग्या युद्धपातळीवर पूर्ण करून घेण्यात आल्या आहेत. कामाची गुणवत्ता आणि सुरक्षितता याबाबत कोणतीही तडजोड केली जाणार नाही, अशी ग्वाही यावेळी देण्यात आली.';
 
         case AiContentType.letterNotice:
-          return '📜 **नागरिकांसाठी जाहीर सूचना**\n\n'
+          return '**नागरिकांसाठी जाहीर सूचना**\n\n'
               'विषय: \'$cleanTopic\' बाबत.\n\n'
               'प्रभाग १२ मधील सर्व सन्माननीय नागरिकांना कळविण्यात येते की, प्रभागाच्या विकास नियोजनांतर्गत \'$cleanTopic\' चे काम हाती घेण्यात आले आहे. या कालावधीत नागरिकांना होणाऱ्या तात्पुरत्या असुविधेबद्दल दिलगीर आहोत.\n\n'
               'कोणत्याही आपत्कालीन मदतीसाठी किंवा तक्रारीसाठी नगरसेवक जनसंपर्क कार्यालयाशी संपर्क साधावा.\n\n'
@@ -209,7 +209,7 @@ class AiContentRepository {
               'नगरसेवक जनसंपर्क कार्यालय, प्रभाग १२';
 
         case AiContentType.workReport:
-          return '📋 **प्रभाग विकास काम पूर्तता अहवाल (Work Report)**\n\n'
+          return '**प्रभाग विकास काम पूर्तता अहवाल (Work Report)**\n\n'
               'काम तपशील: \'$cleanTopic\'\n'
               'प्रभाग: प्रभाग क्र. १२, पुणे महानगरपालिका\n'
               'कामाची स्थिती: नियोजनानुसार यशस्वी अंमलबजावणी\n\n'
@@ -226,8 +226,8 @@ class AiContentRepository {
               '- आपका सेवक, नगरसेवक जनसंपर्क कार्यालय';
 
         case AiContentType.socialMediaCaption:
-          return '📢 **वार्ड विकास अपडेट: $cleanTopic** ✨\n\n'
-              'आज हमारे वार्ड में \'$cleanTopic\' के संबंध में एक महत्वपूर्ण कार्य शुरू किया गया है। नागरिकों की सुविधा और सुरक्षा के लिए हम निरंतर प्रयासरत हैं। 💪\n\n'
+          return '**वार्ड विकास अपडेट: $cleanTopic**\n\n'
+              'आज हमारे वार्ड में \'$cleanTopic\' के संबंध में एक महत्वपूर्ण कार्य शुरू किया गया है। नागरिकों की सुविधा और सुरक्षा के लिए हम निरंतर प्रयासरत हैं।\n\n'
               'आपके सुझाव और सहयोग का सदैव स्वागत है!\n\n'
               '#WardDevelopment #Pune #NagarSevak #Community #Progress';
 
@@ -247,12 +247,12 @@ class AiContentRepository {
               '- Corporator Public Liaison Office';
 
         case AiContentType.socialMediaCaption:
-          return '📢 **Ward Milestone Update: $cleanTopic** 🚀\n\n'
-              'We are thrilled to announce that work regarding \'$cleanTopic\' is now officially in full swing across our ward! Delivering world-class infrastructure and peace of mind to our citizens remains our top priority. 💪\n\n'
+          return '**Ward Milestone Update: $cleanTopic**\n\n'
+              'We are pleased to announce that work regarding \'$cleanTopic\' is now officially in full swing across our ward. Delivering world-class infrastructure and peace of mind to our citizens remains our top priority.\n\n'
               '#Ward12Pune #CommunityDevelopment #PuneMunicipalCorporation #SmartWard #CitizenFirst';
 
         case AiContentType.pressRelease:
-          return '📰 **PRESS RELEASE**\n\n'
+          return '**PRESS RELEASE**\n\n'
               'Date: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}\n\n'
               '**Major Milestone: \'$cleanTopic\' Announced by Corporator Public Liaison Office**\n\n'
               'In a dedicated effort to accelerate civic infrastructure, comprehensive implementation of \'$cleanTopic\' has been fast-tracked to ensure completion within the stipulated timeline with strict adherence to civic standards.\n\n'
@@ -260,7 +260,7 @@ class AiContentRepository {
               'Office of the Corporator, Ward 12';
 
         case AiContentType.letterNotice:
-          return '📜 **PUBLIC NOTICE**\n\n'
+          return '**PUBLIC NOTICE**\n\n'
               'Subject: Regarding \'$cleanTopic\'.\n\n'
               'This is to officially inform all residents that civic work regarding \'$cleanTopic\' has commenced. We sincerely regret any temporary inconvenience caused during the execution of this public work.\n\n'
               'Sincerely,\n'
@@ -274,7 +274,7 @@ class AiContentRepository {
               'Corporator Public Liaison Office';
 
         case AiContentType.workReport:
-          return '📋 **CIVIC WORK COMPLETION REPORT**\n\n'
+          return '**CIVIC WORK COMPLETION REPORT**\n\n'
               'Project Title: \'$cleanTopic\'\n'
               'Status: 100% Successfully Executed\n\n'
               'Under this initiative, we have successfully accomplished all scheduled milestones for \'$cleanTopic\'. On-site inspections have confirmed high construction standards and citizen satisfaction.';

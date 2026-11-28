@@ -73,12 +73,12 @@ class _GalleryDetailScreenState extends ConsumerState<GalleryDetailScreen> {
       hi: '— नगरसेवक अमित चौगुले (वार्ड १२, मनपा)',
     );
     final text =
-        '📸 *$titleText*\n\n'
-        '📂 $catLabel: ${_item.category.title(lang)}\n'
-        '📍 $locLabel: $locText\n'
-        '📅 $dateLabel: ${_item.formattedDateFullFor(lang)}\n\n'
+        '*$titleText*\n\n'
+        '$catLabel: ${_item.category.title(lang)}\n'
+        '$locLabel: $locText\n'
+        '$dateLabel: ${_item.formattedDateFullFor(lang)}\n\n'
         '$descText\n\n'
-        '🔗 $imgLabel: ${_item.imageUrl}\n\n'
+        '$imgLabel: ${_item.imageUrl}\n\n'
         '$footer';
 
     final encoded = Uri.encodeComponent(text);

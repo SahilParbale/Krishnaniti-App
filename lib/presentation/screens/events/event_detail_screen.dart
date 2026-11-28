@@ -81,10 +81,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       hi: '— नगरसेवक अमित चौगुले जनसंपर्क कार्यालय, वार्ड १२, मनपा',
     );
     final text =
-        '📌 *$titleText*\n\n'
-        '📅 $dateLabel: ${_event.formattedDateFor(lang)}\n'
-        '⏰ $timeLabel: ${AppTranslations.formatDigits(_event.eventTime, lang)}\n'
-        '📍 $venueLabel: $locText\n\n'
+        '*$titleText*\n\n'
+        '$dateLabel: ${_event.formattedDateFor(lang)}\n'
+        '$timeLabel: ${AppTranslations.formatDigits(_event.eventTime, lang)}\n'
+        '$venueLabel: $locText\n\n'
         '$descText\n\n'
         '$footer';
 

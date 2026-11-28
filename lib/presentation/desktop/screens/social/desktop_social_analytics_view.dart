@@ -81,9 +81,9 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
     );
     final messageText = AppTranslations.pick(
       lang,
-      en: '🎂 Happy Birthday, $locName! Wishing you joy, health, and success in life. - Nagar Sevak Office • Ward 12',
-      mr: '🎂 वाढदिवसाच्या हार्दिक शुभेच्छा, $locName! आपणास उत्तम आरोग्य, आनंद आणि यश लाभो ही सदिच्छा. - नगरसेवक कार्यालय • प्रभाग १२',
-      hi: '🎂 जन्मदिन की हार्दिक शुभकामनाएं, $locName! आपके सुख, उत्तम स्वास्थ्य और सफलता की कामना करते हैं। - नगरसेवक कार्यालय • वार्ड १२',
+      en: 'Happy Birthday, $locName! Wishing you joy, health, and success in life. - Nagar Sevak Office • Ward 12',
+      mr: 'वाढदिवसाच्या हार्दिक शुभेच्छा, $locName! आपणास उत्तम आरोग्य, आनंद आणि यश लाभो ही सदिच्छा. - नगरसेवक कार्यालय • प्रभाग १२',
+      hi: 'जन्मदिन की हार्दिक शुभकामनाएं, $locName! आपके सुख, उत्तम स्वास्थ्य और सफलता की कामना करते हैं। - नगरसेवक कार्यालय • वार्ड १२',
     );
     final message = Uri.encodeComponent(messageText);
     final cleanMobile = AppTranslations.normalizeAsciiDigits(mobile);
@@ -150,14 +150,20 @@ class _DesktopSocialAnalyticsViewState extends ConsumerState<DesktopSocialAnalyt
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                AppTranslations.pick(
-                  lang,
-                  en: 'Social Analytics',
-                  mr: 'सोशल मीडिया विश्लेषण',
-                  hi: 'सोशल मीडिया विश्लेषण',
-                ),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+              Row(
+                children: [
+                  const Icon(Icons.insights_rounded, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Social Analytics',
+                      mr: 'सोशल मीडिया विश्लेषण',
+                      hi: 'सोशल मीडिया विश्लेषण',
+                    ),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(

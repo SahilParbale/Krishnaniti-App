@@ -654,14 +654,20 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                lang == 'mr' ? 'डॅशबोर्ड' : (lang == 'hi' ? 'डैशबोर्ड' : 'Dashboard'),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.slate900,
-                  letterSpacing: -0.5,
-                ),
+              Row(
+                children: [
+                  const Icon(Icons.dashboard_rounded, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
+                  Text(
+                    lang == 'mr' ? 'डॅशबोर्ड' : (lang == 'hi' ? 'डैशबोर्ड' : 'Dashboard'),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.slate900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(

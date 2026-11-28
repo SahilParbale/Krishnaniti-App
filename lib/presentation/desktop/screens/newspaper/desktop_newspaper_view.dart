@@ -654,14 +654,20 @@ class _DesktopNewspaperViewState extends ConsumerState<DesktopNewspaperView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                AppTranslations.pick(
-                  lang,
-                  en: 'Newspaper Clipping',
-                  mr: 'वृत्तपत्र कात्रणे',
-                  hi: 'समाचार पत्र कतरनें',
-                ),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+              Row(
+                children: [
+                  const Icon(Icons.feed_outlined, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Newspaper Clipping',
+                      mr: 'वृत्तपत्र कात्रणे',
+                      hi: 'समाचार पत्र कतरनें',
+                    ),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(

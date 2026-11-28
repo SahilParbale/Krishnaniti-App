@@ -618,6 +618,8 @@ class _DesktopGbRegisterViewState extends ConsumerState<DesktopGbRegisterView> {
           children: [
             Row(
               children: [
+                const Icon(Icons.menu_book_rounded, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
                 Text(
                   AppTranslations.getNavTitle('gb_register', lang),
                   style: const TextStyle(

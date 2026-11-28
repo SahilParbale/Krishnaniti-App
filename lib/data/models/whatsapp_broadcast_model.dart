@@ -88,7 +88,7 @@ class WhatsAppTemplateModel {
     required this.title,
     required this.category,
     required this.text,
-    this.emoji = '📢',
+    this.emoji = '',
   });
 }
 

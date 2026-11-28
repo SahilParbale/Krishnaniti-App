@@ -481,6 +481,8 @@ class _DesktopVoterFormsViewState extends ConsumerState<DesktopVoterFormsView> {
             children: [
               Row(
                 children: [
+                  const Icon(Icons.description_outlined, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
                   Text(
                     AppTranslations.pick(
                       lang,

@@ -109,6 +109,7 @@ class _DesktopCommandPaletteState extends State<DesktopCommandPalette> {
     _CommandItem(key: 'analysis_strategy', title: 'Analysis & Strategy', categoryEn: 'Strategy', categoryMr: 'विश्लेषण व रणनीती', categoryHi: 'विश्लेषण और रणनीति', icon: Icons.query_stats_outlined),
     _CommandItem(key: 'profile_settings', title: 'Profile Settings', categoryEn: 'Settings', categoryMr: 'सेटिंग्ज', categoryHi: 'सेटिंग्स', icon: Icons.manage_accounts_outlined),
     _CommandItem(key: 'whatsapp_bot', title: 'WhatsApp Bot (Baileys)', categoryEn: 'Settings', categoryMr: 'सेटिंग्ज', categoryHi: 'सेटिंग्स', icon: Icons.smart_toy_outlined),
+    _CommandItem(key: 'clear_cache', title: 'Clear App Cache & Optimize', categoryEn: 'Settings', categoryMr: 'सेटिंग्ज', categoryHi: 'सेटिंग्स', icon: Icons.cleaning_services_outlined),
   ];
 
   List<_CommandItem> _filteredItems = _allItems;

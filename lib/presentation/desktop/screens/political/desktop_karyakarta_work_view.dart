@@ -335,14 +335,20 @@ class _DesktopKaryakartaWorkViewState extends ConsumerState<DesktopKaryakartaWor
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                AppTranslations.pick(
-                  lang,
-                  en: 'Karyakarta Work Management',
-                  mr: 'कार्यकर्ता काम व्यवस्थापन',
-                  hi: 'कार्यकर्ता कार्य प्रबंधन',
-                ),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+              Row(
+                children: [
+                  const Icon(Icons.assignment_ind_outlined, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
+                  Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Karyakarta Work Management',
+                      mr: 'कार्यकर्ता काम व्यवस्थापन',
+                      hi: 'कार्यकर्ता कार्य प्रबंधन',
+                    ),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(

@@ -554,6 +554,8 @@ class _DesktopEventsViewState extends ConsumerState<DesktopEventsView> {
           children: [
             Row(
               children: [
+                const Icon(Icons.calendar_today_rounded, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
                 Text(
                   AppTranslations.pick(
                     lang,

@@ -494,6 +494,8 @@ class _DesktopVotersViewState extends ConsumerState<DesktopVotersView> {
           children: [
             Row(
               children: [
+                const Icon(Icons.person_search_rounded, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
                 Text(
                   AppTranslations.pick(lang, en: 'Voter Search', mr: 'मतदार शोध', hi: 'मतदाता खोज'),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),

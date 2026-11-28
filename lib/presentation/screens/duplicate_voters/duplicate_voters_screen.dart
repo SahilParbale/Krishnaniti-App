@@ -875,7 +875,8 @@ class _DuplicateVotersScreenState extends ConsumerState<DuplicateVotersScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('📍 ', style: TextStyle(fontSize: 10)),
+                const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF64748B)),
+                const SizedBox(width: 4),
                 Expanded(
                   child: AppTranslatedText(
                     voter.address,

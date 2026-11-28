@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/services/translation_service.dart';
+import '../../../../core/services/cache_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../../providers/navigation_provider.dart';
+import '../../common/desktop_modal_dialog.dart';
 import 'desktop_bot_dashboard_view.dart';
 
 class DesktopProfileSettingsView extends ConsumerStatefulWidget {
@@ -16,7 +18,9 @@ class DesktopProfileSettingsView extends ConsumerStatefulWidget {
 }
 
 class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSettingsView> {
-  String _activeTab = 'profile'; // 'profile' | 'bot' | 'sms' | 'security' | 'support'
+  String _activeTab = 'profile'; // 'profile' | 'storage' | 'bot' | 'sms' | 'security' | 'support'
+  String _cacheSizeStr = '...';
+  bool _isClearingCache = false;
 
   // Profile Form Controllers
   final _nameEnCtrl = TextEditingController(text: 'Ramesh Patil');
@@ -63,6 +67,113 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
       _activeTab = widget.initialTab!;
     } else {
       _activeTab = ref.read(desktopSettingsTabProvider);
+    }
+    _loadCacheSize();
+  }
+
+  Future<void> _loadCacheSize() async {
+    try {
+      final size = await CacheService.instance.getFormattedCacheSize();
+      if (mounted) setState(() => _cacheSizeStr = size);
+    } catch (_) {
+      if (mounted) setState(() => _cacheSizeStr = '0.0 MB');
+    }
+  }
+
+  Future<void> _handleClearCache(String lang) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => DesktopModalDialog(
+        width: 540,
+        title: AppTranslations.pick(lang, en: 'Clear App Cache', mr: 'कॅशे डेटा साफ करा', hi: 'कैश डेटा साफ करें'),
+        subtitle: AppTranslations.pick(lang, en: 'Safe local optimization & memory cleanup', mr: 'सुरक्षित ऑप्टिमायझेशन व मेमरी स्वच्छता', hi: 'सुरक्षित अनुकूलन और मेमोरी स्वच्छता'),
+        icon: Icons.cleaning_services_rounded,
+        iconColor: const Color(0xFF0284C7),
+        iconBgColor: const Color(0xFFE0F2FE),
+        actions: [
+          DesktopModalDialog.cancelButton(ctx),
+          DesktopModalDialog.primaryButton(
+            text: AppTranslations.pick(lang, en: 'Clear Now', mr: 'आत्ताच साफ करा', hi: 'अभी साफ करें'),
+            backgroundColor: const Color(0xFF0284C7),
+            icon: Icons.delete_sweep_rounded,
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppTranslations.pick(
+                lang,
+                en: 'This will safely delete temporary report PDF previews, camera cache buffers, and clear image RAM memory ($_cacheSizeStr).',
+                mr: 'यामुळे संगणकावरील तात्पुरत्या रिपोर्ट पीडीएफ फाइल्स, कॅमेरा बफर आणि फोटो मेमरी ($_cacheSizeStr) सुरक्षितपणे साफ होईल.',
+                hi: 'इससे कंप्यूटर पर अस्थायी रिपोर्ट पीडीएफ फाइलें, कैमरा बफर और इमेज मेमोरी ($_cacheSizeStr) सुरक्षित रूप से साफ हो जाएगी।',
+              ),
+              style: const TextStyle(fontSize: 13.5, color: Color(0xFF334155), height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF16A34A), size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      AppTranslations.pick(
+                        lang,
+                        en: 'Zero Data Loss: Your Supabase cloud database, voter lists, karyakarta data, and active session will NOT be affected.',
+                        mr: 'कोणताही डेटा नष्ट होणार नाही: आपला सुपाबेस क्लाउड डेटाबेस, मतदार याद्या, कार्यकर्ते डेटा आणि चालू लॉगिन सुरक्षित राहील.',
+                        hi: 'कोई डेटा नष्ट नहीं होगा: आपका सुपाबेस क्लाउड डेटाबेस, मतदाता सूची और सक्रिय लॉगिन सत्र सुरक्षित रहेगा।',
+                      ),
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF15803D), height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isClearingCache = true);
+      final freed = await CacheService.instance.clearCache();
+      final freedStr = CacheService.formatBytes(freed);
+      await _loadCacheSize();
+      if (mounted) {
+        setState(() => _isClearingCache = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF16A34A),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    AppTranslations.pick(
+                      lang,
+                      en: 'Cache cleared successfully! $freedStr of temporary storage freed.',
+                      mr: 'कॅशे यशस्वीरित्या साफ केला! $freedStr तात्पुरती जागा मोकळी झाली.',
+                      hi: 'कैश सफलतापूर्वक साफ किया गया! $freedStr अस्थायी स्थान मुक्त हुआ।',
+                    ),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -223,6 +334,7 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildTabButton('profile', AppTranslations.pick(lang, en: 'Profile Details', mr: 'प्रोफाईल तपशील', hi: 'प्रोफाइल विवरण'), Icons.person_outline_rounded),
+                    _buildTabButton('storage', AppTranslations.pick(lang, en: 'Storage & Cache', mr: 'स्टोरेज व कॅशे', hi: 'स्टोरेज एवं कैश'), Icons.cleaning_services_rounded),
                     _buildTabButton('bot', AppTranslations.pick(lang, en: 'WhatsApp Bot', mr: 'व्हॉट्सॲप बॉट', hi: 'व्हाट्सएप बॉट'), Icons.smart_toy_outlined),
                     _buildTabButton('sms', AppTranslations.pick(lang, en: 'SMS Gateway', mr: 'एसएमएस गेटवे', hi: 'एसएमएस गेटवे'), Icons.phone_android_rounded),
                     _buildTabButton('security', AppTranslations.pick(lang, en: 'Security Logs', mr: 'सुरक्षा लॉग', hi: 'सुरक्षा लॉग'), Icons.shield_outlined),
@@ -422,6 +534,10 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+              _buildStorageAndCacheCard(lang),
+            ] else if (_activeTab == 'storage') ...[
+              _buildStorageAndCacheCard(lang),
             ] else if (_activeTab == 'bot') ...[
               const DesktopBotDashboardView(),
             ] else if (_activeTab == 'sms') ...[
@@ -773,7 +889,7 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: _tickets.length,
-                            separatorBuilder: (_, __) => const Divider(color: AppColors.slate100),
+                            separatorBuilder: (_, _) => const Divider(color: AppColors.slate100),
                             itemBuilder: (ctx, i) {
                               final t = _tickets[i];
                               final statusStr = t['status']?.toString() ?? 'Pending';
@@ -932,6 +1048,203 @@ class _DesktopProfileSettingsViewState extends ConsumerState<DesktopProfileSetti
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStorageAndCacheCard(String lang) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.slate200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.cleaning_services_rounded, color: Color(0xFF0284C7), size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Desktop Storage & Cache Optimization',
+                          mr: 'डेस्कटॉप स्टोरेज व कॅशे ऑप्टिमायझेशन',
+                          hi: 'डेस्कटॉप स्टोरेज और कैश अनुकूलन',
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.slate800),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        AppTranslations.pick(
+                          lang,
+                          en: 'Manage temporary report preview files, rendered images RAM, and performance buffers',
+                          mr: 'तात्पुरत्या रिपोर्ट फाइल्स, इमेज रॅम मेमरी आणि ॲप कार्यक्षमता व्यवस्थापन',
+                          hi: 'अस्थायी रिपोर्ट फाइलें, इमेज रैम मेमोरी और ऐप प्रदर्शन प्रबंधन',
+                        ),
+                        style: const TextStyle(fontSize: 12.5, color: AppColors.slate500),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.pie_chart_outline_rounded, size: 14, color: Color(0xFF475569)),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${AppTranslations.pick(lang, en: 'Current Cache: ', mr: 'सध्याचा कॅशे: ', hi: 'वर्तमान कैश: ')}$_cacheSizeStr',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.slate200),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.bolt_rounded, color: Color(0xFFD97706), size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Faster App Performance',
+                                mr: 'जलद ॲप कार्यक्षमता',
+                                hi: 'तेज़ ऐप प्रदर्शन',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.slate800),
+                            ),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Reclaims system memory and clears stale temporary documents.',
+                                mr: 'सिस्टम मेमरी मोकळी करते व जुन्या तात्पुरत्या फाइल्स काढून टाकते.',
+                                hi: 'सिस्टम मेमोरी मुक्त करता है और पुरानी अस्थायी फाइलों को हटाता है।',
+                              ),
+                              style: const TextStyle(fontSize: 11.5, color: AppColors.slate500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: '100% Safe (No Data Loss)',
+                                mr: '१००% सुरक्षित (डेटा नष्ट होत नाही)',
+                                hi: '100% सुरक्षित (कोई डेटा हानि नहीं)',
+                              ),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.slate800),
+                            ),
+                            Text(
+                              AppTranslations.pick(
+                                lang,
+                                en: 'Supabase database records, voter lists & login remain intact.',
+                                mr: 'सुपाबेस डेटाबेस, मतदार यादी आणि आपले लॉगिन सुरक्षित राहते.',
+                                hi: 'सुपाबेस डेटाबेस रिकॉर्ड, मतदाता सूची और लॉगिन बरकरार रहते हैं।',
+                              ),
+                              style: const TextStyle(fontSize: 11.5, color: AppColors.slate500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: _isClearingCache ? null : () => _handleClearCache(lang),
+                icon: _isClearingCache
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.delete_sweep_rounded, size: 18),
+                label: Text(
+                  _isClearingCache
+                      ? AppTranslations.pick(lang, en: 'Cleaning Cache...', mr: 'कॅशे साफ होत आहे...', hi: 'कैश साफ हो रहा है...')
+                      : AppTranslations.pick(lang, en: 'Clear App Cache & Optimize', mr: 'कॅशे साफ करा व ऑप्टिमाइझ करा', hi: 'कैश साफ करें और ऑप्टिमाइज़ करें'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.slate700,
+                  side: const BorderSide(color: AppColors.slate300),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: _loadCacheSize,
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: Text(
+                  AppTranslations.pick(lang, en: 'Refresh Size', mr: 'आकार रीफ्रेश करा', hi: 'आकार रीफ़्रेश करें'),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

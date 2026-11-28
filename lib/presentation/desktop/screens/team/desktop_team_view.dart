@@ -479,6 +479,8 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
           children: [
             Row(
               children: [
+                const Icon(Icons.supervised_user_circle_outlined, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
                 Text(
                   AppTranslations.pick(lang, en: 'My Team', mr: 'माझी टीम', hi: 'मेरी टीम'),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: -0.5),

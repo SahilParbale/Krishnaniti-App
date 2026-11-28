@@ -115,9 +115,9 @@ class _SocialAnalyticsScreenState extends ConsumerState<SocialAnalyticsScreen> {
     final msg = Uri.encodeComponent(
       AppTranslations.pick(
         lang,
-        en: '🎂 Wishing you a very Happy Birthday $voterName! Wishing you good health, long life, and happiness. - Your Nagarsevak, Ward 12, Pune.',
-        mr: '🎂 $voterName, तुम्हाला वाढदिवसाच्या खूप खूप शुभेच्छा! तुम्हाला उत्तम आरोग्य, दीर्घायुष्य आणि आनंद लाभो ही सदिच्छा. - तुमचा नगरसेवक, प्रभाग १२, पुणे.',
-        hi: '🎂 $voterName, आपको जन्मदिन की हार्दिक शुभकामनाएँ! आपके उत्तम स्वास्थ्य, दीर्घायु और खुशियों की कामना। - आपका नगरसेवक, वार्ड १२, पुणे।',
+        en: 'Wishing you a very Happy Birthday $voterName! Wishing you good health, long life, and happiness. - Your Nagarsevak, Ward 12, Pune.',
+        mr: '$voterName, तुम्हाला वाढदिवसाच्या खूप खूप शुभेच्छा! तुम्हाला उत्तम आरोग्य, दीर्घायुष्य आणि आनंद लाभो ही सदिच्छा. - तुमचा नगरसेवक, प्रभाग १२, पुणे.',
+        hi: '$voterName, आपको जन्मदिन की हार्दिक शुभकामनाएँ! आपके उत्तम स्वास्थ्य, दीर्घायु और खुशियों की कामना। - आपका नगरसेवक, वार्ड १२, पुणे।',
       ),
     );
     final uri = Uri.parse('https://wa.me/$mobileClean?text=$msg');

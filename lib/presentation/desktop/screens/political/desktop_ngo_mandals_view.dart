@@ -558,6 +558,8 @@ class _DesktopNgoMandalsViewState extends ConsumerState<DesktopNgoMandalsView> {
             children: [
               Row(
                 children: [
+                  const Icon(Icons.corporate_fare_rounded, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
                   Flexible(
                     child: Text(
                       AppTranslations.pick(

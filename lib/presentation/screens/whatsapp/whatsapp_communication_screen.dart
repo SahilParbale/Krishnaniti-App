@@ -432,9 +432,9 @@ class _WhatsAppCommunicationScreenState
             content: Text(
               AppTranslations.pick(
                 lang,
-                en: 'WhatsApp message queued for $recStr voters! 🚀',
-                mr: '$recStr मतदारांसाठी व्हॉट्सॲप संदेश रांगेत पाठवला आहे! 🚀',
-                hi: '$recStr मतदाताओं के लिए व्हाट्सएप संदेश कतार में भेजा गया! 🚀',
+                en: 'WhatsApp message queued for $recStr voters.',
+                mr: '$recStr मतदारांसाठी व्हॉट्सॲप संदेश रांगेत जोडला आहे.',
+                hi: '$recStr मतदाताओं के लिए व्हाट्सएप संदेश कतार में जोड़ा गया।',
               ),
             ),
             backgroundColor: _kWaDark,

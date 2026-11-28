@@ -110,10 +110,10 @@ class _EventInviteModalState extends ConsumerState<EventInviteModal> {
     final eventTime = AppTranslations.formatDigits(event.eventTime, lang);
 
     final message = lang == 'mr'
-        ? '🎉 *निमंत्रण: $eventTitle*\n\nप्रिय नागरिक,\nआपणास या सामुदायिक कार्यक्रमासाठी सस्नेह निमंत्रित करण्यात येत आहे:\n\n📌 *कार्यक्रम:* $eventTitle\n📅 *तारीख:* $eventDate\n⏰ *वेळ:* $eventTime\n📍 *ठिकाण:* $eventLoc\n\nकृपया सहकुटुंब उपस्थित राहावे ही विनंती.\n\n— *नगरसेवक अमित चौगुले*\n(प्रभाग क्र. १२, पुणे महानगरपालिका)'
+        ? '*निमंत्रण: $eventTitle*\n\nप्रिय नागरिक,\nआपणास या सामुदायिक कार्यक्रमासाठी सस्नेह निमंत्रित करण्यात येत आहे:\n\n*कार्यक्रम:* $eventTitle\n*तारीख:* $eventDate\n*वेळ:* $eventTime\n*ठिकाण:* $eventLoc\n\nकृपया सहकुटुंब उपस्थित राहावे ही विनंती.\n\n— *नगरसेवक अमित चौगुले*\n(प्रभाग क्र. १२, पुणे महानगरपालिका)'
         : (lang == 'hi'
-            ? '🎉 *निमंत्रण: $eventTitle*\n\nप्रिय नागरिक,\nआपको इस सामुदायिक कार्यक्रम में सादर आमंत्रित किया जाता है:\n\n📌 *कार्यक्रम:* $eventTitle\n📅 *दिनांक:* $eventDate\n⏰ *समय:* $eventTime\n📍 *स्थान:* $eventLoc\n\nकृपया सपरिवार पधारें।\n\n— *नगरसेवक अमित चौगुले*\n(वार्ड क्र. १२, पुणे महानगरपालिका)'
-            : '🎉 *Invitation: $eventTitle*\n\nDear Resident,\nYou are cordially invited to attend the community program:\n\n📌 *Event:* $eventTitle\n📅 *Date:* $eventDate\n⏰ *Time:* $eventTime\n📍 *Venue:* $eventLoc\n\nPlease join us with your family.\n\n— *Nagarsevak Amit Chougale*\n(Ward No. 12, Pune Municipal Corporation)');
+            ? '*निमंत्रण: $eventTitle*\n\nप्रिय नागरिक,\nआपको इस सामुदायिक कार्यक्रम में सादर आमंत्रित किया जाता है:\n\n*कार्यक्रम:* $eventTitle\n*दिनांक:* $eventDate\n*समय:* $eventTime\n*स्थान:* $eventLoc\n\nकृपया सपरिवार पधारें।\n\n— *नगरसेवक अमित चौगुले*\n(वार्ड क्र. १२, पुणे महानगरपालिका)'
+            : '*Invitation: $eventTitle*\n\nDear Resident,\nYou are cordially invited to attend the community program:\n\n*Event:* $eventTitle\n*Date:* $eventDate\n*Time:* $eventTime\n*Venue:* $eventLoc\n\nPlease join us with your family.\n\n— *Nagarsevak Amit Chougale*\n(Ward No. 12, Pune Municipal Corporation)');
 
     final encoded = Uri.encodeComponent(message);
     // If 1 voter selected, send directly to their number. If multiple, open generic WhatsApp share

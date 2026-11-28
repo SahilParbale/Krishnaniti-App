@@ -510,19 +510,25 @@ class _DesktopGovernmentOfficeViewState extends ConsumerState<DesktopGovernmentO
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              AppTranslations.pick(
-                lang,
-                en: 'Government Offices',
-                mr: 'शासकीय कार्यालये',
-                hi: 'सरकारी कार्यालय',
-              ),
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.5,
-              ),
+            Row(
+              children: [
+                const Icon(Icons.account_balance_outlined, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
+                Text(
+                  AppTranslations.pick(
+                    lang,
+                    en: 'Government Offices',
+                    mr: 'शासकीय कार्यालये',
+                    hi: 'सरकारी कार्यालय',
+                  ),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(

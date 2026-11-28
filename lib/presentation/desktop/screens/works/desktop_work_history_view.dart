@@ -595,6 +595,8 @@ class _DesktopWorkHistoryViewState extends ConsumerState<DesktopWorkHistoryView>
           children: [
             Row(
               children: [
+                const Icon(Icons.history_rounded, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
                 Text(
                   AppTranslations.getNavTitle('work_history', lang),
                   style: const TextStyle(

@@ -76,19 +76,19 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
       return AppTranslations.formatDigits(
         AppTranslations.pick(
           lang,
-          en: '''📌 **Ward 12 ($areaName) - Strategic Campaign Intelligence Brief**:
+          en: '''**Ward 12 ($areaName) - Strategic Campaign Intelligence Brief**:
 
 1. **Water Supply & Infrastructure Repairs**: Citizen complaints regarding low water pressure constitute 28% of overall volume in this pocket. Prioritizing pipeline overhaul works will yield immediate voter goodwill.
 2. **Youth Voter Outreach (Age 18-35)**: Constitutes 42% of local electorate. Organizing career guidance workshops and inter-ward sports tournaments is strongly recommended.
 3. **Welfare Scheme Camps**: Over 500+ applications have been processed for central & state welfare benefits; scheduling a dedicated assistance desk in the community hall will consolidate support.
 4. **Cooperative Housing Society Meetings**: Direct liaison with management committees across 8 prominent apartment societies is recommended for upcoming weekend town halls.''',
-          mr: '''📌 **प्रभाग 12 ($areaName) - रणनीतिक मोहीम विश्लेषण सारांश**:
+          mr: '''**प्रभाग 12 ($areaName) - रणनीतिक मोहीम विश्लेषण सारांश**:
 
 1. **पाणी पुरवठा व पायाभूत सुविधा दुरुस्ती**: या परिसरातील एकूण तक्रारींपैकी 28% तक्रारी कमी दाबाच्या पाणी पुरवठ्याशी संबंधित आहेत. जलवाहिनी दुरुस्तीस प्राधान्य दिल्यास मतदारांचा तात्काळ विश्वास वाढेल.
 2. **युवा मतदार संपर्क (वय 18-35)**: स्थानिक मतदारांपैकी 42% मतदार युवा वर्गातील आहेत. करिअर मार्गदर्शन शिबिरे व प्रभागस्तरीय क्रीडा स्पर्धा आयोजित करण्याची शिफारस आहे.
 3. **कल्याणकारी योजना शिबिरे**: केंद्र व राज्य शासनाच्या विविध योजनांसाठी 500+ हून अधिक अर्जांवर कार्यवाही झाली आहे; समाज मंदिरात विशेष मदत केंद्र सुरू केल्यास पाठिंबा अधिक दृढ होईल.
 4. **सहकारी गृहनिर्माण संस्था बैठका**: आगामी आठवड्याच्या शेवटी 8 प्रमुख अपार्टमेंट सोसायट्यांच्या कार्यकारी समित्यांशी थेट संवाद बैठकांचे आयोजन करण्याची शिफारस आहे.''',
-          hi: '''📌 **वार्ड 12 ($areaName) - रणनीतिक अभियान विश्लेषण सारांश**:
+          hi: '''**वार्ड 12 ($areaName) - रणनीतिक अभियान विश्लेषण सारांश**:
 
 1. **जल आपूर्ति एवं बुनियादी ढांचा सुधार**: इस क्षेत्र में कुल शिकायतों का 28% कम पानी के दबाव से संबंधित है। पाइपलाइन सुधार कार्यों को प्राथमिकता देने से तत्काल मतदाता सद्भावना प्राप्त होगी।
 2. **युवा मतदाता संपर्क (आयु 18-35)**: स्थानीय मतदाताओं में 42% युवा वर्ग से हैं। करियर मार्गदर्शन कार्यशालाओं और अंतर-वार्ड खेल प्रतियोगिताओं का आयोजन अत्यंत अनुशंसित है।
@@ -102,19 +102,19 @@ class _DesktopAnalysisStrategyViewState extends ConsumerState<DesktopAnalysisStr
     return AppTranslations.formatDigits(
       AppTranslations.pick(
         lang,
-        en: '''📌 **Ward 12 ($areaName) - Strategic Focus: $toneLabel**:
+        en: '''**Ward 12 ($areaName) - Strategic Focus: $toneLabel**:
 
 • **Core Priority #1**: Accelerate visible development works and local civic infrastructure completion across $areaName.
 • **Grievance Resolution Velocity**: Current resolution rate stands at 84%; target an increase to 92% over the next 3 weeks before election announcements.
 • **Community Outreach**: Coordinate direct interactive sessions with local senior citizen clubs and commercial merchant associations next week.
 • **Digital Amplification**: Broadcast video reels of completed road concreting and LED street lighting upgrades across WhatsApp and Facebook networks.''',
-        mr: '''📌 **प्रभाग 12 ($areaName) - मुख्य रणनीतिक दिशा: $toneLabel**:
+        mr: '''**प्रभाग 12 ($areaName) - मुख्य रणनीतिक दिशा: $toneLabel**:
 
 • **मुख्य प्राधान्य #1**: $areaName परिसरात दृश्यमान विकास कामे व स्थानिक नागरी पायाभूत सुविधांची पूर्तता वेगाने पूर्ण करा.
 • **तक्रार निवारण वेग**: सध्याचे तक्रार निवारण प्रमाण 84% आहे; निवडणूक घोषणेपूर्वी पुढील 3 आठवड्यांत ते 92% पर्यंत नेण्याचे उद्दिष्ट ठेवा.
 • **लोकसंपर्क मोहीम**: पुढील आठवड्यात स्थानिक ज्येष्ठ नागरिक संघटना व व्यापारी महासंघांसोबत थेट संवादात्मक बैठकांचे आयोजन करा.
 • **डिजिटल प्रसार**: पूर्ण झालेल्या काँक्रीट रस्ते आणि LED पथदिव्यांच्या कामांचे व्हिडिओ रील्स व्हॉट्सॲप व फेसबुक नेटवर्कद्वारे प्रसारित करा.''',
-        hi: '''📌 **वार्ड 12 ($areaName) - रणनीतिक फोकस: $toneLabel**:
+        hi: '''**वार्ड 12 ($areaName) - रणनीतिक फोकस: $toneLabel**:
 
 • **मुख्य प्राथमिकता #1**: $areaName क्षेत्र में दृश्यमान विकास कार्यों और स्थानीय नागरिक बुनियादी ढांचे को तेजी से पूरा करें।
 • **शिकायत समाधान गति**: वर्तमान समाधान दर 84% है; चुनाव घोषणाओं से पहले अगले 3 सप्ताह में इसे 92% तक बढ़ाने का लक्ष्य रखें।

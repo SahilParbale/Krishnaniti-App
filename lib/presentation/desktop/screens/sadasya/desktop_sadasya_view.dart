@@ -494,6 +494,8 @@ class _DesktopSadasyaViewState extends ConsumerState<DesktopSadasyaView> {
             children: [
               Row(
                 children: [
+                  const Icon(Icons.group_add_rounded, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
                   Text(
                     AppTranslations.pick(
                       lang,

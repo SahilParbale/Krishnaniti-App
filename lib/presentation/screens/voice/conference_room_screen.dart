@@ -1265,9 +1265,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                 final timeStr = AppTranslations.formatTime(meeting.scheduledAt, lang);
                                 final waMsg = AppTranslations.pick(
                                   lang,
-                                  en: '🎥 You are invited to a video meeting: *$translatedTitle*\n📅 Date: $dateStr\n⏰ Time: $timeStr\n🔗 Join here: ${meeting.meetLink}\n\nPlease join on time.',
-                                  mr: '🎥 आपणास व्हिडिओ मीटिंगसाठी आमंत्रित केले आहे: *$translatedTitle*\n📅 तारीख: $dateStr\n⏰ वेळ: $timeStr\n🔗 इथे सामील व्हा: ${meeting.meetLink}\n\nकृपया वेळेवर सामील व्हा.',
-                                  hi: '🎥 आपको वीडियो मीटिंग के लिए आमंत्रित किया गया है: *$translatedTitle*\n📅 तारीख: $dateStr\n⏰ समय: $timeStr\n🔗 यहाँ जुड़ें: ${meeting.meetLink}\n\nकृपया समय पर जुड़ें।',
+                                  en: 'You are invited to a video meeting: *$translatedTitle*\nDate: $dateStr\nTime: $timeStr\nJoin here: ${meeting.meetLink}\n\nPlease join on time.',
+                                  mr: 'आपणास व्हिडिओ मीटिंगसाठी आमंत्रित केले आहे: *$translatedTitle*\nतारीख: $dateStr\nवेळ: $timeStr\nइथे सामील व्हा: ${meeting.meetLink}\n\nकृपया वेळेवर सामील व्हा.',
+                                  hi: 'आपको वीडियो मीटिंग के लिए आमंत्रित किया गया है: *$translatedTitle*\nतारीख: $dateStr\nसमय: $timeStr\nयहाँ जुड़ें: ${meeting.meetLink}\n\nकृपया समय पर जुड़ें।',
                                 );
 
                                 final encoded = Uri.encodeComponent(waMsg);
@@ -1312,9 +1312,9 @@ class _ConferenceRoomScreenState extends ConsumerState<ConferenceRoomScreen>
                                       content: Text(
                                         AppTranslations.pick(
                                           lang,
-                                          en: '✅ Sent conference invites to $countStr citizens!',
-                                          mr: '✅ $countStr मतदारांना बैठकीचे आमंत्रण पाठवले!',
-                                          hi: '✅ $countStr नागरिकों को मीटिंग का निमंत्रण भेजा गया!',
+                                          en: 'Sent conference invites to $countStr citizens!',
+                                          mr: '$countStr मतदारांना बैठकीचे आमंत्रण पाठवले!',
+                                          hi: '$countStr नागरिकों को मीटिंग का निमंत्रण भेजा गया!',
                                         ),
                                       ),
                                       backgroundColor: const Color(0xFF16A34A),

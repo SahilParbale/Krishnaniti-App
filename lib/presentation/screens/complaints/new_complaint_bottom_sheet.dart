@@ -1652,7 +1652,7 @@ class _VoterSearchModalSheetState
                                     if (v.mobile != null && v.mobile!.isNotEmpty) ...[
                                       const SizedBox(width: 6),
                                       Text(
-                                        '| 📱 ${AppTranslations.formatDigits(v.mobile!, lang)}',
+                                        '| ${AppTranslations.formatDigits(v.mobile!, lang)}',
                                         style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7)),
                                       ),
                                     ],

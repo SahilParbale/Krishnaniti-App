@@ -646,6 +646,8 @@ class _DesktopHousingSocietiesViewState extends ConsumerState<DesktopHousingSoci
             children: [
               Row(
                 children: [
+                  const Icon(Icons.home_work_outlined, size: 26, color: Color(0xFF0369A1)),
+                  const SizedBox(width: 10),
                   Flexible(
                     child: Text(
                       AppTranslations.pick(

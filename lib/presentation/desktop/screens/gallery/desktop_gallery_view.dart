@@ -454,6 +454,8 @@ class _DesktopGalleryViewState extends ConsumerState<DesktopGalleryView> {
           children: [
             Row(
               children: [
+                const Icon(Icons.collections_outlined, size: 26, color: Color(0xFF0369A1)),
+                const SizedBox(width: 10),
                 Text(
                   AppTranslations.pick(
                     lang,

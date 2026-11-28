@@ -366,74 +366,74 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
     if (tone == 'Development') {
       return AppTranslations.pick(
         lang,
-        en: '🚩 *Development & Civic Outreach Briefing - $areaDisplay*\n\n'
+        en: '*Development & Civic Outreach Briefing - $areaDisplay*\n\n'
             'Greetings, in Ward 12 $areaDisplay, inauguration of recently completed water pipelines, road concretization and new LED street lighting will take place.\n\n'
-            '📌 *Key Highlights:*\n'
+            '*Key Highlights:*\n'
             '• Total Voters: $totalVotersStr | Mobile Reach: $reachStr%\n'
             '• Grievances Resolved: $solvedStr of $totalCompStr\n'
             '• Ward Budget Utilized: ₹$budgetStr\n\n'
-            '🎯 *Action:* Reaffirm commitment to prioritizing remaining sanitation and water supply issues.',
-        mr: '🚩 *विकास कामे व नागरी संवाद माहिती - $areaDisplay*\n\n'
+            '*Action:* Reaffirm commitment to prioritizing remaining sanitation and water supply issues.',
+        mr: '*विकास कामे व नागरी संवाद माहिती - $areaDisplay*\n\n'
             'नमस्कार, प्रभाग १२ मधील $areaDisplay परिसरात पूर्ण झालेल्या पाणीपुरवठा जलवाहिनी, रस्ते काँक्रिटीकरण आणि नवीन LED पथदिव्यांचे लोकार्पण करण्यात येणार आहे.\n\n'
-            '📌 *प्रमुख ठळक मुद्दे:*\n'
+            '*प्रमुख ठळक मुद्दे:*\n'
             '• एकूण मतदार: $totalVotersStr | मोबाईल पोहोच: $reachStr%\n'
             '• सोडवलेल्या तक्रारी: $totalCompStr पैकी $solvedStr\n'
             '• वापरलेला प्रभाग निधी: ₹$budgetStr\n\n'
-            '🎯 *कृती:* उर्वरित स्वच्छता व पाणीपुरवठा कामांना प्राधान्य देण्याचा संकल्प पुन्हा अधोरेखित करा.',
-        hi: '🚩 *विकास एवं नागरिक संवाद ब्रीफिंग - $areaDisplay*\n\n'
+            '*कृती:* उर्वरित स्वच्छता व पाणीपुरवठा कामांना प्राधान्य देण्याचा संकल्प पुन्हा अधोरेखित करा.',
+        hi: '*विकास एवं नागरिक संवाद ब्रीफिंग - $areaDisplay*\n\n'
             'नमस्कार, वार्ड १२ के $areaDisplay क्षेत्र में हाल ही में पूर्ण हुई जल पाइपलाइन, सड़क कंक्रीटीकरण और नई LED स्ट्रीट लाइटों का लोकार्पण किया जाएगा।\n\n'
-            '📌 *मुख्य बिंदु:*\n'
+            '*मुख्य बिंदु:*\n'
             '• कुल मतदाता: $totalVotersStr | मोबाइल पहुंच: $reachStr%\n'
             '• सुलझाई गई शिकायतें: $totalCompStr में से $solvedStr\n'
             '• उपयोग किया गया वार्ड बजट: ₹$budgetStr\n\n'
-            '🎯 *कार्रवाई:* शेष स्वच्छता और जल आपूर्ति कार्यों को प्राथमिकता देने की प्रतिबद्धता दोहराएं।',
+            '*कार्रवाई:* शेष स्वच्छता और जल आपूर्ति कार्यों को प्राथमिकता देने की प्रतिबद्धता दोहराएं।',
       );
     } else if (tone == 'Grievance') {
       return AppTranslations.pick(
         lang,
-        en: '⚠️ *Citizen Grievance Redressal Meeting - $areaDisplay*\n\n'
+        en: '*Citizen Grievance Redressal Meeting - $areaDisplay*\n\n'
             'Joint inspection with municipal engineers to resolve $ongoingStr pending grievances in the $areaDisplay vicinity.\n\n'
-            '📌 *Priority Action Items:*\n'
+            '*Priority Action Items:*\n'
             '• Sewage drainage chamber repairs & mosquito fogging drive\n'
             '• Footpath safety & cleanliness drive for senior citizens\n\n'
-            '🎯 *Action Plan:* Token numbers will be issued within 24 hours via PMC helpline and progress reports delivered to citizens.',
-        mr: '⚠️ *नागरी तक्रार निवारण बैठक - $areaDisplay*\n\n'
+            '*Action Plan:* Token numbers will be issued within 24 hours via PMC helpline and progress reports delivered to citizens.',
+        mr: '*नागरी तक्रार निवारण बैठक - $areaDisplay*\n\n'
             '$areaDisplay परिसरातील प्रलंबित $ongoingStr तक्रारी सोडवण्यासाठी महानगरपालिका अभियंत्यांसोबत संयुक्त पाहणी.\n\n'
-            '📌 *प्राधान्याची कामे:*\n'
+            '*प्राधान्याची कामे:*\n'
             '• ड्रेनेज चेंबर दुरुस्ती व डास प्रतिबंधक फवारणी मोहीम\n'
             '• ज्येष्ठ नागरिकांसाठी पदपथ सुरक्षा व स्वच्छता मोहीम\n\n'
-            '🎯 *कृती आराखडा:* पालिका हेल्पलाइनद्वारे २४ तासांत टोकन क्रमांक देऊन कामाचा प्रगती अहवाल नागरिकांपर्यंत पोहोचवला जाईल.',
-        hi: '⚠️ *नागरिक शिकायत निवारण बैठक - $areaDisplay*\n\n'
+            '*कृती आराखडा:* पालिका हेल्पलाइनद्वारे २४ तासांत टोकन क्रमांक देऊन कामाचा प्रगती अहवाल नागरिकांपर्यंत पोहोचवला जाईल.',
+        hi: '*नागरिक शिकायत निवारण बैठक - $areaDisplay*\n\n'
             '$areaDisplay क्षेत्र की लंबित $ongoingStr शिकायतों के समाधान के लिए नगर निगम अभियंताओं के साथ संयुक्त निरीक्षण।\n\n'
-            '📌 *प्राथमिक कार्य:*\n'
+            '*प्राथमिक कार्य:*\n'
             '• सीवेज ड्रेनेज चैंबर मरम्मत एवं मच्छर फॉगिंग अभियान\n'
             '• वरिष्ठ नागरिकों के लिए फुटपाथ सुरक्षा एवं स्वच्छता अभियान\n\n'
-            '🎯 *कार्य योजना:* हेल्पलाइन के माध्यम से २४ घंटे के भीतर टोकन नंबर जारी कर नागरिकों को प्रगति रिपोर्ट दी जाएगी।',
+            '*कार्य योजना:* हेल्पलाइन के माध्यम से २४ घंटे के भीतर टोकन नंबर जारी कर नागरिकों को प्रगति रिपोर्ट दी जाएगी।',
       );
     } else {
       return AppTranslations.pick(
         lang,
-        en: '🏆 *Campaign & Booth Strengthening Briefing - $areaDisplay*\n\n'
+        en: '*Campaign & Booth Strengthening Briefing - $areaDisplay*\n\n'
             'Cadre meeting and booth-level voter connect in $areaDisplay.\n\n'
-            '📌 *Political Overview:*\n'
+            '*Political Overview:*\n'
             '• Total Voters: $totalVotersStr\n'
             '• Committed Supporters: $supportersStr (Density $densityStr%)\n'
             '• Prior Election Lead: +$marginStr votes\n\n'
-            '🎯 *Strategy:* Engage youth voters aged 18-35 via sports clubs and welfare scheme helpdesks.',
-        mr: '🏆 *प्रचार व बूथ सक्षमीकरण माहिती - $areaDisplay*\n\n'
+            '*Strategy:* Engage youth voters aged 18-35 via sports clubs and welfare scheme helpdesks.',
+        mr: '*प्रचार व बूथ सक्षमीकरण माहिती - $areaDisplay*\n\n'
             '$areaDisplay परिसरात कार्यकर्त्यांची बैठक आणि बूथ-स्तरीय मतदार संपर्क मोहीम.\n\n'
-            '📌 *राजकीय आढावा:*\n'
+            '*राजकीय आढावा:*\n'
             '• एकूण मतदार: $totalVotersStr\n'
             '• खंबीर समर्थक: $supportersStr (प्रमाण $densityStr%)\n'
             '• मागील निवडणुकीतील मताधिक्य: +$marginStr मते\n\n'
-            '🎯 *रणनीती:* क्रीडा मंडळे आणि कल्याणकारी योजना मदत केंद्रांद्वारे १८-३५ वयोगटातील युवा मतदारांशी संपर्क साधा.',
-        hi: '🏆 *प्रचार एवं बूथ सशक्तिकरण ब्रीफिंग - $areaDisplay*\n\n'
+            '*रणनीती:* क्रीडा मंडळे आणि कल्याणकारी योजना मदत केंद्रांद्वारे १८-३५ वयोगटातील युवा मतदारांशी संपर्क साधा.',
+        hi: '*प्रचार एवं बूथ सशक्तिकरण ब्रीफिंग - $areaDisplay*\n\n'
             '$areaDisplay में कार्यकर्ता बैठक और बूथ-स्तरीय मतदाता संपर्क अभियान।\n\n'
-            '📌 *राजनीतिक समीक्षा:*\n'
+            '*राजनीतिक समीक्षा:*\n'
             '• कुल मतदाता: $totalVotersStr\n'
             '• प्रतिबद्ध समर्थक: $supportersStr (घनत्व $densityStr%)\n'
             '• पिछले चुनाव में बढ़त: +$marginStr मत\n\n'
-            '🎯 *रणनीति:* खेल क्लबों और कल्याणकारी योजना सहायता केंद्रों के माध्यम से १८-३५ आयु वर्ग के युवा मतदाताओं से जुड़ें।',
+            '*रणनीति:* खेल क्लबों और कल्याणकारी योजना सहायता केंद्रों के माध्यम से १८-३५ आयु वर्ग के युवा मतदाताओं से जुड़ें।',
       );
     }
   }
@@ -464,19 +464,19 @@ class _AnalysisStrategyScreenState extends ConsumerState<AnalysisStrategyScreen>
 
       text = AppTranslations.pick(
         lang,
-        en: '📊 *$areaDisplay Analysis & Strategy Report*\n'
+        en: '*$areaDisplay Analysis & Strategy Report*\n'
             'Total Voters: $totalVotersStr\n'
             'Committed Supporters: $supportersStr\n'
             'Resolved Grievances: $solvedStr/$totalCompStr\n'
             'Ward Budget Utilized: ₹$budgetStr\n\n'
             '_Corporator PR Office, Ward 12_',
-        mr: '📊 *$areaDisplay विश्लेषण आणि रणनीती अहवाल*\n'
+        mr: '*$areaDisplay विश्लेषण आणि रणनीती अहवाल*\n'
             'एकूण मतदार: $totalVotersStr\n'
             'खंबीर समर्थक: $supportersStr\n'
             'सोडवलेल्या तक्रारी: $solvedStr/$totalCompStr\n'
             'वापरलेला प्रभाग निधी: ₹$budgetStr\n\n'
             '_नगरसेवक जनसंपर्क कार्यालय, प्रभाग १२_',
-        hi: '📊 *$areaDisplay विश्लेषण एवं रणनीति रिपोर्ट*\n'
+        hi: '*$areaDisplay विश्लेषण एवं रणनीति रिपोर्ट*\n'
             'कुल मतदाता: $totalVotersStr\n'
             'प्रतिबद्ध समर्थक: $supportersStr\n'
             'सुलझाई गई शिकायतें: $solvedStr/$totalCompStr\n'
