@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/letter_model.dart';
 import '../models/letter_type_model.dart';
 import '../models/paginated_result.dart';
@@ -107,16 +108,26 @@ class LettersRepository {
   Future<List<LetterModel>> getLetters({required bool isIncoming, int limit = 50}) async {
     try {
       final tableName = isIncoming ? 'incoming_letters' : 'letter_requests';
+      final cacheKey = '${tableName}_${_tenantId ?? 'default'}';
+      final cached = await DeltaSyncCache.load(cacheKey);
+
       var query = _client.from(tableName).select('*');
 
       if (_tenantId != null) {
         query = query.eq('tenant_id', _tenantId!);
       }
+      if (cached.lastSyncedAt != null && cached.rows.isNotEmpty) {
+        query = query.gt('updated_at', cached.lastSyncedAt!);
+      }
 
       final response = await query.order('created_at', ascending: false).limit(limit);
+      final deltaRows = (response as List<dynamic>)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      final mergedRows = await DeltaSyncCache.mergeAndSave(cacheKey, cached.rows, deltaRows);
 
-      final list = (response as List<dynamic>)
-          .map((item) => LetterModel.fromJson(item as Map<String, dynamic>, isIncoming: isIncoming))
+      final list = mergedRows
+          .map((item) => LetterModel.fromJson(item, isIncoming: isIncoming))
           .toList();
 
       return list.isNotEmpty ? list : _getFallbackLetters(isIncoming);

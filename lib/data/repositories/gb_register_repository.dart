@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/gb_register_entry_model.dart';
 
 final gbRegisterRepoProvider = Provider<GbRegisterRepository>((ref) {
@@ -18,7 +19,15 @@ class GbRegisterRepository {
       if (_tenantId != null) {
         query = query.eq('tenant_id', _tenantId!);
       }
-      final response = await query.order('meeting_date', ascending: false);
+      final cacheKey = 'gb_register_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = query;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('meeting_date', ascending: false);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       return (response as List<dynamic>)
           .map((item) => GbRegisterEntryModel.fromJson(Map<String, dynamic>.from(item as Map)))
           .toList();

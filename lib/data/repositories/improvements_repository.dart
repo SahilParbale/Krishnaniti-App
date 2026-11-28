@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/improvement_model.dart';
 
 final improvementsRepoProvider = Provider<ImprovementsRepository>((ref) {
@@ -31,7 +32,15 @@ class ImprovementsRepository {
         dbQuery = dbQuery.eq('area', area);
       }
 
-      final response = await dbQuery.order('votes', ascending: false);
+      final cacheKey = 'improvements_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = dbQuery;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('votes', ascending: false);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       var list = (response as List<dynamic>)
           .map((item) => ImprovementModel.fromJson(item as Map<String, dynamic>))
           .toList();

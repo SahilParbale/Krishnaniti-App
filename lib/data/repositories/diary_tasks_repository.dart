@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/diary_task_model.dart';
 
 class DiaryTasksRepository {
@@ -15,18 +16,31 @@ class DiaryTasksRepository {
     DateTime? date,
   }) async {
     try {
-      var query = _client.from('tasks').select('*');
-
-      if (_tenantId != null && _tenantId!.isNotEmpty) {
-        query = query.eq('tenant_id', _tenantId!);
-      }
-
-      if (status != null && status != 'All') {
-        query = query.eq('status', status);
-      }
-
-      final response = await query.order('created_at', ascending: false).limit(200);
-      final rawList = response as List<dynamic>;
+      final canUseDelta = status == null || status == 'All';
+      final cacheKey = 'tasks_${_tenantId ?? 'default'}';
+      final rawList = canUseDelta
+          ? await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+              var query = _client.from('tasks').select('*');
+              if (_tenantId != null && _tenantId!.isNotEmpty) {
+                query = query.eq('tenant_id', _tenantId!);
+              }
+              if (lastSyncedAt != null) {
+                query = query.gt('updated_at', lastSyncedAt);
+              }
+              final response = await query.order('created_at', ascending: false).limit(200);
+              return (response as List<dynamic>)
+                  .map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList();
+            })
+          : await () async {
+              var query = _client.from('tasks').select('*');
+              if (_tenantId != null && _tenantId!.isNotEmpty) {
+                query = query.eq('tenant_id', _tenantId!);
+              }
+              query = query.eq('status', status);
+              final response = await query.order('created_at', ascending: false).limit(200);
+              return response as List<dynamic>;
+            }();
 
       // Resolve assigned staff names if assigned_staff_id exists but assigned_to is empty
       final Map<String, String> staffMap = {};

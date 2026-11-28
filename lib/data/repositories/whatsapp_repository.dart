@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/voter_model.dart';
 import '../models/whatsapp_broadcast_model.dart';
 import 'voters_repository.dart';
@@ -113,7 +114,15 @@ class WhatsAppRepository {
         }
       }
 
-      final response = await query.order('serial_no').limit(200);
+      final cacheKey = 'whatsapp_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = query;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('serial_no').limit(200);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       return (response as List<dynamic>)
           .map((item) => VoterModel.fromJson(item as Map<String, dynamic>))
           .where((v) => v.mobile != null && v.mobile!.isNotEmpty)

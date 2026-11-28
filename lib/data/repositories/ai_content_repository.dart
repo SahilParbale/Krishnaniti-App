@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/ai_content_model.dart';
 
 class AiContentRepository {
@@ -82,7 +83,15 @@ class AiContentRepository {
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
       }
-      final response = await query.order('created_at', ascending: false);
+      final cacheKey = 'ai_content_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = query;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('created_at', ascending: false);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       return (response as List<dynamic>).map((item) {
         final map = Map<String, dynamic>.from(item as Map);
         final itemId = map['id']?.toString() ?? '';

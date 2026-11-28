@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/voter_application_model.dart';
 import '../models/voter_model.dart';
 import 'voters_repository.dart';
@@ -42,7 +43,15 @@ class VoterApplicationsRepository {
         dbQuery = dbQuery.or('applicant_name.ilike.%$q%,applicant_mobile.ilike.%$q%,notes.ilike.%$q%');
       }
 
-      final response = await dbQuery.order('created_at', ascending: false);
+      final cacheKey = 'voter_applications_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = dbQuery;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('created_at', ascending: false);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       return (response as List<dynamic>)
           .map((item) => VoterApplicationModel.fromJson(item as Map<String, dynamic>))
           .toList();

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/work_tracker_model.dart';
 
 final fileTrackerRepoProvider = Provider<FileTrackerRepository>((ref) {
@@ -30,7 +31,15 @@ class FileTrackerRepository {
         query = query.eq('current_status', status);
       }
 
-      final response = await query.order('updated_at', ascending: false);
+      final cacheKey = 'file_tracker_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = query;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('updated_at', ascending: false);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
 
       final list = (response as List<dynamic>)
           .map((item) => WorkTrackerModel.fromJson(item as Map<String, dynamic>))

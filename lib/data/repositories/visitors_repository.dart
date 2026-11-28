@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/paginated_result.dart';
 import '../models/visitor_model.dart';
 
@@ -72,17 +73,33 @@ class VisitorsRepository {
     DateTime? date,
   }) async {
     try {
+      final cacheKey = 'visitors_${_tenantId ?? 'default'}';
+      final canUseDelta = (search == null || search.trim().isEmpty) &&
+          (purpose == null || purpose == 'All') &&
+          (area == null || area == 'All') &&
+          date == null;
+      final cached = canUseDelta
+          ? await DeltaSyncCache.load(cacheKey)
+          : (rows: <Map<String, dynamic>>[], lastSyncedAt: null);
+
       var query = _client.from('visitors').select('*');
 
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         query = query.eq('tenant_id', _tenantId!);
       }
+      if (canUseDelta && cached.lastSyncedAt != null && cached.rows.isNotEmpty) {
+        query = query.gt('updated_at', cached.lastSyncedAt!);
+      }
 
       final response = await query.order('visit_date', ascending: false).limit(200);
-
-      final list = (response as List<dynamic>)
-          .map((item) => VisitorModel.fromJson(item as Map<String, dynamic>))
+      final deltaRows = (response as List<dynamic>)
+          .map((item) => Map<String, dynamic>.from(item as Map))
           .toList();
+      final mergedRows = canUseDelta
+          ? await DeltaSyncCache.mergeAndSave(cacheKey, cached.rows, deltaRows)
+          : deltaRows;
+
+      final list = mergedRows.map((item) => VisitorModel.fromJson(item)).toList();
 
       return list.isNotEmpty ? list : _getFallbackVisitors();
     } catch (_) {

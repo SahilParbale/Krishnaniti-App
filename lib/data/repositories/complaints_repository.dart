@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/complaint_model.dart';
 import '../models/paginated_result.dart';
 import '../models/staff_model.dart';
@@ -102,10 +103,20 @@ class ComplaintsRepository {
     int limit = 50,
   }) async {
     try {
+      final cacheKey = 'complaints_${_tenantId ?? 'default'}';
+      final canUseDelta = (statusFilter == null || statusFilter == 'All') &&
+          (searchQuery == null || searchQuery.trim().isEmpty);
+      final cached = canUseDelta
+          ? await DeltaSyncCache.load(cacheKey)
+          : (rows: <Map<String, dynamic>>[], lastSyncedAt: null);
+
       var query = _client.from('complaints').select('*');
 
       if (_tenantId != null) {
         query = query.eq('tenant_id', _tenantId!);
+      }
+      if (canUseDelta && cached.lastSyncedAt != null && cached.rows.isNotEmpty) {
+        query = query.gt('updated_at', cached.lastSyncedAt!);
       }
 
       if (statusFilter != null && statusFilter != 'All') {
@@ -132,10 +143,20 @@ class ComplaintsRepository {
     String? priorityFilter,
   }) async {
     try {
+      final cacheKey = 'complaints_${_tenantId ?? 'default'}';
+      final canUseDelta = (statusFilter == null || statusFilter == 'All') &&
+          (searchQuery == null || searchQuery.trim().isEmpty);
+      final cached = canUseDelta
+          ? await DeltaSyncCache.load(cacheKey)
+          : (rows: <Map<String, dynamic>>[], lastSyncedAt: null);
+
       var query = _client.from('complaints').select('*');
 
       if (_tenantId != null) {
         query = query.eq('tenant_id', _tenantId!);
+      }
+      if (canUseDelta && cached.lastSyncedAt != null && cached.rows.isNotEmpty) {
+        query = query.gt('updated_at', cached.lastSyncedAt!);
       }
 
       if (statusFilter != null && statusFilter != 'All' && statusFilter.isNotEmpty) {

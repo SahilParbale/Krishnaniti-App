@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/work_history_model.dart';
 
 final workHistoryRepoProvider = Provider<WorkHistoryRepository>((ref) {
@@ -15,12 +16,20 @@ class WorkHistoryRepository {
 
   Future<List<WorkHistoryModel>> getWorks() async {
     try {
-      var query = _client.from('works').select('*');
-      if (_tenantId != null) {
-        query = query.eq('tenant_id', _tenantId!);
-      }
-      final response = await query.order('created_at', ascending: false);
-      final rawList = response as List<dynamic>;
+      final cacheKey = 'works_${_tenantId ?? 'default'}';
+      final rawList = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var query = _client.from('works').select('*');
+        if (_tenantId != null) {
+          query = query.eq('tenant_id', _tenantId!);
+        }
+        if (lastSyncedAt != null) {
+          query = query.gt('updated_at', lastSyncedAt);
+        }
+        final response = await query.order('created_at', ascending: false);
+        return (response as List<dynamic>)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      });
 
       // Load feedback for these works
       final List<WorkHistoryModel> works = [];

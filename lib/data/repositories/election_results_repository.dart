@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/election_result_model.dart';
 
 class ElectionResultsRepository {
@@ -31,7 +32,15 @@ class ElectionResultsRepository {
         query = query.eq('ward_name', ward);
       }
 
-      final response = await query.order('booth_number', ascending: true);
+      final cacheKey = 'election_results_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = query;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('booth_number', ascending: true);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       return (response as List<dynamic>)
           .map((item) => ElectionResultModel.fromJson(item as Map<String, dynamic>))
           .toList();

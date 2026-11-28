@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/karyakarta_work_model.dart';
 
 final karyakartaWorkRepoProvider = Provider<KaryakartaWorkRepository>((ref) {
@@ -22,7 +23,15 @@ class KaryakartaWorkRepository {
       if (_tenantId != null && _tenantId!.isNotEmpty) {
         dbQuery = dbQuery.eq('tenant_id', _tenantId!);
       }
-      final response = await dbQuery.order('name', ascending: true);
+      final cacheKey = 'karyakarta_work_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = dbQuery;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('name', ascending: true);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       final list = (response as List<dynamic>)
           .map((item) => KaryakartaWorkStaff.fromJson(item as Map<String, dynamic>))
           .toList();

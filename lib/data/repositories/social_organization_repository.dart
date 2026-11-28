@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/social_organization_model.dart';
 
 final socialOrgRepoProvider = Provider<SocialOrganizationRepository>((ref) {
@@ -41,7 +42,15 @@ class SocialOrganizationRepository {
         );
       }
 
-      final response = await dbQuery.order('created_at', ascending: false);
+      final cacheKey = 'social_organization_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = dbQuery;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('created_at', ascending: false);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       return (response as List<dynamic>)
           .map((item) => SocialOrganizationModel.fromJson(item as Map<String, dynamic>))
           .toList();

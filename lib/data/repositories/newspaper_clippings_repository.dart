@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/delta_sync_cache.dart';
 import '../models/newspaper_clipping_model.dart';
 
 final newspaperClippingsRepoProvider =
@@ -28,7 +29,15 @@ class NewspaperClippingsRepository {
         dbQuery = dbQuery.eq('sentiment', sentiment);
       }
 
-      final response = await dbQuery.order('date', ascending: false);
+      final cacheKey = 'newspaper_clippings_${_tenantId ?? 'default'}';
+      final response = await DeltaSyncCache.sync(cacheKey, (lastSyncedAt) async {
+        var q = dbQuery;
+        if (lastSyncedAt != null) {
+          q = q.gt('updated_at', lastSyncedAt);
+        }
+        final res = await q.order('date', ascending: false);
+        return (res as List<dynamic>).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
       final rawList = response as List<dynamic>;
 
       final List<NewspaperClippingModel> list = [];
