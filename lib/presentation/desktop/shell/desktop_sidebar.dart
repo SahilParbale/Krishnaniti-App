@@ -209,9 +209,10 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     final currentLang = ref.watch(desktopLanguageProvider);
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 260),
+      duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
       width: widget.isCollapsed ? 80 : 288,
+      clipBehavior: Clip.hardEdge,
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -599,10 +600,15 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(
-                  isOpen ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_right_rounded,
-                  size: 18,
-                  color: AppColors.slate400,
+                AnimatedRotation(
+                  turns: isOpen ? 0.25 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  child: const Icon(
+                    Icons.keyboard_arrow_right_rounded,
+                    size: 18,
+                    color: AppColors.slate400,
+                  ),
                 ),
               ],
             ),

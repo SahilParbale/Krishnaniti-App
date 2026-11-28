@@ -89,6 +89,18 @@ class DeltaSyncCache {
     } catch (_) {}
   }
 
+  static Future<void> clearAll() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys().where(
+            (k) => k.startsWith(_dataPrefix) || k.startsWith(_syncPrefix),
+          );
+      for (final k in keys.toList()) {
+        await prefs.remove(k);
+      }
+    } catch (_) {}
+  }
+
   /// Convenience wrapper: loads cached rows, runs [fetchDelta] with `lastSyncedAt`
   /// (null on first load), merges the delta into the cache, and returns the full list.
   static Future<List<Map<String, dynamic>>> sync(

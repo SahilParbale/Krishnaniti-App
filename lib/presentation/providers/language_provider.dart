@@ -99,17 +99,19 @@ class AppLanguageSegmentedSelector extends ConsumerWidget {
     final currentLang = ref.watch(appLanguageProvider);
 
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildItem(ref, 'en', 'EN', 'English', currentLang == 'en'),
+          const SizedBox(width: 2),
           _buildItem(ref, 'mr', 'मराठी', 'मराठी (Marathi)', currentLang == 'mr'),
+          const SizedBox(width: 2),
           _buildItem(ref, 'hi', 'हिंदी', 'हिंदी (Hindi)', currentLang == 'hi'),
         ],
       ),
@@ -125,23 +127,25 @@ class AppLanguageSegmentedSelector extends ConsumerWidget {
   ) {
     return InkWell(
       onTap: () => ref.read(appLanguageProvider.notifier).setLanguage(code),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(9),
       child: Tooltip(
         message: fullLabel,
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
           padding: EdgeInsets.symmetric(
-            horizontal: isCompact ? 10 : 14,
-            vertical: isCompact ? 5 : 7,
+            horizontal: isCompact ? 13 : 16,
+            vertical: isCompact ? 7 : 9,
           ),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: isSelected ? const Color(0xFF0284C7) : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+                      color: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ]
                 : null,
@@ -149,9 +153,10 @@ class AppLanguageSegmentedSelector extends ConsumerWidget {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: isCompact ? 11.5 : 12.5,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-              color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF64748B),
+              fontSize: isCompact ? 12.5 : 13.5,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+              color: isSelected ? Colors.white : const Color(0xFF475569),
+              letterSpacing: 0.1,
             ),
           ),
         ),

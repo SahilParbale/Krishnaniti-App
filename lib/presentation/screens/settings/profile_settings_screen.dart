@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_config.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/services/cache_service.dart';
+import '../../../core/services/delta_sync_cache.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/translation_service.dart';
 import '../../navigation/app_drawer.dart';
@@ -209,6 +210,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
     if (confirmed == true) {
       setState(() => _isClearingCache = true);
       final freed = await CacheService.instance.clearCache();
+      await DeltaSyncCache.clearAll();
       final freedStr = CacheService.formatBytes(freed);
       await _loadCacheSize();
       if (mounted) {
@@ -1131,6 +1133,8 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                   controller: _tabController,
                                   isScrollable: true,
                                   tabAlignment: TabAlignment.start,
+                                  indicatorSize: TabBarIndicatorSize.tab,
+                                  indicatorPadding: const EdgeInsets.symmetric(vertical: 2),
                                   indicator: BoxDecoration(
                                     color: const Color(0xFF0284C7),
                                     borderRadius: BorderRadius.circular(9),
@@ -1147,7 +1151,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen>
                                   labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
                                   unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                   dividerColor: Colors.transparent,
-                                  labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+                                  labelPadding: const EdgeInsets.symmetric(horizontal: 16),
                                   tabs: isStaff
                                       ? [
                                           Tab(
