@@ -16,6 +16,7 @@ import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart'
 import 'package:nagarsevak_mobile/core/localization/app_translations.dart';
 import 'package:nagarsevak_mobile/core/services/translation_service.dart';
 import 'package:nagarsevak_mobile/presentation/screens/complaints/new_complaint_screen.dart';
+import '../../common/desktop_responsive.dart';
 
 /// Desktop Dashboard matching Nagarsevak-Managment/src/pages/dashboard/Dashboard.tsx exactly 1:1
 class DesktopDashboardView extends ConsumerStatefulWidget {
@@ -541,34 +542,42 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
     final pendingList = _recentActivity.where((a) => a.status.toLowerCase().contains('pending')).toList();
     final displayedActivity = _activityFilter == 'pending' ? pendingList : _recentActivity;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Sticky Header Section (matching Dashboard.tsx lines 226-249)
-              _buildHeaderSection(lang),
+    return ResponsiveLayout(
+      builder: (context, r) => SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: r.contentPadding, vertical: r.contentPadding),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: r.isXLarge ? 1600 : 1280),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Sticky Header Section (matching Dashboard.tsx lines 226-249)
+                _buildHeaderSection(lang),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // 2. Quick Actions Card (matching Dashboard.tsx lines 252-282)
-              _buildQuickActionsCard(lang),
+                // 2. Quick Actions Card (matching Dashboard.tsx lines 252-282)
+                _buildQuickActionsCard(lang),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // 3. AI Insight Banner (matching Dashboard.tsx lines 285-299)
-              _buildAiInsightBanner(lang, pending, resolved, voters),
+                // 3. AI Insight Banner (matching Dashboard.tsx lines 285-299)
+                _buildAiInsightBanner(lang, pending, resolved, voters),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // 4. Stats Grid 4 Cards (matching Dashboard.tsx lines 302-307)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
+                // 4. Stats Grid 4 Cards (matching Dashboard.tsx lines 302-307)
+                GridView(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: r.statCardColumns,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    mainAxisExtent: 128,
+                  ),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildStatCard(
                       title: lang == 'mr' ? 'एकूण नागरिक' : (lang == 'hi' ? 'कुल नागरिक' : 'Total Citizens'),
                       value: voters,
                       lang: lang,
@@ -578,10 +587,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                       iconColor: const Color(0xFF0369A1),
                       onTap: () => ref.read(activeScreenProvider.notifier).setScreen('voters'),
                     ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: _buildStatCard(
+                    _buildStatCard(
                       title: lang == 'mr' ? 'प्रलंबित तक्रारी' : (lang == 'hi' ? 'लंबित मुद्दे' : 'Pending Issues'),
                       value: pending,
                       lang: lang,
@@ -591,10 +597,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                       iconColor: const Color(0xFFB91C1C),
                       onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
                     ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: _buildStatCard(
+                    _buildStatCard(
                       title: lang == 'mr' ? 'काम चालू' : (lang == 'hi' ? 'कार्य प्रगति पर' : 'In Progress'),
                       value: inProgress,
                       lang: lang,
@@ -604,10 +607,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                       iconColor: const Color(0xFFB45309),
                       onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
                     ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: _buildStatCard(
+                    _buildStatCard(
                       title: lang == 'mr' ? 'सोडवलेले' : (lang == 'hi' ? 'हल किया गया' : 'Resolved'),
                       value: resolved,
                       lang: lang,
@@ -617,28 +617,37 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
                       iconColor: const Color(0xFF15803D),
                       onTap: () => ref.read(activeScreenProvider.notifier).setScreen('complaints'),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
 
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
 
-              // 5. Main Content Grid (3 Columns: 2 cols Status Overview Chart + 1 col Live Activity)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildStatusOverviewCard(lang, total, pending, inProgress, resolved, resolutionRate),
+                // 5. Main Content Grid (3 Columns: 2 cols Status Overview Chart + 1 col Live Activity)
+                if (r.isCompact)
+                  Column(
+                    children: [
+                      _buildStatusOverviewCard(lang, total, pending, inProgress, resolved, resolutionRate),
+                      const SizedBox(height: 20),
+                      _buildLiveActivityFeedCard(lang, pending, displayedActivity),
+                    ],
+                  )
+                else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _buildStatusOverviewCard(lang, total, pending, inProgress, resolved, resolutionRate),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        flex: 1,
+                        child: _buildLiveActivityFeedCard(lang, pending, displayedActivity),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    flex: 1,
-                    child: _buildLiveActivityFeedCard(lang, pending, displayedActivity),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -728,20 +737,26 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Text(
-            lang == 'mr' ? 'त्वरित क्रिया:' : (lang == 'hi' ? 'त्वरित कार्रवाई:' : 'Quick actions:'),
-            style: const TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
-              color: AppColors.slate600,
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 10,
+          children: [
+            Text(
+              lang == 'mr' ? 'त्वरित क्रिया:' : (lang == 'hi' ? 'त्वरित कार्रवाई:' : 'Quick actions:'),
+              style: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.slate600,
+              ),
             ),
-          ),
-          const Spacer(),
-          Wrap(
-            spacing: 10,
-            children: [
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              children: [
               _buildGhostActionBtn(
                 icon: Icons.search_rounded,
                 label: lang == 'mr' ? 'मतदार शोधा' : (lang == 'hi' ? 'मतदाता खोजें' : 'Search Voter'),
@@ -760,6 +775,7 @@ class _DesktopDashboardViewState extends ConsumerState<DesktopDashboardView> {
             ],
           ),
         ],
+        ),
       ),
     );
   }

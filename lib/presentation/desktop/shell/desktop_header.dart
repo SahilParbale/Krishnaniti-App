@@ -5,6 +5,7 @@ import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/language_provider.dart';
+import '../common/desktop_responsive.dart';
 
 class DesktopHeader extends ConsumerWidget {
   final VoidCallback onOpenCommandPalette;
@@ -35,186 +36,213 @@ class DesktopHeader extends ConsumerWidget {
       nowFormatted = DateFormat('EEEE, d MMMM yyyy').format(now);
     }
 
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: AppColors.slate200, width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Active Screen Title & Breadcrumb
-          Expanded(
-            flex: 4,
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.brand50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.brand100),
-                  ),
-                  child: const Icon(
-                    Icons.layers_rounded,
-                    color: AppColors.brand600,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        activeTitle,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.slate900,
-                          letterSpacing: -0.3,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            currentLang == 'mr'
-                                ? 'नगरसेवक पोर्टल'
-                                : (currentLang == 'hi' ? 'नगरसेवक पोर्टल' : 'Nagarsevak Portal'),
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.slate400,
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 6),
-                            child: Text('•', style: TextStyle(color: AppColors.slate300, fontSize: 11)),
-                          ),
-                          Expanded(
-                            child: Text(
-                              nowFormatted,
-                              style: const TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.slate500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = DesktopResponsive.of(context);
+        final isVeryCompact = r.width < 1024;
+        return Container(
+          height: r.headerHeight,
+          padding: EdgeInsets.symmetric(horizontal: r.headerPadding),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              bottom: BorderSide(color: AppColors.slate200, width: 1),
             ),
           ),
-
-          // Central Search / Command Palette Bar
-          Expanded(
-            flex: 5,
-            child: InkWell(
-              onTap: onOpenCommandPalette,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                height: 42,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: AppColors.slate50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.slate200),
-                ),
+          child: Row(
+            children: [
+              // Active Screen Title & Breadcrumb
+              Expanded(
+                flex: r.isCompact ? 3 : 4,
                 child: Row(
                   children: [
-                    const Icon(Icons.search_rounded, color: AppColors.slate400, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        currentLang == 'mr'
-                            ? 'सर्व मॉड्युल्समध्ये काहीही शोधा...'
-                            : (currentLang == 'hi'
-                                ? 'सभी मॉड्यूल में कुछ भी खोजें...'
-                                : 'Search anything across modules...'),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.slate400,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.brand50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.brand100),
+                      ),
+                      child: const Icon(
+                        Icons.layers_rounded,
+                        color: AppColors.brand600,
+                        size: 20,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.slate300),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            activeTitle,
+                            style: TextStyle(
+                              fontSize: r.isCompact ? 15 : 17,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.slate900,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                          if (!r.isCompact)
+                            Row(
+                              children: [
+                                Text(
+                                  currentLang == 'mr'
+                                      ? 'नगरसेवक पोर्टल'
+                                      : (currentLang == 'hi' ? 'नगरसेवक पोर्टल' : 'Nagarsevak Portal'),
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.slate400,
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 6),
+                                  child: Text('•', style: TextStyle(color: AppColors.slate300, fontSize: 11)),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    nowFormatted,
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.slate500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                         ],
-                      ),
-                      child: const Text(
-                        'Ctrl+K',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.slate600,
-                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
 
-          const SizedBox(width: 20),
-
-          // 3-Language Selector (EN | MR | HI)
-          const AppLanguageSegmentedSelector(isCompact: true),
-
-          const SizedBox(width: 14),
-
-          // Action Button: + New Grievance
-          ElevatedButton.icon(
-            onPressed: onNewComplaint,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(
-              currentLang == 'mr'
-                  ? '+ नवीन तक्रार'
-                  : (currentLang == 'hi' ? '+ नई शिकायत' : '+ New Grievance'),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brand600,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              textStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
+              // Central Search / Command Palette Bar
+              Expanded(
+                flex: r.isCompact ? 3 : 5,
+                child: InkWell(
+                  onTap: onOpenCommandPalette,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.slate50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.slate200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search_rounded, color: AppColors.slate400, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            currentLang == 'mr'
+                                ? 'सर्व मॉड्युल्समध्ये काहीही शोधा...'
+                                : (currentLang == 'hi'
+                                    ? 'सभी मॉड्यूल में कुछ भी खोजें...'
+                                    : 'Search anything across modules...'),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.slate400,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (!r.isCompact)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.slate300),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: const Text(
+                              'Ctrl+K',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.slate600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+
+              SizedBox(width: r.isCompact ? 10 : 20),
+
+              // 3-Language Selector (EN | MR | HI)
+              const AppLanguageSegmentedSelector(isCompact: true),
+
+              SizedBox(width: r.isCompact ? 8 : 14),
+
+              // Action Button: + New Grievance
+              if (isVeryCompact)
+                Tooltip(
+                  message: currentLang == 'mr'
+                      ? 'नवीन तक्रार'
+                      : (currentLang == 'hi' ? 'नई शिकायत' : 'New Grievance'),
+                  child: IconButton(
+                    onPressed: onNewComplaint,
+                    icon: const Icon(Icons.add_rounded, size: 20),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.brand600,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ElevatedButton.icon(
+                  onPressed: onNewComplaint,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text(
+                    currentLang == 'mr'
+                        ? '+ नवीन तक्रार'
+                        : (currentLang == 'hi' ? '+ नई शिकायत' : '+ New Grievance'),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brand600,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: r.isCompact ? 12 : 16,
+                      vertical: 12,
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+            ],
           ),
-
-
-        ],
-      ),
+        );
+      },
     );
   }
 }

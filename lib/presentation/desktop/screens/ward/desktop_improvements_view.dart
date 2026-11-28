@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../common/desktop_responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/services/translation_service.dart';
@@ -467,7 +468,7 @@ class _DesktopImprovementsViewState extends ConsumerState<DesktopImprovementsVie
     final visible = _visibleImprovements;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

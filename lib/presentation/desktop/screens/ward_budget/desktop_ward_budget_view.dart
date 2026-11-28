@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../common/desktop_responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/localization/app_translations.dart';
@@ -426,7 +427,7 @@ class _DesktopWardBudgetViewState extends ConsumerState<DesktopWardBudgetView> {
     final visible = _visibleBudgets;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,4 +1,5 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_responsive.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/services/translation_service.dart';
 import '../../shell/desktop_sidebar.dart';
@@ -430,7 +431,7 @@ class _DesktopTeamViewState extends ConsumerState<DesktopTeamView> {
     final visible = _visibleMembers;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

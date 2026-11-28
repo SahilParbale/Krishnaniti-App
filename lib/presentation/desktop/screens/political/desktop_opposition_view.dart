@@ -1,4 +1,5 @@
 import '../../../../core/theme/app_colors.dart';
+import '../../common/desktop_responsive.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/services/translation_service.dart';
 import '../../../providers/language_provider.dart';
@@ -492,7 +493,7 @@ class _DesktopOppositionViewState extends ConsumerState<DesktopOppositionView> {
     final workerCount = _members.length - candidateCount;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

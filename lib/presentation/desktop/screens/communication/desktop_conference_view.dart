@@ -1,4 +1,5 @@
 import '../../common/desktop_modal_dialog.dart';
+import '../../common/desktop_responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -265,7 +266,7 @@ class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(28.0),
+        padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -418,8 +419,8 @@ class _DesktopConferenceViewState extends ConsumerState<DesktopConferenceView> {
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: DesktopResponsive.of(context).gridColumns,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 mainAxisExtent: 220,

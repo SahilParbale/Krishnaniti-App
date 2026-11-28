@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../common/desktop_responsive.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/localization/app_translations.dart';
@@ -78,7 +79,7 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(28.0),
+        padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -267,8 +268,8 @@ class _DesktopWhatsappCallingViewState extends ConsumerState<DesktopWhatsappCall
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: DesktopResponsive.of(context).gridColumns,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                     mainAxisExtent: 170,

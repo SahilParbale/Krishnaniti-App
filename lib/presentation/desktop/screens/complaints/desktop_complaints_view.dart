@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../common/desktop_responsive.dart';
 import 'package:intl/intl.dart';
 import 'package:nagarsevak_mobile/data/models/complaint_model.dart';
 import 'package:nagarsevak_mobile/data/repositories/complaints_repository.dart';
@@ -183,7 +184,7 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // bg-slate-50
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+        padding: EdgeInsets.all(DesktopResponsive.of(context).contentPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -733,8 +734,8 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
   Widget _buildComplaintGrid(List<ComplaintModel> items, String lang) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Standard 3-by-3 format across desktop screens
-        final crossAxisCount = constraints.maxWidth < 650 ? 2 : 3;
+        final r = DesktopResponsive.of(context);
+        final crossAxisCount = r.gridColumns;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -1019,11 +1020,12 @@ class _DesktopComplaintsViewState extends ConsumerState<DesktopComplaintsView> {
 
   // --- Skeleton Loading Grid ---
   Widget _buildLoadingGrid() {
+    final r = DesktopResponsive.of(context);
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: r.gridColumns,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         childAspectRatio: 1.55,

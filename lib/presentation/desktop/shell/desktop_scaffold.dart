@@ -5,6 +5,7 @@ import 'package:nagarsevak_mobile/presentation/providers/language_provider.dart'
 import 'package:nagarsevak_mobile/presentation/providers/navigation_provider.dart';
 import 'desktop_sidebar.dart';
 import 'desktop_command_palette.dart';
+import '../common/desktop_responsive.dart';
 import '../screens/dashboard/desktop_dashboard_view.dart';
 import '../screens/complaints/desktop_complaints_view.dart';
 import '../screens/letters/desktop_letters_view.dart';
@@ -60,8 +61,26 @@ class DesktopScaffold extends ConsumerStatefulWidget {
 
 class _DesktopScaffoldState extends ConsumerState<DesktopScaffold> {
   bool _isSidebarCollapsed = false;
+  bool _manualCollapse = false;
   final Set<String> _visitedScreens = {'dashboard'};
   final Map<String, Widget> _cachedScreens = {};
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final w = MediaQuery.sizeOf(context).width;
+    if (!_manualCollapse) {
+      if (w < 1100 && !_isSidebarCollapsed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _isSidebarCollapsed = true);
+        });
+      } else if (w >= 1200 && _isSidebarCollapsed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _isSidebarCollapsed = false);
+        });
+      }
+    }
+  }
 
   static const List<String> _screenKeyList = [
     'dashboard', 'complaints', 'letters', 'profile_settings', 'diary',
@@ -86,14 +105,18 @@ class _DesktopScaffoldState extends ConsumerState<DesktopScaffold> {
   }
 
   void _openNewComplaintModal() {
+    final r = DesktopResponsive.of(context);
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: r.isCompact ? 16 : 40,
+          vertical: r.isCompact ? 20 : 30,
+        ),
         child: Container(
-          width: 680,
+          width: r.maxDialogWidth(680),
           constraints: const BoxConstraints(maxHeight: 720),
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
@@ -232,7 +255,10 @@ class _DesktopScaffoldState extends ConsumerState<DesktopScaffold> {
               DesktopSidebar(
                 isCollapsed: _isSidebarCollapsed,
                 onToggleCollapse: () {
-                  setState(() => _isSidebarCollapsed = !_isSidebarCollapsed);
+                  setState(() {
+                    _manualCollapse = true;
+                    _isSidebarCollapsed = !_isSidebarCollapsed;
+                  });
                 },
               ),
 
