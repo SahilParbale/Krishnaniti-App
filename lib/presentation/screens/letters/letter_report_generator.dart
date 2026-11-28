@@ -264,6 +264,58 @@ class LetterReportGenerator {
     );
 
     final fileName = 'Letters_Register_${DateFormat('yyyyMMdd').format(now)}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Ref / Date', mr: 'संदर्भ / दिनांक', hi: 'संदर्भ / दिनांक'),
+        AppTranslations.pick(activeLang, en: 'Flow', mr: 'प्रवाह', hi: 'प्रवाह'),
+        AppTranslations.pick(activeLang, en: 'Citizen', mr: 'नागरिक', hi: 'नागरिक'),
+        AppTranslations.getReportColumn('subject', activeLang),
+        AppTranslations.getReportColumn('area', activeLang),
+        AppTranslations.getReportColumn('status', activeLang),
+      ];
+      final htmlRows = List.generate(letters.length, (index) {
+        final l = letters[index];
+        final dateStr = PdfTranslationHelper.formatDate(l.receivedDate ?? l.createdAt, activeLang, pattern: 'dd/MM/yyyy');
+        final rawRefNo = l.details['letter_ref']?.toString() ?? (l.id.length >= 8 ? l.id.substring(0, 8).toUpperCase() : l.id);
+        final refNo = PdfTranslationHelper.formatNumber(rawRefNo, activeLang);
+        final flow = l.isIncoming
+            ? AppTranslations.pick(activeLang, en: 'INWARD', mr: 'आवक', hi: 'आवक')
+            : AppTranslations.pick(activeLang, en: 'OUTWARD', mr: 'जावक', hi: 'जावक');
+        final rawRecipient = l.isIncoming ? (l.sender ?? l.citizenName) : l.citizenName;
+        final recipient = PdfTranslationHelper.resolveName(nameCache, rawRecipient, activeLang);
+        final resolvedType = PdfTranslationHelper.resolve(textCache, l.letterType ?? l.title, activeLang);
+        final resolvedSubject = PdfTranslationHelper.resolve(textCache, l.subject, activeLang);
+        final typeSubject = resolvedType != resolvedSubject ? '$resolvedType\n$resolvedSubject' : resolvedSubject;
+        final area = _resolveArea(textCache, l.area, activeLang, fallback: defaultPrabhag);
+        return [
+          PdfTranslationHelper.formatNumber(index + 1, activeLang),
+          '$refNo\n$dateStr',
+          flow,
+          recipient,
+          typeSubject,
+          area,
+          _resolveStatus(textCache, l.status, activeLang),
+        ];
+      });
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: resolvedTitle,
+          subtitle: resolvedSubtitle,
+          dateFormatted: formattedDate,
+          totalCount: total,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -271,11 +323,11 @@ class LetterReportGenerator {
         title: resolvedTitle,
         subtitle: resolvedSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

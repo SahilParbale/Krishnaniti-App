@@ -266,6 +266,59 @@ class ComplaintReportGenerator {
     );
 
     final fileName = 'Complaints_Report_${DateFormat('yyyy-MM-dd').format(now)}';
+    final bool useHarfBuzzHtml = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzzHtml) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.getReportColumn('date_time', activeLang),
+        AppTranslations.getReportColumn('citizen_info', activeLang),
+        AppTranslations.getReportColumn('title_type', activeLang),
+        AppTranslations.getReportColumn('location_area', activeLang),
+        AppTranslations.getReportColumn('staff', activeLang),
+        AppTranslations.getReportColumn('status', activeLang),
+      ];
+      final htmlRows = complaints.map((c) {
+        final dateStr = PdfTranslationHelper.formatDate(c.createdAt, activeLang, pattern: 'dd/MM/yyyy');
+        final timeStr = AppTranslations.formatTime(c.createdAt, activeLang);
+        final citizenName = PdfTranslationHelper.resolveName(
+          nameCache,
+          c.citizenName,
+          activeLang,
+          fallback: AppTranslations.pick(activeLang, en: 'Anonymous', mr: 'निनावी', hi: 'अनाम'),
+        );
+        final citizenMobile = AppTranslations.formatDigits(c.citizenMobile ?? '', activeLang);
+        final citizenInfo = citizenMobile.isNotEmpty ? '$citizenName\n$citizenMobile' : citizenName;
+        final cTitle = PdfTranslationHelper.resolve(textCache, c.title, activeLang);
+        final cType = _resolveComplaintType(textCache, c.category, activeLang);
+        final titleInfo = cType.isNotEmpty ? '$cTitle\n($cType)' : cTitle;
+        final area = _resolveArea(textCache, c.area ?? c.location, activeLang);
+        final staff = PdfTranslationHelper.resolveName(
+          nameCache,
+          c.assignedStaffName,
+          activeLang,
+          fallback: AppTranslations.pick(activeLang, en: 'Unassigned', mr: 'अनियुक्त', hi: 'अनियुक्त'),
+        );
+        final status = _resolveStatus(textCache, c.status, activeLang);
+        return ['$dateStr\n$timeStr', citizenInfo, titleInfo, area, staff, status];
+      }).toList();
+
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: resolvedTitle,
+          subtitle: resolvedSubtitle,
+          dateFormatted: formattedDate,
+          totalCount: total,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          summaryText: activeFilters.isNotEmpty ? activeFilters.join('  |  ') : null,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -273,11 +326,11 @@ class ComplaintReportGenerator {
         title: resolvedTitle,
         subtitle: resolvedSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

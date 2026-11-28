@@ -366,6 +366,45 @@ class WardBudgetReportGenerator {
 
     final asciiYear = AppTranslations.normalizeAsciiDigits(year);
     final fileName = 'Budget_Report_${asciiYear}_${DateFormat('yyyyMMdd').format(now)}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'अ.क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Category / Head', mr: 'वर्गवारी / शीर्ष', hi: 'श्रेणी / शीर्ष'),
+        AppTranslations.pick(activeLang, en: 'Allocated', mr: 'तरतूद', hi: 'आवंटित'),
+        AppTranslations.pick(activeLang, en: 'Utilized', mr: 'खर्च', hi: 'उपयोग'),
+        AppTranslations.pick(activeLang, en: 'Progress', mr: 'प्रगती', hi: 'प्रगति'),
+      ];
+      final htmlRows = List.generate(budgets.length, (index) {
+        final b = budgets[index];
+        final percent = b.totalAllocation > 0 ? (b.utilizedAmount / b.totalAllocation) * 100 : 0.0;
+        final categoryStr = PdfTranslationHelper.resolve(textCache, b.category, activeLang);
+        final areaStr = b.area.trim().isNotEmpty ? '\n${_resolveArea(b.area, textCache, activeLang)}' : '';
+        return [
+          PdfTranslationHelper.formatNumber(index + 1, activeLang),
+          '$categoryStr$areaStr',
+          formatCurrency(b.totalAllocation),
+          formatCurrency(b.utilizedAmount),
+          '${PdfTranslationHelper.formatNumber(percent.toStringAsFixed(0), activeLang)}% $utilizedSuffix',
+        ];
+      });
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: effectiveTitle,
+          subtitle: effectiveSubtitle,
+          dateFormatted: PdfTranslationHelper.formatDateTime(now, activeLang),
+          totalCount: budgets.length,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -373,11 +412,11 @@ class WardBudgetReportGenerator {
         title: effectiveTitle,
         subtitle: effectiveSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

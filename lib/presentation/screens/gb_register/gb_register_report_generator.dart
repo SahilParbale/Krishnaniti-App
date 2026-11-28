@@ -247,6 +247,50 @@ class GbRegisterReportGenerator {
     );
 
     final fileName = 'GB_Register_Report_${DateFormat('yyyyMMdd').format(now)}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'अ.क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Date', mr: 'दिनांक', hi: 'दिनांक'),
+        meetingTypeLabel,
+        AppTranslations.pick(activeLang, en: 'Subject / Resolution', mr: 'विषय / ठराव', hi: 'विषय / प्रस्ताव'),
+        AppTranslations.pick(activeLang, en: 'Department', mr: 'विभाग', hi: 'विभाग'),
+        AppTranslations.pick(activeLang, en: 'Outcome / Status', mr: 'निष्कर्ष / स्थिती', hi: 'निष्कर्ष / स्थिति'),
+        AppTranslations.pick(activeLang, en: 'Area', mr: 'परिसर', hi: 'क्षेत्र'),
+      ];
+      final htmlRows = List.generate(entries.length, (index) {
+        final e = entries[index];
+        final statusStr = _resolveStatus(e.status, textCache, activeLang);
+        final outcomeStr = (e.response != null && e.response!.trim().isNotEmpty)
+            ? '$statusStr\n${PdfTranslationHelper.resolve(textCache, e.response, activeLang)}'
+            : statusStr;
+        return [
+          PdfTranslationHelper.formatNumber(index + 1, activeLang),
+          _resolveMeetingDate(e.meetingDate, activeLang),
+          _resolveMeetingType(e.meetingType, textCache, activeLang),
+          PdfTranslationHelper.resolve(textCache, e.subject, activeLang),
+          PdfTranslationHelper.resolve(textCache, e.department, activeLang),
+          outcomeStr,
+          e.area.trim().isNotEmpty ? _resolveArea(e.area, textCache, activeLang) : defaultAreaLabel,
+        ];
+      });
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: effectiveTitle,
+          subtitle: effectiveSubtitle,
+          dateFormatted: PdfTranslationHelper.formatDateTime(now, activeLang),
+          totalCount: entries.length,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -254,11 +298,11 @@ class GbRegisterReportGenerator {
         title: effectiveTitle,
         subtitle: effectiveSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

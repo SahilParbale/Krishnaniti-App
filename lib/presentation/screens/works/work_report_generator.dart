@@ -244,6 +244,56 @@ class WorkReportGenerator {
     );
 
     final fileName = 'Work_History_Report_${DateFormat('yyyy-MM-dd').format(now)}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Complaint / Subject', mr: 'तक्रार / विषय', hi: 'शिकायत / विषय'),
+        AppTranslations.pick(activeLang, en: 'Location / Area', mr: 'स्थान / क्षेत्र', hi: 'स्थान / क्षेत्र'),
+        AppTranslations.getReportColumn('status', activeLang),
+        AppTranslations.pick(activeLang, en: 'Amount', mr: 'रक्कम', hi: 'राशि'),
+      ];
+      final htmlRows = List.generate(works.length, (index) {
+        final w = works[index];
+        final dateStr = w.date.trim().isNotEmpty ? PdfTranslationHelper.parseAndFormatDateString(w.date, activeLang) : '';
+        final locResolved = _resolveArea(textCache, w.location, activeLang);
+        final areaResolved = _resolveArea(textCache, w.area, activeLang);
+        final locationStr = areaResolved.isNotEmpty && locResolved.isNotEmpty && areaResolved != locResolved
+            ? '$locResolved ($areaResolved)'
+            : (locResolved.isNotEmpty ? locResolved : (areaResolved.isNotEmpty ? areaResolved : '-'));
+        final amountStr = w.amount != null && w.amount! > 0
+            ? PdfTranslationHelper.formatCurrency(NumberFormat.decimalPattern('en_IN').format(w.amount!.toInt()), activeLang)
+            : '--';
+        final titleResolved = PdfTranslationHelper.resolve(textCache, w.title, activeLang);
+        final descResolved = w.description.trim().isNotEmpty ? PdfTranslationHelper.resolve(textCache, w.description, activeLang) : '';
+        final subjectDesc = descResolved.isNotEmpty ? '$titleResolved\n$descResolved' : titleResolved;
+        final localizedStatus = _resolveStatus(textCache, w.status, activeLang);
+        final statusWithDate = dateStr.isNotEmpty && dateStr != '-' ? '$localizedStatus\n$dateStr' : localizedStatus;
+        return [
+          PdfTranslationHelper.formatNumber(index + 1, activeLang),
+          subjectDesc,
+          locationStr,
+          statusWithDate,
+          amountStr,
+        ];
+      });
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: effectiveTitle,
+          subtitle: effectiveSubtitle,
+          dateFormatted: formattedDate,
+          totalCount: total,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -251,11 +301,11 @@ class WorkReportGenerator {
         title: effectiveTitle,
         subtitle: effectiveSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

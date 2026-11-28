@@ -262,6 +262,60 @@ class DiaryReportGenerator {
     );
 
     final fileName = 'Task_Report_${DateFormat('yyyy-MM-dd').format(now)}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Task Title & Details', mr: 'कार्याचे शीर्षक आणि तपशील', hi: 'कार्य शीर्षक और विवरण'),
+        AppTranslations.getReportColumn('priority', activeLang),
+        AppTranslations.pick(activeLang, en: 'Due Date / Time', mr: 'देय तारीख / वेळ', hi: 'नियत तारीख / समय'),
+        AppTranslations.pick(activeLang, en: 'Location / Contact', mr: 'स्थान / संपर्क', hi: 'स्थान / संपर्क'),
+        AppTranslations.getReportColumn('status', activeLang),
+      ];
+      final htmlRows = List.generate(tasks.length, (index) {
+        final t = tasks[index];
+        final dateStr = t.dueDate != null ? PdfTranslationHelper.formatDate(t.dueDate, activeLang, pattern: 'dd/MM/yyyy') : '-';
+        final timeStr = _formatTaskTime(t.dueTime, activeLang);
+        final due = timeStr.isNotEmpty ? '$dateStr\n$timeStr' : dateStr;
+        final resolvedTitleText = PdfTranslationHelper.resolve(textCache, t.title, activeLang);
+        final resolvedDesc = (t.description != null && t.description!.trim().isNotEmpty)
+            ? PdfTranslationHelper.resolve(textCache, t.description, activeLang)
+            : '';
+        final desc = resolvedDesc.isNotEmpty ? '$resolvedTitleText\n$resolvedDesc' : resolvedTitleText;
+        final loc = (t.address != null && t.address!.trim().isNotEmpty)
+            ? PdfTranslationHelper.resolve(textCache, t.address, activeLang)
+            : PdfTranslationHelper.resolve(textCache, t.officeName, activeLang);
+        final meet = (t.meetPersonName != null && t.meetPersonName!.trim().isNotEmpty)
+            ? '\n$meetPrefix: ${PdfTranslationHelper.resolveName(nameCache, t.meetPersonName, activeLang)}'
+            : '';
+        final priorityStr = _resolvePriority(textCache, t.priority, activeLang);
+        final statusStr = _resolveStatus(textCache, t.status, activeLang);
+        return [
+          PdfTranslationHelper.formatNumber(index + 1, activeLang),
+          desc,
+          priorityStr,
+          due,
+          '$loc$meet',
+          statusStr,
+        ];
+      });
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: effectiveTitle,
+          subtitle: effectiveSubtitle,
+          dateFormatted: formattedDate,
+          totalCount: total,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -269,11 +323,11 @@ class DiaryReportGenerator {
         title: effectiveTitle,
         subtitle: effectiveSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

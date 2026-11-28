@@ -191,6 +191,45 @@ class VisitorReportGenerator {
     );
 
     final fileName = 'Visitor_Log_Report_${DateFormat('yyyy-MM-dd').format(now)}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.getReportColumn('date_time', activeLang),
+        AppTranslations.getReportColumn('name', activeLang),
+        AppTranslations.pick(activeLang, en: 'Mobile', mr: 'मोबाईल', hi: 'मोबाइल'),
+        AppTranslations.getReportColumn('area', activeLang),
+        AppTranslations.pick(activeLang, en: 'Purpose', mr: 'उद्दिष्ट', hi: 'उद्देश्य'),
+        AppTranslations.pick(activeLang, en: 'Reference', mr: 'संदर्भ', hi: 'संदर्भ'),
+      ];
+      final htmlRows = visitors.map((v) {
+        final dateStr = PdfTranslationHelper.formatDate(v.visitDate, activeLang, pattern: 'dd/MM/yyyy');
+        final timeStr = AppTranslations.formatTime(v.visitDate, activeLang);
+        return [
+          '$dateStr\n$timeStr',
+          PdfTranslationHelper.resolveName(nameCache, v.name, activeLang),
+          v.mobile.trim().isNotEmpty ? PdfTranslationHelper.formatNumber(v.mobile.trim(), activeLang) : '-',
+          _resolveArea(textCache, v.area, activeLang),
+          PdfTranslationHelper.resolve(textCache, v.purpose, activeLang),
+          PdfTranslationHelper.resolveName(nameCache, v.reference, activeLang),
+        ];
+      }).toList();
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: resolvedTitle,
+          subtitle: resolvedSubtitle,
+          dateFormatted: formattedDate,
+          totalCount: total,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -198,11 +237,11 @@ class VisitorReportGenerator {
         title: resolvedTitle,
         subtitle: resolvedSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

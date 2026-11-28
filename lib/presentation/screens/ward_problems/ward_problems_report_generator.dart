@@ -316,6 +316,57 @@ class WardProblemsReportGenerator {
 
     final fileName =
         'Ward_Problems_Report_${DateFormat('yyyyMMdd').format(now)}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'अ.क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Issue Title & Category', mr: 'समस्येचे शीर्षक आणि वर्गवारी', hi: 'समस्या शीर्षक और श्रेणी'),
+        AppTranslations.pick(activeLang, en: 'Location / Area', mr: 'ठिकाण / परिसर', hi: 'स्थान / क्षेत्र'),
+        AppTranslations.pick(activeLang, en: 'Citizen / Reporter', mr: 'नागरिक / तक्रारदार', hi: 'नागरिक / रिपोर्टकर्ता'),
+        AppTranslations.pick(activeLang, en: 'Status', mr: 'स्थिती', hi: 'स्थिति'),
+        AppTranslations.pick(activeLang, en: 'Date', mr: 'दिनांक', hi: 'दिनांक'),
+      ];
+      final htmlRows = List.generate(problems.length, (index) {
+        final p = problems[index];
+        final titleStr = PdfTranslationHelper.resolve(textCache, p.title, activeLang);
+        final catStr = p.category.trim().isNotEmpty ? '\n$categoryPrefix: ${_resolveCategory(p.category, textCache, activeLang)}' : '';
+        final rawArea = (p.area != null && p.area!.trim().isNotEmpty)
+            ? p.area!
+            : (p.location != null && p.location!.trim().isNotEmpty ? p.location! : (p.ward != null && p.ward!.trim().isNotEmpty ? p.ward! : ''));
+        final areaStr = rawArea.isNotEmpty ? _resolveArea(rawArea, textCache, activeLang) : '-';
+        final citizenName = (p.citizenName != null && p.citizenName!.trim().isNotEmpty)
+            ? PdfTranslationHelper.resolveName(nameCache, p.citizenName, activeLang, fallback: anonymousLabel)
+            : anonymousLabel;
+        final phoneStr = (p.citizenMobile != null && p.citizenMobile!.trim().isNotEmpty)
+            ? '\n${PdfTranslationHelper.formatNumber(p.citizenMobile!.trim(), activeLang)}'
+            : '';
+        final dateStr = PdfTranslationHelper.formatDate(p.createdAt, activeLang);
+        return [
+          PdfTranslationHelper.formatNumber(index + 1, activeLang),
+          '$titleStr$catStr',
+          areaStr,
+          '$citizenName$phoneStr',
+          _resolveStatus(p.status, textCache, activeLang),
+          dateStr,
+        ];
+      });
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: reportTitle,
+          subtitle: reportSubtitle,
+          dateFormatted: PdfTranslationHelper.formatDateTime(now, activeLang),
+          totalCount: problems.length,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -323,11 +374,11 @@ class WardProblemsReportGenerator {
         title: reportTitle,
         subtitle: reportSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

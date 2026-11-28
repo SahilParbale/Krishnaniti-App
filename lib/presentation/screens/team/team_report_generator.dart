@@ -396,6 +396,49 @@ class TeamReportGenerator {
 
     final fileName =
         'Team_Staff_Directory_${DateFormat('yyyyMMdd').format(DateTime.now())}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Name & Role', mr: 'नाव आणि पद', hi: 'नाम एवं पद'),
+        AppTranslations.pick(activeLang, en: 'Contact', mr: 'संपर्क', hi: 'संपर्क'),
+        AppTranslations.pick(activeLang, en: 'Area', mr: 'परिसर', hi: 'क्षेत्र'),
+        AppTranslations.pick(activeLang, en: 'Keywords / Scope', mr: 'कीवर्ड्स / कार्यक्षेत्र', hi: 'कीवर्ड / कार्यक्षेत्र'),
+      ];
+      final htmlRows = staffList.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final member = entry.value;
+        final resolvedName = PdfTranslationHelper.resolveName(nameCache, nameSources[idx], activeLang);
+        final resolvedRole = _localizeRole(member.role, activeLang, textCache);
+        final roleStr = resolvedRole.isNotEmpty ? '\n$resolvedRole' : '';
+        final keywordsStr = member.keywords.isNotEmpty
+            ? member.keywords.map((k) => PdfTranslationHelper.resolve(textCache, k, activeLang)).join(', ')
+            : '-';
+        return [
+          PdfTranslationHelper.formatNumber(idx + 1, activeLang),
+          '$resolvedName$roleStr',
+          member.mobile.trim().isNotEmpty ? member.mobile.trim() : '-',
+          _resolveArea(member.area, activeLang, textCache),
+          keywordsStr,
+        ];
+      }).toList();
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: reportTitle,
+          subtitle: reportSubtitle,
+          dateFormatted: PdfTranslationHelper.formatDateTime(DateTime.now(), activeLang),
+          totalCount: staffList.length,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -403,11 +446,11 @@ class TeamReportGenerator {
         title: reportTitle,
         subtitle: reportSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

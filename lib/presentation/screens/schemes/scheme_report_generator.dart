@@ -191,6 +191,42 @@ class SchemeReportGenerator {
     );
 
     final fileName = 'Government_Schemes_${DateFormat('yyyyMMdd').format(now)}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Scheme Name', mr: 'योजनेचे नाव', hi: 'योजना का नाम'),
+        AppTranslations.getReportColumn('description', activeLang),
+        AppTranslations.getReportColumn('category', activeLang),
+        AppTranslations.pick(activeLang, en: 'Benefits', mr: 'लाभ', hi: 'लाभ'),
+      ];
+      final htmlRows = List.generate(schemes.length, (index) {
+        final item = schemes[index];
+        return [
+          PdfTranslationHelper.formatNumber(index + 1, activeLang),
+          PdfTranslationHelper.resolve(textCache, rawNames[index], activeLang),
+          PdfTranslationHelper.resolve(textCache, rawDescs[index], activeLang),
+          PdfTranslationHelper.resolve(textCache, item.category, activeLang),
+          PdfTranslationHelper.resolve(textCache, rawBenefits[index], activeLang),
+        ];
+      });
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: title,
+          subtitle: subtitle,
+          dateFormatted: PdfTranslationHelper.formatDateTime(now, activeLang),
+          totalCount: schemes.length,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -198,11 +234,11 @@ class SchemeReportGenerator {
         title: title,
         subtitle: subtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

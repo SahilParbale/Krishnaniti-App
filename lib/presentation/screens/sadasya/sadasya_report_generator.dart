@@ -343,6 +343,51 @@ class SadasyaReportGenerator {
 
     final fileName =
         'Party_Members_Report_${DateFormat('yyyy-MM-dd').format(DateTime.now())}';
+    final bool useHarfBuzz = activeLang == 'mr' || activeLang == 'hi';
+
+    Future<List<int>> buildPdfBytes() async {
+      if (!useHarfBuzz) return pdf.save();
+      final htmlHeaders = [
+        AppTranslations.pick(activeLang, en: '#', mr: 'क्र.', hi: 'क्र.'),
+        AppTranslations.pick(activeLang, en: 'Member Name', mr: 'सदस्याचे नाव', hi: 'सदस्य का नाम'),
+        AppTranslations.pick(activeLang, en: 'Mobile No.', mr: 'मोबाईल क्र.', hi: 'मोबाइल नं.'),
+        AppTranslations.pick(activeLang, en: 'Area / Ward', mr: 'परिसर / प्रभाग', hi: 'क्षेत्र / वार्ड'),
+        AppTranslations.pick(activeLang, en: 'Address', mr: 'पत्ता', hi: 'पता'),
+        AppTranslations.pick(activeLang, en: 'Type', mr: 'प्रकार', hi: 'प्रकार'),
+        AppTranslations.pick(activeLang, en: 'Joined Date', mr: 'नोंदणी दिनांक', hi: 'शामिल होने की तिथि'),
+      ];
+      final htmlRows = members.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final item = entry.value;
+        final dateFormatted = PdfTranslationHelper.formatDate(item.registeredAt, activeLang, pattern: 'MMM d, yyyy');
+        final rawArea = (item.area != null && item.area!.trim().isNotEmpty) ? item.area : item.ward;
+        return [
+          PdfTranslationHelper.formatNumber(idx + 1, activeLang),
+          PdfTranslationHelper.resolveName(nameCache, nameSources[idx], activeLang),
+          item.mobile.trim().isNotEmpty ? item.mobile.trim() : '-',
+          _resolveArea(rawArea, activeLang, textCache),
+          addressSources[idx].isNotEmpty ? PdfTranslationHelper.resolve(textCache, addressSources[idx], activeLang) : '-',
+          item.isVoter
+              ? AppTranslations.pick(activeLang, en: 'Voter Member', mr: 'मतदार सदस्य', hi: 'मतदाता सदस्य')
+              : AppTranslations.pick(activeLang, en: 'Party Member', mr: 'पक्ष सदस्य', hi: 'पार्टी सदस्य'),
+          dateFormatted,
+        ];
+      }).toList();
+      try {
+        return await WebReportTheme.generateHtmlPdfBytes(
+          title: reportTitle,
+          subtitle: reportSubtitle,
+          dateFormatted: PdfTranslationHelper.formatDateTime(DateTime.now(), activeLang),
+          totalCount: members.length,
+          headers: htmlHeaders,
+          rows: htmlRows,
+          lang: activeLang,
+        );
+      } catch (_) {
+        return pdf.save();
+      }
+    }
+
     if (context != null) {
       if (!context.mounted) return;
       await AppReportPreviewModal.show(
@@ -350,11 +395,11 @@ class SadasyaReportGenerator {
         title: reportTitle,
         subtitle: reportSubtitle,
         fileName: fileName,
-        onBuildPdf: () async => pdf.save(),
+        onBuildPdf: () async => (await buildPdfBytes()) as dynamic,
       );
     } else {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
+        onLayout: (PdfPageFormat format) async => (await buildPdfBytes()) as dynamic,
         name: '$fileName.pdf',
       );
     }

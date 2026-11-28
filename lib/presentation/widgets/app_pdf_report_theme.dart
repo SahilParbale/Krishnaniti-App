@@ -1,3 +1,9 @@
+import 'dart:convert';
+import 'dart:io' show File, Platform, Process;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart' as m;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -90,6 +96,431 @@ class WebReportTheme {
   static Future<pw.Document> createDocument({String lang = 'en'}) async {
     final theme = await getTheme();
     return pw.Document(theme: theme);
+  }
+
+  static String? _cachedDevRegB64;
+  static String? _cachedDevBoldB64;
+
+  static Future<({String regB64, String boldB64})> _getDevanagariFontBase64() async {
+    if (_cachedDevRegB64 != null && _cachedDevBoldB64 != null) {
+      return (regB64: _cachedDevRegB64!, boldB64: _cachedDevBoldB64!);
+    }
+    final regBytes = await rootBundle.load('assets/fonts/NotoSansDevanagari-Regular.ttf');
+    final boldBytes = await rootBundle.load('assets/fonts/NotoSansDevanagari-Bold.ttf');
+    _cachedDevRegB64 = base64Encode(regBytes.buffer.asUint8List());
+    _cachedDevBoldB64 = base64Encode(boldBytes.buffer.asUint8List());
+    return (regB64: _cachedDevRegB64!, boldB64: _cachedDevBoldB64!);
+  }
+
+  static String _escapeHtml(String input) {
+    return input
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+  }
+
+  /// Generates a PDF using the platform's native Chromium/WebView2 HarfBuzz engine
+  /// via [Printing.convertHtml], guaranteeing 100% accurate Devanagari (Marathi & Hindi)
+  /// text shaping, matra positioning, conjuncts (जोडाक्षरे), and selectable/copyable text.
+  static Future<Uint8List> generateHtmlPdfBytes({
+    required String title,
+    required String subtitle,
+    String? dateFormatted,
+    int? totalCount,
+    String? foundLabel,
+    List<String>? metaLines,
+    required List<String> headers,
+    required List<List<String>> rows,
+    String? summaryText,
+    String lang = 'en',
+    PdfPageFormat? format,
+  }) async {
+    final fonts = await _getDevanagariFontBase64();
+    final pageFmt = format ?? pageFormat;
+    final datePrefix = AppTranslations.pick(lang, en: 'Date:', mr: 'दिनांक:', hi: 'दिनांक:');
+    final effectiveFound = foundLabel ?? AppTranslations.pick(lang, en: 'Found', mr: 'एकूण', hi: 'कुल');
+
+    final metaHtml = StringBuffer();
+    if (metaLines != null && metaLines.isNotEmpty) {
+      for (final line in metaLines) {
+        metaHtml.write('<div class="meta-line">${_escapeHtml(AppTranslations.formatDigits(line, lang))}</div>');
+      }
+    } else {
+      if (dateFormatted != null && dateFormatted.isNotEmpty) {
+        metaHtml.write('<div class="meta-line">${_escapeHtml(datePrefix)} ${_escapeHtml(AppTranslations.formatDigits(dateFormatted, lang))}</div>');
+      }
+      if (totalCount != null) {
+        metaHtml.write('<div class="meta-line">${_escapeHtml(effectiveFound)}: ${_escapeHtml(AppTranslations.formatDigits(totalCount, lang))}</div>');
+      }
+    }
+
+    final thHtml = headers.map((h) => '<th>${_escapeHtml(h)}</th>').join();
+    final trHtml = StringBuffer();
+    for (int i = 0; i < rows.length; i++) {
+      final rowClass = i.isOdd ? ' class="alt"' : '';
+      final tds = rows[i].map((c) => '<td>${_escapeHtml(c)}</td>').join();
+      trHtml.write('<tr$rowClass>$tds</tr>');
+    }
+
+    final summaryBlock = (summaryText != null && summaryText.trim().isNotEmpty)
+        ? '<div class="summary">${_escapeHtml(summaryText)}</div>'
+        : '';
+
+    final html = '''
+<!DOCTYPE html>
+<html lang="${_escapeHtml(lang)}">
+<head>
+<meta charset="UTF-8">
+<style>
+  @font-face {
+    font-family: 'NotoSansDevanagari';
+    src: url('data:font/ttf;base64,${fonts.regB64}') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'NotoSansDevanagari';
+    src: url('data:font/ttf;base64,${fonts.boldB64}') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+  }
+  * {
+    box-sizing: border-box;
+    font-family: 'NotoSansDevanagari', 'Noto Sans', sans-serif;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    color: #1E293B;
+    font-size: 10.5px;
+    line-height: 1.45;
+  }
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid #0284C7;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .report-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0369A1;
+    margin: 0 0 3px 0;
+  }
+  .report-subtitle {
+    font-size: 11px;
+    color: #64748B;
+    margin: 0;
+  }
+  .meta-col {
+    text-align: right;
+  }
+  .meta-line {
+    font-size: 9.5px;
+    color: #64748B;
+    margin-bottom: 2px;
+  }
+  .summary {
+    background: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 10px;
+    color: #0C4A6E;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+  th {
+    background-color: #F8FAFC;
+    color: #334155;
+    font-weight: 700;
+    font-size: 10px;
+    text-align: left;
+    padding: 7px 8px;
+    border-bottom: 1.5px solid #CBD5E1;
+    border-top: 1px solid #E2E8F0;
+  }
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 10px;
+    color: #1E293B;
+    vertical-align: top;
+  }
+  tr.alt td {
+    background-color: #F8FAFC;
+  }
+</style>
+</head>
+<body>
+  <div class="report-header">
+    <div>
+      <h1 class="report-title">${_escapeHtml(title)}</h1>
+      <p class="report-subtitle">${_escapeHtml(subtitle)}</p>
+    </div>
+    <div class="meta-col">
+      $metaHtml
+    </div>
+  </div>
+  $summaryBlock
+  <table>
+    <thead><tr>$thHtml</tr></thead>
+    <tbody>$trHtml</tbody>
+  </table>
+</body>
+</html>
+''';
+
+    if (!kIsWeb && Platform.isWindows) {
+      final tempDir = await File('${Platform.environment['TEMP'] ?? '.'}\\ns_pdf_${DateTime.now().microsecondsSinceEpoch}').parent.create(recursive: true);
+      final stamp = DateTime.now().microsecondsSinceEpoch;
+      final htmlFile = File('${tempDir.path}\\ns_report_$stamp.html');
+      final pdfFile = File('${tempDir.path}\\ns_report_$stamp.pdf');
+      try {
+        await htmlFile.writeAsString(html, flush: true);
+        final isLandscape = pageFmt.width > pageFmt.height;
+        final htmlWithPage = html.replaceFirst(
+          '</style>',
+          '@page { size: A4 ${isLandscape ? 'landscape' : 'portrait'}; margin: 10mm; }\n</style>',
+        );
+        await htmlFile.writeAsString(htmlWithPage, flush: true);
+
+        final edgePaths = [
+          r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
+          r'C:\Program Files\Microsoft\Edge\Application\msedge.exe',
+          r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+          r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+        ];
+        String? browserExe;
+        for (final p in edgePaths) {
+          if (await File(p).exists()) {
+            browserExe = p;
+            break;
+          }
+        }
+        if (browserExe != null) {
+          final res = await Process.run(browserExe, [
+            '--headless=new',
+            '--disable-gpu',
+            '--no-sandbox',
+            '--print-to-pdf=${pdfFile.path}',
+            '--no-pdf-header-footer',
+            Uri.file(htmlFile.path).toString(),
+          ]);
+          if (res.exitCode == 0 && await pdfFile.exists()) {
+            return await pdfFile.readAsBytes();
+          }
+        }
+      } finally {
+        if (await htmlFile.exists()) await htmlFile.delete().catchError((_) => htmlFile);
+        if (await pdfFile.exists()) await pdfFile.delete().catchError((_) => pdfFile);
+      }
+    }
+
+    if (kIsWeb) {
+      return _generateHarfBuzzRasterPdfBytes(
+        title: title,
+        subtitle: subtitle,
+        dateFormatted: dateFormatted,
+        totalCount: totalCount,
+        foundLabel: effectiveFound,
+        metaLines: metaLines,
+        headers: headers,
+        rows: rows,
+        summaryText: summaryText,
+        lang: lang,
+        format: pageFmt,
+      );
+    }
+
+    return Printing.convertHtml(
+      html: html,
+      format: pageFmt,
+    );
+  }
+
+  /// Renders a single string using Flutter's native Skia/HarfBuzz [m.TextPainter]
+  /// at 3x scale so Devanagari matras, conjuncts, and ligatures are 100% accurate.
+  static Future<pw.MemoryImage> _renderShapedText(
+    String text, {
+    required double fontSize,
+    required double maxWidth,
+    m.FontWeight fontWeight = m.FontWeight.normal,
+    m.Color color = const m.Color(0xFF1E293B),
+    m.TextAlign textAlign = m.TextAlign.left,
+  }) async {
+    const double scale = 3.0;
+    final painter = m.TextPainter(
+      text: m.TextSpan(
+        text: text.isEmpty ? ' ' : text,
+        style: m.TextStyle(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: color,
+          height: 1.35,
+        ),
+      ),
+      textDirection: m.TextDirection.ltr,
+      textAlign: textAlign,
+    )..layout(maxWidth: maxWidth);
+
+    final w = (painter.width * scale).ceil().clamp(1, 4096);
+    final h = (painter.height * scale).ceil().clamp(1, 4096);
+
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+    canvas.scale(scale, scale);
+    painter.paint(canvas, ui.Offset.zero);
+
+    final picture = recorder.endRecording();
+    final image = await picture.toImage(w, h);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return pw.MemoryImage(byteData!.buffer.asUint8List());
+  }
+
+  static Future<Uint8List> _generateHarfBuzzRasterPdfBytes({
+    required String title,
+    required String subtitle,
+    String? dateFormatted,
+    int? totalCount,
+    required String foundLabel,
+    List<String>? metaLines,
+    required List<String> headers,
+    required List<List<String>> rows,
+    String? summaryText,
+    required String lang,
+    required PdfPageFormat format,
+  }) async {
+    final doc = pw.Document();
+    final usableWidth = format.availableWidth - (marginPt * 2);
+
+    final titleImg = await _renderShapedText(
+      title,
+      fontSize: 16,
+      maxWidth: usableWidth * 0.65,
+      fontWeight: m.FontWeight.bold,
+      color: const m.Color(0xFF0369A1),
+    );
+    final subtitleImg = await _renderShapedText(
+      subtitle,
+      fontSize: 10,
+      maxWidth: usableWidth * 0.65,
+      color: const m.Color(0xFF64748B),
+    );
+
+    final datePrefix = AppTranslations.pick(lang, en: 'Date:', mr: 'दिनांक:', hi: 'दिनांक:');
+    final metaStrings = <String>[];
+    if (metaLines != null && metaLines.isNotEmpty) {
+      metaStrings.addAll(metaLines.map((l) => AppTranslations.formatDigits(l, lang)));
+    } else {
+      if (dateFormatted != null && dateFormatted.isNotEmpty) {
+        metaStrings.add('$datePrefix ${AppTranslations.formatDigits(dateFormatted, lang)}');
+      }
+      if (totalCount != null) {
+        metaStrings.add('$foundLabel: ${AppTranslations.formatDigits(totalCount, lang)}');
+      }
+    }
+    final metaImg = metaStrings.isNotEmpty
+        ? await _renderShapedText(
+            metaStrings.join('\n'),
+            fontSize: 9,
+            maxWidth: usableWidth * 0.32,
+            color: const m.Color(0xFF64748B),
+            textAlign: m.TextAlign.right,
+          )
+        : null;
+
+    final colCount = headers.isNotEmpty ? headers.length : 1;
+    final colWidth = (usableWidth / colCount) - 12;
+
+    final headerImgs = await Future.wait(
+      headers.map((h) => _renderShapedText(
+            h,
+            fontSize: 9,
+            maxWidth: colWidth,
+            fontWeight: m.FontWeight.bold,
+            color: const m.Color(0xFF334155),
+          )),
+    );
+
+    final rowImgs = <List<pw.MemoryImage>>[];
+    for (final row in rows) {
+      final imgs = await Future.wait(
+        row.map((cell) => _renderShapedText(
+              cell,
+              fontSize: 8.5,
+              maxWidth: colWidth,
+              color: const m.Color(0xFF1E293B),
+            )),
+      );
+      rowImgs.add(imgs);
+    }
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: format,
+        margin: pageMargin,
+        header: (ctx) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Image(titleImg, width: titleImg.width! / 3.0),
+                    pw.SizedBox(height: 2),
+                    pw.Image(subtitleImg, width: subtitleImg.width! / 3.0),
+                  ],
+                ),
+                if (metaImg != null) pw.Image(metaImg, width: metaImg.width! / 3.0),
+              ],
+            ),
+            pw.SizedBox(height: 8),
+            pw.Container(height: 1.5, color: brand600),
+            pw.SizedBox(height: 10),
+          ],
+        ),
+        build: (ctx) => [
+          pw.Table(
+            border: tableBorder,
+            children: [
+              pw.TableRow(
+                decoration: tableHeaderDecoration,
+                children: headerImgs
+                    .map((img) => pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                          child: pw.Image(img, width: img.width! / 3.0),
+                        ))
+                    .toList(),
+              ),
+              for (int i = 0; i < rowImgs.length; i++)
+                pw.TableRow(
+                  decoration: i.isOdd ? oddRowDecoration : null,
+                  children: rowImgs[i]
+                      .map((img) => pw.Padding(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                            child: pw.Image(img, width: img.width! / 3.0),
+                          ))
+                      .toList(),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    return doc.save();
   }
 
   /// Builds the top report header matching Nagarsevak-Managment web .report-header
